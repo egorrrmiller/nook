@@ -1,0 +1,38 @@
+{
+  "name": "@nook/collab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Nook collaboration service: Hocuspocus (Yjs) server + headless BlockNote for server-side edits",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@blocknote/core": "^0.54.2",
+    "@blocknote/server-util": "^0.54.2",
+    "@hocuspocus/server": "^4.7.0",
+    "@hono/node-server": "^2.1.1",
+    "hono": "^4.13.7",
+    "jose": "^6.2.12",
+    "pino": "^10.3.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "ws": "^8.21.3",
+    "y-protocols": "^1.0.7",
+    "yjs": "^13.6.32"
+  },
+  "devDependencies": {
+    "@hocuspocus/provider": "^4.7.0",
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.18.0",
+    "pino-pretty": "^13.0.0",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11"
+  }
+}

@@ -1,0 +1,23 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+TestResults/
+# Node
+node_modules/
+dist/
+.turbo/
+*.tsbuildinfo
+playwright-report/
+test-results/
+# env / data
+.env
+.env.*
+!.env.example
+data/
+*.log
+.DS_Store
+# IDE
+.idea/
+.vscode/

@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nook
+      POSTGRES_USER: nook
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nook -d nook"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/api.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_URLS: http://0.0.0.0:5000
+      NOOK_DB: "Host=postgres;Port=5432;Database=nook;Username=nook;Password=${POSTGRES_PASSWORD}"
+      NOOK_DATA_DIR: /data
+      NOOK_OWNER_EMAIL: ${NOOK_OWNER_EMAIL:?set NOOK_OWNER_EMAIL}
+      NOOK_OWNER_PASSWORD: ${NOOK_OWNER_PASSWORD:?set NOOK_OWNER_PASSWORD}
+      NOOK_COLLAB_JWT_SECRET: ${NOOK_COLLAB_JWT_SECRET:?set NOOK_COLLAB_JWT_SECRET}
+      NOOK_INTERNAL_TOKEN: ${NOOK_INTERNAL_TOKEN:?set NOOK_INTERNAL_TOKEN}
+      NOOK_COLLAB_INTERNAL_URL: http://collab:1235
+    volumes:
+      - nookdata:/data
+
+  collab:
+    build:
+      context: ../services/collab
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      COLLAB_PORT: "1234"
+      COLLAB_INTERNAL_PORT: "1235"
+      COLLAB_API_BASE: http://api:5000
+      NOOK_COLLAB_JWT_SECRET: ${NOOK_COLLAB_JWT_SECRET}
+      NOOK_INTERNAL_TOKEN: ${NOOK_INTERNAL_TOKEN}
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - api
+      - collab
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      NOOK_DOMAIN: ${NOOK_DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+
+volumes:
+  pgdata:
+  nookdata:
+  caddydata:
+  caddyconfig:
