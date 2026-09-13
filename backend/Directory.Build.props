@@ -1,0 +1,28 @@
+<Project>
+  <!--
+    When NOOK_BUILD_ROOT is set, obj/ and bin/ are written there instead of next to the sources.
+    Use it when the repo lives on a network share (SMB): MSBuild stalls on remote obj/ directories.
+    Example: NOOK_BUILD_ROOT=$HOME/.nook-build dotnet build
+  -->
+  <PropertyGroup Condition="'$(NOOK_BUILD_ROOT)' != ''">
+    <BaseIntermediateOutputPath>$(NOOK_BUILD_ROOT)/obj/$(MSBuildProjectName)/</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(NOOK_BUILD_ROOT)/bin/$(MSBuildProjectName)/</BaseOutputPath>
+    <MSBuildProjectExtensionsPath>$(BaseIntermediateOutputPath)</MSBuildProjectExtensionsPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <!-- The repo may live on a network share where the SourceLink git tasks cannot lock .git/config; we do not need them. -->
+    <EnableSourceLink>false</EnableSourceLink>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,32 @@
+{
+  "name": "nook-frontend",
+  "type": "module",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@12.4.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @nook/web dev",
+    "build": "pnpm -r --filter './packages/**' --filter './plugins/**' build && pnpm --filter @nook/web build",
+    "test": "pnpm -r --if-present test",
+    "e2e": "pnpm --filter @nook/web e2e",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "gen:api": "pnpm --filter @nook/api-client gen"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "eslint": "^9.39.0",
+    "eslint-config-prettier": "^10.1.0",
+    "eslint-plugin-react-hooks": "^7.0.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.0.0",
+    "prettier": "^3.6.0",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.46.0"
+  }
+}

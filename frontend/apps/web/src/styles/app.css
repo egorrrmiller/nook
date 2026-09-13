@@ -1,0 +1,98 @@
+@import 'tailwindcss';
+@import '@nook/ui/styles.css';
+@import '@nook/editor/styles.css';
+
+/* Workspace packages ship TSX with Tailwind classes; scan them (paths relative to this file). */
+@source '../../../../packages/ui/src';
+@source '../../../../packages/editor/src';
+@source '../../../../packages/plugin-sdk/src';
+@source '../../../../plugins';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *, .dark, .dark *));
+
+@theme inline {
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+  --font-mono: var(--font-mono);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--popover);
+  --color-card-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--muted);
+  --color-secondary-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-tertiary: var(--foreground-tertiary);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    overscroll-behavior: none;
+  }
+  #root {
+    height: 100dvh;
+  }
+  * {
+    border-color: var(--border);
+  }
+  button {
+    cursor: pointer;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--accent-strong);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+}
+
+/* Notion-like page column */
+.nook-page-column {
+  width: 100%;
+  max-width: var(--content-width);
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+.nook-page-column[data-full-width='true'] {
+  max-width: none;
+  padding-inline: 96px;
+}
+@media (max-width: 900px) {
+  .nook-page-column[data-full-width='true'] {
+    padding-inline: 24px;
+  }
+}

@@ -1,16 +1,16 @@
 <Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Nook.Domain/Nook.Domain.csproj" />
+    <Project Path="src/Nook.Application/Nook.Application.csproj" />
+    <Project Path="src/Nook.Plugins.Sdk/Nook.Plugins.Sdk.csproj" />
+    <Project Path="src/Nook.Infrastructure/Nook.Infrastructure.csproj" />
+    <Project Path="src/Nook.Api/Nook.Api.csproj" />
+  </Folder>
   <Folder Name="/plugins/">
     <Project Path="plugins/Nook.Plugin.Sample/Nook.Plugin.Sample.csproj" />
   </Folder>
-  <Folder Name="/src/">
-    <Project Path="src/Nook.Api/Nook.Api.csproj" />
-    <Project Path="src/Nook.Application/Nook.Application.csproj" />
-    <Project Path="src/Nook.Domain/Nook.Domain.csproj" />
-    <Project Path="src/Nook.Infrastructure/Nook.Infrastructure.csproj" />
-    <Project Path="src/Nook.Plugins.Sdk/Nook.Plugins.Sdk.csproj" />
-  </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/Nook.IntegrationTests/Nook.IntegrationTests.csproj" />
     <Project Path="tests/Nook.UnitTests/Nook.UnitTests.csproj" />
+    <Project Path="tests/Nook.IntegrationTests/Nook.IntegrationTests.csproj" />
   </Folder>
 </Solution>

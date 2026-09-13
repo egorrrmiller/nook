@@ -1,9 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Nook.Api</RootNamespace>
+    <UserSecretsId>nook-api</UserSecretsId>
   </PropertyGroup>
-
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Scalar.AspNetCore" />
+    <PackageReference Include="Microsoft.OpenApi" />
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Nook.Domain/Nook.Domain.csproj" />
+    <ProjectReference Include="../Nook.Application/Nook.Application.csproj" />
+    <ProjectReference Include="../Nook.Infrastructure/Nook.Infrastructure.csproj" />
+    <ProjectReference Include="../Nook.Plugins.Sdk/Nook.Plugins.Sdk.csproj" />
+    <ProjectReference Include="../../plugins/Nook.Plugin.Sample/Nook.Plugin.Sample.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Nook.IntegrationTests" />
+  </ItemGroup>
 </Project>

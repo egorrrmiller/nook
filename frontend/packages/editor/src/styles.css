@@ -1,0 +1,66 @@
+/* BlockNote shadcn variant: its React components carry Tailwind classes, so the
+   consuming app's Tailwind build must scan the package (path relative to this file). */
+@import '@blocknote/shadcn/style.css';
+@source '../node_modules/@blocknote/shadcn/src';
+
+.nook-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nook-editor-title {
+  width: 100%;
+  resize: none;
+  overflow: hidden;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 0;
+  margin: 0 0 8px;
+}
+.nook-editor-title::placeholder {
+  color: var(--foreground-tertiary);
+}
+
+.nook-editor-banner {
+  border: 1px solid var(--border);
+  background: var(--muted);
+  color: var(--foreground-secondary);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+/* BlockNote pads 54px for the side menu; the page column already leaves room. */
+.nook-editor .bn-editor {
+  padding-inline: 0;
+  background: transparent;
+}
+.nook-editor .bn-container {
+  font-family: var(--font-sans);
+}
+
+.nook-editor-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px;
+}
+.nook-skeleton-line {
+  height: 14px;
+  border-radius: 4px;
+  background: var(--accent);
+  animation: nook-pulse 1.4s ease-in-out infinite;
+}
+@keyframes nook-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}

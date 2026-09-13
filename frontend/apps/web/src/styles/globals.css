@@ -1,0 +1,15 @@
+@import 'tailwindcss';
+@import '@nook/ui/styles.css';
+@import '@nook/editor/styles.css';
+
+/* Tailwind must scan workspace packages and @blocknote/shadcn's components (they ship as class names, not CSS). */
+@source '../../../../packages/ui/src';
+@source '../../../../packages/editor/src';
+@source '../../../../plugins';
+@source '../../../../node_modules/.pnpm/@blocknote+shadcn@*/node_modules/@blocknote/shadcn/dist/blocknote-shadcn.js';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+a {
+  color: inherit;
+}

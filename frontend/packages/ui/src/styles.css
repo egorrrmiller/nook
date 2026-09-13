@@ -1,0 +1,167 @@
+/*
+ * Nook design tokens. Plain CSS variables (no Tailwind directives) so this file can be
+ * imported by any consumer; apps/web maps them onto Tailwind's @theme.
+ *
+ * Theme selection: `data-theme="light|dark|hc"` on <html>; when unset, follows
+ * prefers-color-scheme. `.dark` is mirrored on <html> for third-party CSS (BlockNote).
+ */
+
+:root {
+  color-scheme: light;
+
+  --font-sans:
+    Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, 'Apple Color Emoji',
+    Arial, sans-serif, 'Segoe UI Emoji', 'Segoe UI Symbol';
+  --font-serif: Lyon-Text, Georgia, ui-serif, serif;
+  --font-mono: iawriter-mono, Nitti, Menlo, Courier, monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  --sidebar-width: 240px;
+  --content-width: 708px;
+  --topbar-height: 44px;
+
+  /* Notion light palette */
+  --background: #ffffff;
+  --foreground: #37352f;
+  --foreground-secondary: #787774;
+  --foreground-tertiary: #9b9a97;
+  --muted: #f7f7f5;
+  --muted-foreground: #787774;
+  --accent: rgba(55, 53, 47, 0.08);
+  --accent-strong: rgba(55, 53, 47, 0.16);
+  --accent-foreground: #37352f;
+  --primary: #2383e2;
+  --primary-foreground: #ffffff;
+  --popover: #ffffff;
+  --popover-foreground: #37352f;
+  --border: rgba(55, 53, 47, 0.09);
+  --border-strong: rgba(55, 53, 47, 0.16);
+  --input: rgba(55, 53, 47, 0.16);
+  --ring: rgba(35, 131, 226, 0.57);
+  --destructive: #eb5757;
+  --destructive-foreground: #ffffff;
+  --sidebar: #f7f7f5;
+  --sidebar-foreground: #5f5e5b;
+  --selection: rgba(35, 131, 226, 0.28);
+  --shadow-popover:
+    rgba(15, 15, 15, 0.05) 0 0 0 1px, rgba(15, 15, 15, 0.1) 0 3px 6px, rgba(15, 15, 15, 0.2) 0 9px 24px;
+  --shadow-dialog: rgba(15, 15, 15, 0.1) 0 0 0 1px, rgba(15, 15, 15, 0.2) 0 5px 10px, rgba(15, 15, 15, 0.4) 0 15px 40px;
+}
+
+/* Dark */
+:root[data-theme='dark'],
+:root:not([data-theme]):not([data-theme='light']).dark {
+  color-scheme: dark;
+  --background: #191919;
+  --foreground: #d4d4d4;
+  --foreground-secondary: #9b9b9b;
+  --foreground-tertiary: #6f6f6f;
+  --muted: #202020;
+  --muted-foreground: #9b9b9b;
+  --accent: rgba(255, 255, 255, 0.055);
+  --accent-strong: rgba(255, 255, 255, 0.12);
+  --accent-foreground: #ffffff;
+  --primary: #529cca;
+  --primary-foreground: #ffffff;
+  --popover: #252525;
+  --popover-foreground: #d4d4d4;
+  --border: rgba(255, 255, 255, 0.094);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --input: rgba(255, 255, 255, 0.2);
+  --ring: rgba(82, 156, 202, 0.7);
+  --destructive: #ff7369;
+  --sidebar: #202020;
+  --sidebar-foreground: #9b9b9b;
+  --selection: rgba(82, 156, 202, 0.35);
+  --shadow-popover:
+    rgba(255, 255, 255, 0.05) 0 0 0 1px, rgba(0, 0, 0, 0.3) 0 3px 6px, rgba(0, 0, 0, 0.5) 0 9px 24px;
+  --shadow-dialog: rgba(255, 255, 255, 0.05) 0 0 0 1px, rgba(0, 0, 0, 0.4) 0 5px 10px, rgba(0, 0, 0, 0.6) 0 15px 40px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --background: #191919;
+    --foreground: #d4d4d4;
+    --foreground-secondary: #9b9b9b;
+    --foreground-tertiary: #6f6f6f;
+    --muted: #202020;
+    --muted-foreground: #9b9b9b;
+    --accent: rgba(255, 255, 255, 0.055);
+    --accent-strong: rgba(255, 255, 255, 0.12);
+    --accent-foreground: #ffffff;
+    --primary: #529cca;
+    --primary-foreground: #ffffff;
+    --popover: #252525;
+    --popover-foreground: #d4d4d4;
+    --border: rgba(255, 255, 255, 0.094);
+    --border-strong: rgba(255, 255, 255, 0.2);
+    --input: rgba(255, 255, 255, 0.2);
+    --ring: rgba(82, 156, 202, 0.7);
+    --destructive: #ff7369;
+    --sidebar: #202020;
+    --sidebar-foreground: #9b9b9b;
+    --selection: rgba(82, 156, 202, 0.35);
+    --shadow-popover:
+      rgba(255, 255, 255, 0.05) 0 0 0 1px, rgba(0, 0, 0, 0.3) 0 3px 6px, rgba(0, 0, 0, 0.5) 0 9px 24px;
+    --shadow-dialog: rgba(255, 255, 255, 0.05) 0 0 0 1px, rgba(0, 0, 0, 0.4) 0 5px 10px, rgba(0, 0, 0, 0.6) 0 15px 40px;
+  }
+}
+
+/* High contrast (light) */
+:root[data-theme='hc'] {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #000000;
+  --foreground-secondary: #1f1f1f;
+  --foreground-tertiary: #3d3d3d;
+  --muted: #f0f0f0;
+  --muted-foreground: #1f1f1f;
+  --accent: #e0e0e0;
+  --accent-strong: #c8c8c8;
+  --accent-foreground: #000000;
+  --primary: #0000ee;
+  --primary-foreground: #ffffff;
+  --popover: #ffffff;
+  --popover-foreground: #000000;
+  --border: #000000;
+  --border-strong: #000000;
+  --input: #000000;
+  --ring: #0000ee;
+  --destructive: #b00020;
+  --sidebar: #f0f0f0;
+  --sidebar-foreground: #000000;
+  --selection: rgba(0, 0, 238, 0.3);
+  --shadow-popover: #000 0 0 0 2px;
+  --shadow-dialog: #000 0 0 0 2px;
+}
+
+/* BlockNote (shadcn variant) inherits the same palette. */
+.bn-container,
+.bn-container[data-color-scheme='dark'],
+.bn-container[data-color-scheme='light'] {
+  --bn-font-family: var(--font-sans);
+  --bn-colors-editor-text: var(--foreground);
+  --bn-colors-editor-background: var(--background);
+  --bn-colors-menu-text: var(--popover-foreground);
+  --bn-colors-menu-background: var(--popover);
+  --bn-colors-tooltip-text: var(--background);
+  --bn-colors-tooltip-background: var(--foreground);
+  --bn-colors-hovered-text: var(--foreground);
+  --bn-colors-hovered-background: var(--accent);
+  --bn-colors-selected-text: var(--foreground);
+  --bn-colors-selected-background: var(--accent-strong);
+  --bn-colors-disabled-text: var(--foreground-tertiary);
+  --bn-colors-disabled-background: var(--muted);
+  --bn-colors-shadow: transparent;
+  --bn-colors-border: var(--border);
+  --bn-colors-side-menu: var(--foreground-tertiary);
+  --bn-border-radius: var(--radius-md);
+}
+
+::selection {
+  background: var(--selection);
+}
