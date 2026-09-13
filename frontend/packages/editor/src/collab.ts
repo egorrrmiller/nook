@@ -22,6 +22,8 @@ export interface UseCollabSessionOptions {
   client?: ApiClient;
   /** Seeds `doc.getText("title")` in local mode when the doc is empty. */
   initialTitle?: string;
+  /** `false` keeps the hook inert (the caller already owns a session). Default `true`. */
+  enabled?: boolean;
 }
 
 /**
@@ -30,10 +32,14 @@ export interface UseCollabSessionOptions {
  * Re-fetches the token on every (re)connect since it expires after 10 minutes.
  */
 export function useCollabSession(nodeId: string, options: UseCollabSessionOptions = {}): CollabSession | null {
-  const { mode = 'remote', client = defaultApi, initialTitle } = options;
+  const { mode = 'remote', client = defaultApi, initialTitle, enabled = true } = options;
   const [session, setSession] = useState<CollabSession | null>(null);
 
   useEffect(() => {
+    if (!enabled || !nodeId) {
+      setSession(null);
+      return;
+    }
     const doc = new Y.Doc();
     let provider: HocuspocusProvider | null = null;
     let cancelled = false;
@@ -91,7 +97,7 @@ export function useCollabSession(nodeId: string, options: UseCollabSessionOption
     };
     // initialTitle only seeds a fresh local doc; changing it must not recreate the session.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeId, mode, client]);
+  }, [nodeId, mode, client, enabled]);
 
   return session;
 }

@@ -306,6 +306,7 @@ export function createNode(state: MockState, workspaceId: string, body: CreateNo
     properties: null,
   };
   state.nodes.push(node);
+  refreshHasChildren(state, node.parentId);
   return node;
 }
 
@@ -315,6 +316,7 @@ export function updateNode(state: MockState, id: string, body: UpdateNodeRequest
   if (body.title !== undefined) node.title = body.title;
   if (body.icon !== undefined) node.icon = body.icon;
   if (body.cover !== undefined) node.cover = body.cover;
+  const previousParent = node.parentId;
   if (body.parentId !== undefined) node.parentId = body.parentId;
   if (body.position !== undefined) node.position = body.position;
   if (body.pageSettings) {
@@ -328,6 +330,10 @@ export function updateNode(state: MockState, id: string, body: UpdateNodeRequest
     };
   }
   node.updatedAt = now();
+  if (previousParent !== node.parentId) {
+    refreshHasChildren(state, previousParent);
+    refreshHasChildren(state, node.parentId);
+  }
   return node;
 }
 
@@ -341,6 +347,7 @@ export function deleteNode(state: MockState, id: string): boolean {
     n.deletedAt = stamp;
     for (const c of state.nodes) if (c.parentId === n.id && !c.deletedAt) stack.push(c);
   }
+  refreshHasChildren(state, node.parentId);
   return true;
 }
 
@@ -584,6 +591,124 @@ export function putSetting(state: MockState, scope: MockSetting['scope'], scopeI
 }
 
 // --- files helpers (frontend-editor) ---
+
+/**
+ * Current document of a page, i.e. what the collab service would have stored through
+ * `PUT /internal/documents/{id}` (contracts §3). Mock mode has no collab service, so the editor
+ * mirrors its document here through the mock-only `PUT /api/nodes/{id}/blocks` handler.
+ */
+const mockDocs = new Map<string, { title: string; blocks: Block[]; version: number }>();
+
+export function setDocBlocks(nodeId: string, title: string, blocks: Block[]): number {
+  const version = (mockDocs.get(nodeId)?.version ?? 0) + 1;
+  mockDocs.set(nodeId, { title, blocks, version });
+  return version;
+}
+
+/** Falls back to the newest snapshot so seeded pages render before the first edit. */
+export function getDocBlocks(state: MockState, nodeId: string): { title: string; blocks: Block[]; version: number } {
+  const live = mockDocs.get(nodeId);
+  if (live) return live;
+  const snaps = state.snapshots.filter((s) => s.nodeId === nodeId).sort((a, b) => b.version - a.version);
+  const newest = snaps[0];
+  const node = state.nodes.find((n) => n.id === nodeId);
+  return { title: newest?.title ?? node?.title ?? '', blocks: newest?.blocks ?? [], version: newest?.version ?? 0 };
+}
+
+export function resetDocBlocks(): void {
+  mockDocs.clear();
+}
+
+/** Walks a block tree (used by `GET /api/blocks/{id}` and block counting). */
+export function findBlock(blocks: Block[], blockId: string): Block | null {
+  for (const b of blocks) {
+    if (b.id === blockId) return b;
+    const hit = findBlock(b.children ?? [], blockId);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+export function countBlocksDeep(blocks: Block[]): number {
+  return blocks.reduce((n, b) => n + 1 + countBlocksDeep(b.children ?? []), 0);
+}
+
+/** §8 attachment row backed by an in-memory blob. */
+export function createAttachment(
+  state: MockState,
+  workspaceId: string,
+  nodeId: string,
+  file: { name: string; type: string; size: number; blob?: Blob },
+  extra: { blockId?: string; propertyId?: string; purpose?: Attachment['purpose'] } = {},
+): MockAttachment {
+  const id = uuid();
+  const isImage = file.type.startsWith('image/');
+  const attachment: MockAttachment = {
+    id,
+    workspaceId,
+    nodeId,
+    blockId: extra.blockId ?? null,
+    propertyId: extra.propertyId ?? null,
+    purpose: extra.purpose ?? 'content',
+    filename: file.name,
+    mime: file.type || 'application/octet-stream',
+    size: file.size,
+    sha256: id.replace(/-/g, '').padEnd(64, '0'),
+    url: `/api/files/${id}`,
+    thumbUrl: isImage ? `/api/files/${id}/thumb` : null,
+    meta: {
+      ...(isImage ? { width: 1280, height: 860 } : {}),
+      ...(file.type === 'application/pdf' ? { pages: 12, textExtracted: true } : {}),
+    },
+    createdAt: now(),
+    ...(file.blob ? { data: file.blob } : {}),
+  };
+  state.attachments.push(attachment);
+  return attachment;
+}
+
+/** A few canned previews so bookmark / embed blocks render in mock mode. */
+export function linkPreviewFor(url: string): LinkPreview {
+  const canned: Record<string, Partial<LinkPreview>> = {
+    'blocknotejs.org': {
+      title: 'BlockNote — the open source Block-Based rich text editor',
+      description: 'A "Notion-style" block-based extensible text editor built on top of ProseMirror and TipTap.',
+      siteName: 'BlockNote',
+      imageUrl: 'https://www.blocknotejs.org/og.png',
+      faviconUrl: 'https://www.blocknotejs.org/favicon.ico',
+    },
+    'youtube.com': {
+      title: 'Rick Astley — Never Gonna Give You Up',
+      description: 'The official video for "Never Gonna Give You Up" by Rick Astley.',
+      siteName: 'YouTube',
+      embed: { provider: 'YouTube', url: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ', aspectRatio: 16 / 9 },
+    },
+    'youtu.be': {
+      title: 'Rick Astley — Never Gonna Give You Up',
+      siteName: 'YouTube',
+      embed: { provider: 'YouTube', url: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ', aspectRatio: 16 / 9 },
+    },
+  };
+  let host = url;
+  try {
+    host = new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    /* keep the raw string */
+  }
+  const hit = canned[host];
+  return {
+    url,
+    finalUrl: url,
+    title: hit?.title ?? host,
+    description: hit?.description ?? `Preview of ${host}`,
+    ...(hit?.imageUrl ? { imageUrl: hit.imageUrl } : {}),
+    ...(hit?.faviconUrl ? { faviconUrl: hit.faviconUrl } : {}),
+    siteName: hit?.siteName ?? host,
+    embed: hit?.embed ?? null,
+    fetchedAt: now(),
+  };
+}
+
 
 // --- knowledge helpers (frontend-knowledge) ---
 // (type-only imports for this section; kept below the marker on purpose)

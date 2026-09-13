@@ -1,0 +1,308 @@
+/* Page chrome owned by frontend-editor (cover, header, inspector, uploads). Plain CSS on the
+   design tokens from @nook/ui so it does not depend on the Tailwind theme mapping. */
+
+.nook-page-layout {
+  display: flex;
+  min-height: 100%;
+  width: 100%;
+  align-items: stretch;
+}
+
+.nook-page {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-bottom: 30vh;
+}
+
+.nook-page__column {
+  width: 100%;
+  max-width: calc(var(--content-width, 708px) + 96px);
+  margin-inline: auto;
+  padding: 0 48px;
+}
+.nook-page--full .nook-page__column {
+  max-width: none;
+  padding-inline: 72px;
+}
+@media (max-width: 900px) {
+  .nook-page__column,
+  .nook-page--full .nook-page__column {
+    padding-inline: 20px;
+  }
+}
+.nook-page--serif {
+  font-family: var(--font-serif);
+}
+.nook-page--mono {
+  font-family: var(--font-mono);
+}
+.nook-page--small .bn-editor {
+  font-size: 14px;
+}
+.nook-page--small .nook-editor__title {
+  font-size: 32px;
+}
+
+.nook-page__toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: flex-end;
+  padding: 6px 10px 0;
+  height: 0;
+}
+.nook-page__toolbar button {
+  border: 0;
+  background: transparent;
+  color: var(--foreground-tertiary);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+}
+.nook-page__toolbar button:hover,
+.nook-page__toolbar button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--foreground-secondary);
+}
+
+/* ------------------------------------------------------------------- cover */
+.nook-page__cover {
+  position: relative;
+  width: 100%;
+  height: 30vh;
+  min-height: 180px;
+  max-height: 280px;
+  overflow: hidden;
+  background: var(--muted);
+}
+.nook-page__cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  user-select: none;
+}
+.nook-page__cover[data-dragging] img {
+  cursor: ns-resize;
+}
+.nook-page__cover-actions {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.nook-page__cover:hover .nook-page__cover-actions {
+  opacity: 1;
+}
+.nook-page__cover-actions button {
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: var(--shadow-popover);
+  font-size: 12px;
+  padding: 4px 8px;
+}
+.nook-page__cover-hint {
+  font-size: 11px;
+  color: var(--popover-foreground);
+  background: var(--popover);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  box-shadow: var(--shadow-popover);
+}
+
+/* ------------------------------------------------------------------ header */
+.nook-page__header {
+  position: relative;
+  padding-top: 40px;
+}
+.nook-page__cover + .nook-page__column .nook-page__header {
+  padding-top: 20px;
+}
+.nook-page__icon {
+  display: block;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin-bottom: 4px;
+  line-height: 1;
+  font-size: 72px;
+}
+.nook-page__actions {
+  display: flex;
+  gap: 6px;
+  height: 26px;
+  margin-bottom: 4px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.nook-page__header:hover .nook-page__actions,
+.nook-page__actions:focus-within {
+  opacity: 1;
+}
+.nook-page__actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  color: var(--foreground-tertiary);
+  font-size: 13px;
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+}
+.nook-page__actions button:hover {
+  background: var(--accent);
+  color: var(--foreground-secondary);
+}
+
+/* --------------------------------------------------------------- inspector */
+.nook-inspector {
+  flex: 0 0 auto;
+  width: min(380px, 38vw);
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  background: var(--background);
+  height: 100%;
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+}
+.nook-inspector__tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.nook-inspector__tab {
+  border: 0;
+  background: transparent;
+  color: var(--foreground-secondary);
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+}
+.nook-inspector__tab.is-active {
+  background: var(--accent);
+  color: var(--foreground);
+  font-weight: 500;
+}
+.nook-inspector__spacer {
+  flex: 1 1 auto;
+}
+.nook-inspector__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.nook-inspector__info {
+  padding: 12px;
+  font-size: 13px;
+}
+.nook-inspector__info dl {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.nook-inspector__info dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.nook-inspector__info dt {
+  color: var(--foreground-secondary);
+}
+.nook-inspector__info dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.nook-inspector__copy {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  padding: 4px 8px;
+}
+.nook-inspector__copy:hover {
+  background: var(--accent);
+}
+
+/* ----------------------------------------------------------------- uploads */
+.nook-uploads {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 260px;
+}
+.nook-uploads__item {
+  border-radius: var(--radius-md);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: var(--shadow-popover);
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.nook-uploads__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.nook-uploads__name {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nook-uploads__size {
+  color: var(--foreground-tertiary);
+}
+.nook-uploads__row button {
+  border: 0;
+  background: transparent;
+  color: var(--foreground-tertiary);
+  padding: 0;
+}
+.nook-uploads__bar {
+  margin-top: 6px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--accent);
+  overflow: hidden;
+}
+.nook-uploads__bar div {
+  height: 100%;
+  background: var(--primary);
+  transition: width 120ms linear;
+}
+.nook-uploads__error {
+  margin-top: 4px;
+  color: var(--destructive);
+}
+
+/* ------------------------------------------------------------- file panel */
+.nook-file-panel__tab {
+  padding: 4px;
+}
+.nook-file-panel__error {
+  margin: 6px 2px 0;
+  font-size: 12px;
+  color: var(--destructive);
+}
