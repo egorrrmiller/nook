@@ -1,0 +1,2 @@
+# Screenshots are produced by `pnpm e2e` (shell.spec.ts) for review, not committed.
+*.png

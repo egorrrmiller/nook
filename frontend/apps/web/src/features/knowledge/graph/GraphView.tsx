@@ -2,13 +2,11 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { DownloadIcon, Loader2Icon, NetworkIcon, SearchIcon, UploadIcon } from 'lucide-react';
 import { Skeleton, cn } from '@nook/ui';
-import { useAncestors } from '../../../lib/ancestors';
-import { useNodes } from '../../../lib/queries';
+import { useNode, useNodes } from '../../../lib/queries';
 import { nodeTitle } from '../../../lib/utils';
 import { useUiStore } from '../../../stores/ui';
 import { ExportDialog } from '../export/ExportDialog';
 import { ImportDialog } from '../import/ImportDialog';
-import { SearchDialog } from '../search/SearchDialog';
 import { useGraph, useTags } from '../api/queries';
 import { matchNodes, toSimGraph, type SimNode } from '../lib/graph-transform';
 import { EmptyState } from '../ui/EmptyState';
@@ -26,7 +24,6 @@ export function GraphView({ workspaceId, focusNodeId }: { workspaceId: string; f
   const [showTags, setShowTags] = useState(false);
   const [query, setQuery] = useState('');
   // Knowledge actions live here until the shell mounts them globally (see the report).
-  const searchOpen = useUiStore((s) => s.searchOpen);
   const setSearchOpen = useUiStore((s) => s.setSearchOpen);
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -35,8 +32,8 @@ export function GraphView({ workspaceId, focusNodeId }: { workspaceId: string; f
   const rootId = scope === 'page' ? focusNodeId ?? undefined : undefined;
   const { data, isPending, isError, isFetching } = useGraph(workspaceId, { rootId, depth, includeTags: showTags });
   const { data: tags } = useTags(workspaceId, showTags);
-  const { data: chain } = useAncestors(workspaceId, focusNodeId ?? null);
-  const focusTitle = chain?.length ? nodeTitle(chain[chain.length - 1]!.title) : null;
+  const { data: focusNode } = useNode(workspaceId, focusNodeId ?? '', !!focusNodeId);
+  const focusTitle = focusNode ? nodeTitle(focusNode.title) : null;
 
   const graph = useMemo(() => toSimGraph(data, { showParentEdges, showTags }, tags ?? [], rootId), [data, showParentEdges, showTags, tags, rootId]);
   const highlighted = useMemo(() => matchNodes(graph.nodes, query), [graph.nodes, query]);
@@ -124,7 +121,6 @@ export function GraphView({ workspaceId, focusNodeId }: { workspaceId: string; f
       <aside className="hidden w-72 shrink-0 flex-col border-l border-border md:flex">
         <BrokenLinksList workspaceId={workspaceId} />
       </aside>
-      <SearchDialog workspaceId={workspaceId} open={searchOpen} onOpenChange={setSearchOpen} />
       <ExportDialog
         workspaceId={workspaceId}
         nodeIds={focusNodeId ? [focusNodeId] : (roots ?? []).map((n) => n.id)}

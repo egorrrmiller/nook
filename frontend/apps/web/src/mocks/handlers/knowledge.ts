@@ -22,7 +22,7 @@ import type {
   UpdateTagRequest,
 } from '@nook/api-client';
 import {
-  breadcrumbOf,
+  liveBreadcrumbOf,
   buildZip,
   createNode,
   importJobs,
@@ -374,7 +374,7 @@ export function createKnowledgeHandlers(ctx: MockContext): HttpHandler[] {
         const titleQ = { ...q, terms: [...q.terms, ...q.titleTerms], titleTerms: [] };
         const contentQ = { ...q, titleTerms: [] };
         if (q.titleTerms.length && !q.titleTerms.every((t) => node.title.toLowerCase().includes(t))) continue;
-        const base = { node, breadcrumb: breadcrumbOf(ctx.state, node) };
+        const base = { node, breadcrumb: liveBreadcrumbOf(ctx.state, node) };
         if (textMatches(node.title, titleQ)) {
           hits.push({ ...base, snippet: makeSnippet(node.title, titleQ), score: scoreHit(node, 'title', q), matchedIn: 'title' });
           continue;

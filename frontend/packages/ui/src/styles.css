@@ -19,15 +19,24 @@
   --radius-md: 6px;
   --radius-lg: 8px;
 
+  --radius: var(--radius-md);
+
   --sidebar-width: 240px;
+  --sidebar-min: 200px;
   --content-width: 708px;
+  --content-max: 708px;
   --topbar-height: 44px;
+  --tabbar-height: 32px;
+
+  --duration: 150ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
 
   /* Notion light palette */
   --background: #ffffff;
   --foreground: #37352f;
   --foreground-secondary: #787774;
   --foreground-tertiary: #9b9a97;
+  --foreground-disabled: rgba(55, 53, 47, 0.35);
   --muted: #f7f7f5;
   --muted-foreground: #787774;
   --accent: rgba(55, 53, 47, 0.08);
@@ -49,6 +58,8 @@
   --shadow-popover:
     rgba(15, 15, 15, 0.05) 0 0 0 1px, rgba(15, 15, 15, 0.1) 0 3px 6px, rgba(15, 15, 15, 0.2) 0 9px 24px;
   --shadow-dialog: rgba(15, 15, 15, 0.1) 0 0 0 1px, rgba(15, 15, 15, 0.2) 0 5px 10px, rgba(15, 15, 15, 0.4) 0 15px 40px;
+  --shadow-sm: rgba(15, 15, 15, 0.1) 0 0 0 1px, rgba(15, 15, 15, 0.1) 0 2px 4px;
+  --shadow: var(--shadow-popover);
 }
 
 /* Dark */
@@ -59,6 +70,7 @@
   --foreground: #d4d4d4;
   --foreground-secondary: #9b9b9b;
   --foreground-tertiary: #6f6f6f;
+  --foreground-disabled: rgba(255, 255, 255, 0.25);
   --muted: #202020;
   --muted-foreground: #9b9b9b;
   --accent: rgba(255, 255, 255, 0.055);
@@ -79,6 +91,7 @@
   --shadow-popover:
     rgba(255, 255, 255, 0.05) 0 0 0 1px, rgba(0, 0, 0, 0.3) 0 3px 6px, rgba(0, 0, 0, 0.5) 0 9px 24px;
   --shadow-dialog: rgba(255, 255, 255, 0.05) 0 0 0 1px, rgba(0, 0, 0, 0.4) 0 5px 10px, rgba(0, 0, 0, 0.6) 0 15px 40px;
+  --shadow-sm: rgba(255, 255, 255, 0.05) 0 0 0 1px, rgba(0, 0, 0, 0.3) 0 2px 4px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -88,6 +101,7 @@
     --foreground: #d4d4d4;
     --foreground-secondary: #9b9b9b;
     --foreground-tertiary: #6f6f6f;
+    --foreground-disabled: rgba(255, 255, 255, 0.25);
     --muted: #202020;
     --muted-foreground: #9b9b9b;
     --accent: rgba(255, 255, 255, 0.055);
@@ -108,6 +122,7 @@
     --shadow-popover:
       rgba(255, 255, 255, 0.05) 0 0 0 1px, rgba(0, 0, 0, 0.3) 0 3px 6px, rgba(0, 0, 0, 0.5) 0 9px 24px;
     --shadow-dialog: rgba(255, 255, 255, 0.05) 0 0 0 1px, rgba(0, 0, 0, 0.4) 0 5px 10px, rgba(0, 0, 0, 0.6) 0 15px 40px;
+    --shadow-sm: rgba(255, 255, 255, 0.05) 0 0 0 1px, rgba(0, 0, 0, 0.3) 0 2px 4px;
   }
 }
 
@@ -118,6 +133,7 @@
   --foreground: #000000;
   --foreground-secondary: #1f1f1f;
   --foreground-tertiary: #3d3d3d;
+  --foreground-disabled: #5a5a5a;
   --muted: #f0f0f0;
   --muted-foreground: #1f1f1f;
   --accent: #e0e0e0;
@@ -137,6 +153,7 @@
   --selection: rgba(0, 0, 238, 0.3);
   --shadow-popover: #000 0 0 0 2px;
   --shadow-dialog: #000 0 0 0 2px;
+  --shadow-sm: #000 0 0 0 1px;
 }
 
 /* BlockNote (shadcn variant) inherits the same palette. */

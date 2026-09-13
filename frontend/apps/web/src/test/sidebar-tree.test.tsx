@@ -71,6 +71,7 @@ describe('sidebar tree', () => {
     const input = await screen.findByTestId('palette-input');
     await user.type(input, 'say hi');
     await user.click(await screen.findByText('Test: say hi'));
-    expect(await screen.findByRole('status')).toHaveTextContent('hi!');
+    // `role="status"` also matches dnd-kit's live regions (one per DndContext), so target the toast.
+    expect(await screen.findByTestId('toast')).toHaveTextContent('hi!');
   });
 });

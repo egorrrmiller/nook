@@ -3,6 +3,8 @@ import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { server } from '../mocks/server';
 import { mockApi } from '../mocks/handlers';
+import { useTabsStore } from '../stores/tabs';
+import { useUiStore } from '../stores/ui';
 
 // jsdom lacks these; Base UI / cmdk touch them.
 if (!window.matchMedia) {
@@ -32,5 +34,18 @@ afterEach(() => {
   server.resetHandlers();
   mockApi.reset();
   localStorage.clear();
+  // Zustand stores are module singletons: without this, tabs and UI flags leak between tests.
+  useTabsStore.setState({ tabs: [], activeId: null });
+  useUiStore.setState({
+    paletteOpen: false,
+    searchOpen: false,
+    shortcutsOpen: false,
+    moveNodeId: null,
+    peekNodeId: null,
+    inspector: null,
+    expanded: {},
+    collapsedSections: {},
+    showArchived: false,
+  });
 });
 afterAll(() => server.close());

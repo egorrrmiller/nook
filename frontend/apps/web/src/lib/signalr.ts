@@ -4,7 +4,7 @@ import {
   LogLevel,
   type HubConnection,
 } from '@microsoft/signalr';
-import type { Node } from '@nook/api-client';
+import type { Node, Tag } from '@nook/api-client';
 
 /** Server → client messages (contracts §5). */
 export interface HubEvents {
@@ -16,6 +16,15 @@ export interface HubEvents {
     users: { id: string; name: string; color: string }[];
   }) => void;
   documentChanged: (payload: { nodeId: string; version: number }) => void;
+  // §7.6 additions (tree)
+  favoritesChanged: (payload: { workspaceId: string }) => void;
+  nodeArchived: (payload: { id: string; archivedAt: string }) => void;
+  nodeRestored: (payload: { node: Node }) => void;
+  trashChanged: (payload: { workspaceId: string }) => void;
+  // §9.9 additions (knowledge) — consumed by the knowledge and editor slices via `useHubEvent`.
+  tagsChanged: (payload: { nodeId: string; tags: Tag[] }) => void;
+  linksChanged: (payload: { nodeId: string }) => void;
+  historyChanged: (payload: { nodeId: string }) => void;
 }
 
 export type HubEventName = keyof HubEvents;

@@ -20,9 +20,18 @@ interface UiState {
   /** Expanded tree nodes, keyed by node id. */
   expanded: Record<string, true>;
   toggleExpanded: (id: string, force?: boolean) => void;
-  /** Favourites are client-side for now (no endpoint in contracts §2). */
-  favorites: Record<string, string[]>;
-  toggleFavorite: (workspaceId: string, nodeId: string) => void;
+  /** Collapsed sidebar sections (Favorites / Private / Shared / plugin panels), persisted. */
+  collapsedSections: Record<string, true>;
+  toggleSection: (id: string, force?: boolean) => void;
+  /** "Show archived" toggle of the Private section (`includeArchived`), persisted. */
+  showArchived: boolean;
+  setShowArchived: (v: boolean) => void;
+  /** Keyboard-shortcuts help dialog. */
+  shortcutsOpen: boolean;
+  setShortcutsOpen: (open: boolean) => void;
+  /** "Move to…" picker target (node id) — null = closed. */
+  moveNodeId: string | null;
+  setMoveNodeId: (id: string | null) => void;
   peekNodeId: string | null;
   setPeek: (id: string | null) => void;
   paletteOpen: boolean;
@@ -61,12 +70,20 @@ export const useUiStore = create<UiState>()(
         else delete next[id];
         set({ expanded: next });
       },
-      favorites: {},
-      toggleFavorite: (ws, id) => {
-        const list = get().favorites[ws] ?? [];
-        const next = list.includes(id) ? list.filter((x) => x !== id) : [...list, id];
-        set({ favorites: { ...get().favorites, [ws]: next } });
+      collapsedSections: {},
+      toggleSection: (id, force) => {
+        const next = { ...get().collapsedSections };
+        const collapsed = force ?? !next[id];
+        if (collapsed) next[id] = true;
+        else delete next[id];
+        set({ collapsedSections: next });
       },
+      showArchived: false,
+      setShowArchived: (showArchived) => set({ showArchived }),
+      shortcutsOpen: false,
+      setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
+      moveNodeId: null,
+      setMoveNodeId: (moveNodeId) => set({ moveNodeId }),
       peekNodeId: null,
       setPeek: (peekNodeId) => set({ peekNodeId }),
       paletteOpen: false,
@@ -84,7 +101,8 @@ export const useUiStore = create<UiState>()(
         sidebarOpen: s.sidebarOpen,
         sidebarWidth: s.sidebarWidth,
         expanded: s.expanded,
-        favorites: s.favorites,
+        collapsedSections: s.collapsedSections,
+        showArchived: s.showArchived,
       }),
     },
   ),
