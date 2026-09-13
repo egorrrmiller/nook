@@ -29,7 +29,6 @@ public sealed class SearchService(
     private const string MarkClose = "";
 
     /// <summary>Whether <c>attachments.extracted_text</c> exists (added by the files workstream); probed once per process.</summary>
-    private static bool? _attachmentsTextColumn;
 
     public async Task<SearchResponse> SearchAsync(SearchRequest request, CancellationToken ct)
     {
@@ -42,7 +41,7 @@ public sealed class SearchService(
 
         var f = request.Filters;
         var titleOnly = f?.TitleOnly == true;
-        var includeFiles = f?.IncludeFiles == true && await AttachmentsHaveTextAsync(ct);
+        var includeFiles = f?.IncludeFiles == true;
         var perBlock = f?.PerBlock == true && !titleOnly;
         var sort = request.Sort?.ToLowerInvariant() switch
         {
@@ -214,16 +213,6 @@ public sealed class SearchService(
     }
 
     private sealed record Row(Guid NodeId, Guid? BlockId, Guid? AttachmentId, string MatchedIn, double Score, int Total, string Snippet);
-
-    private async Task<bool> AttachmentsHaveTextAsync(CancellationToken ct)
-    {
-        if (_attachmentsTextColumn is { } known) return known;
-        var exists = await db.Database.SqlQuery<bool>($"""
-            SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'attachments' AND column_name = 'extracted_text') AS "Value"
-            """).SingleAsync(ct);
-        _attachmentsTextColumn = exists;
-        return exists;
-    }
 
     /// <summary>HTML-escapes the snippet (only <c>&lt;mark&gt;</c> survives) and trims it to <see cref="SnippetLength"/> chars.</summary>
     public static string CleanSnippet(string headline)
