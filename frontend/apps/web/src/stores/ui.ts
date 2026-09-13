@@ -27,7 +27,17 @@ interface UiState {
   setPeek: (id: string | null) => void;
   paletteOpen: boolean;
   setPaletteOpen: (open: boolean) => void;
+  /** Right-hand inspector tab in PageView (contracts §10); null = closed. Not persisted. */
+  inspector: InspectorTab | null;
+  setInspector: (v: InspectorTab | null) => void;
+  /** Opens `v`, or closes the inspector when `v` is already the active tab. */
+  toggleInspector: (v: InspectorTab) => void;
+  /** Full-text SearchDialog visibility (contracts §10). Not persisted. */
+  searchOpen: boolean;
+  setSearchOpen: (open: boolean) => void;
 }
+
+export type InspectorTab = 'backlinks' | 'history' | 'info';
 
 export const useUiStore = create<UiState>()(
   persist(
@@ -61,6 +71,11 @@ export const useUiStore = create<UiState>()(
       setPeek: (peekNodeId) => set({ peekNodeId }),
       paletteOpen: false,
       setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+      inspector: null,
+      setInspector: (inspector) => set({ inspector }),
+      toggleInspector: (v) => set({ inspector: get().inspector === v ? null : v }),
+      searchOpen: false,
+      setSearchOpen: (searchOpen) => set({ searchOpen }),
     }),
     {
       name: 'nook.ui',

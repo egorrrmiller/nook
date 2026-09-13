@@ -31,6 +31,7 @@ tests/Nook.IntegrationTests  WebApplicationFactory against a per-class PostgreSQ
 | `NOOK_AUTO_MIGRATE` | apply migrations on startup (default: `true` in Development) |
 | `NOOK_BACKGROUND_JOBS` | Hangfire server + outbox poller (default `true`) |
 | `NOOK_COLLAB_WS_URL` | `wsUrl` returned by `/api/collab/token` (default `/collab`) |
+| `NOOK_COLLAB_INTERNAL_URL` | base URL of the collab internal API (backend → collab: server-side edits, convert; default `http://127.0.0.1:1235`) |
 
 ## Run
 

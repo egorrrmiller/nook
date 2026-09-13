@@ -44,7 +44,8 @@ builder.Services.AddSingleton(new CollabOptions { JwtSecret = options.CollabJwtS
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddNookApplication();
-builder.Services.AddNookInfrastructure(options.Db, options.BackgroundJobs, pluginAssemblies);
+builder.Services.AddNookInfrastructure(options.Db, options.BackgroundJobs, pluginAssemblies,
+    new CollabClientOptions(options.CollabInternalUrl, options.InternalToken));
 builder.Services.AddNookPlugins(builder.Configuration, pluginAssemblies);
 
 builder.Services.ConfigureHttpJsonOptions(o =>

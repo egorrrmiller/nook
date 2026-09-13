@@ -53,11 +53,17 @@ public sealed record NodeDto(
     DateTimeOffset? DeletedAt,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
-    string? EffectiveRole)
+    string? EffectiveRole,
+    /// <summary>Contracts §7: has at least one live (not deleted) child. Defaults to false; the tree slice computes it.</summary>
+    bool HasChildren = false,
+    /// <summary>Contracts §9.3 page properties (<c>nodes.properties</c>); omitted from JSON when null.</summary>
+    System.Text.Json.JsonElement? Properties = null)
 {
-    public static NodeDto From(Node n, WorkspaceRole? effectiveRole) => new(
+    public static NodeDto From(Node n, WorkspaceRole? effectiveRole, bool hasChildren = false) => new(
         n.Id, n.WorkspaceId, n.ParentId, n.Kind.ToWire(), n.Title, n.Icon, n.Cover, n.Position, n.PageSettings,
-        n.ArchivedAt, n.DeletedAt, n.CreatedAt, n.UpdatedAt, effectiveRole?.ToWire());
+        n.ArchivedAt, n.DeletedAt, n.CreatedAt, n.UpdatedAt, effectiveRole?.ToWire(),
+        HasChildren: hasChildren,
+        Properties: n.Properties is { ValueKind: not System.Text.Json.JsonValueKind.Undefined and not System.Text.Json.JsonValueKind.Null } p ? p : null);
 }
 
 public sealed record CreateNodeRequest(Guid? ParentId, string? Kind, string? Title, NodeIcon? Icon);

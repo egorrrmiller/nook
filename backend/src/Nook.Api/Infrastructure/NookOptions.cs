@@ -1,3 +1,4 @@
+using Nook.Application.Collab;
 using Nook.Infrastructure.Persistence;
 
 namespace Nook.Api.Infrastructure;
@@ -10,6 +11,7 @@ public sealed record NookOptions(
     string? OwnerPassword,
     string CollabJwtSecret,
     string CollabWsUrl,
+    string CollabInternalUrl,
     string InternalToken,
     string? PublicUrl,
     bool AutoMigrate,
@@ -30,6 +32,7 @@ public sealed record NookOptions(
             OwnerPassword: Get("NOOK_OWNER_PASSWORD", "OwnerPassword"),
             CollabJwtSecret: Get("NOOK_COLLAB_JWT_SECRET", "CollabJwtSecret") ?? "",
             CollabWsUrl: Get("NOOK_COLLAB_WS_URL", "CollabWsUrl") ?? "/collab",
+            CollabInternalUrl: Get("NOOK_COLLAB_INTERNAL_URL", "CollabInternalUrl") ?? CollabClientOptions.DefaultBaseUrl,
             InternalToken: Get("NOOK_INTERNAL_TOKEN", "InternalToken") ?? "",
             PublicUrl: Get("NOOK_PUBLIC_URL", "PublicUrl"),
             AutoMigrate: autoMigrate,

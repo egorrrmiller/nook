@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Nook.Application.Collab;
 using Npgsql;
 
 namespace Nook.IntegrationTests;
@@ -15,6 +18,9 @@ public sealed class NookApiFactory : WebApplicationFactory<Program>, IAsyncLifet
     public const string OwnerPassword = "owner-pass-123";
     public const string InternalToken = "test-internal-token";
     public const string CollabJwtSecret = "test-collab-secret-0123456789";
+
+    /// <summary>In-memory stand-in for the collab internal API; inspect it to assert on server-side edits.</summary>
+    public FakeCollabClient CollabClient { get; } = new();
 
     public string DatabaseName { get; } = "nook_test_" + Guid.NewGuid().ToString("N")[..12];
     public string ConnectionString { get; }
@@ -56,9 +62,17 @@ public sealed class NookApiFactory : WebApplicationFactory<Program>, IAsyncLifet
             ["NOOK_INTERNAL_TOKEN"] = InternalToken,
             ["NOOK_COLLAB_JWT_SECRET"] = CollabJwtSecret,
             ["NOOK_DATA_DIR"] = _dataDir,
+            ["NOOK_COLLAB_INTERNAL_URL"] = "http://127.0.0.1:1", // never reached: ICollabClient is replaced below
             ["Serilog:MinimumLevel:Default"] = "Warning",
         };
         foreach (var (key, value) in settings) builder.UseSetting(key, value);
+
+        // No live collab service in tests: swap the HTTP client for the in-memory fake.
+        builder.ConfigureTestServices(services =>
+        {
+            services.RemoveAll<ICollabClient>();
+            services.AddSingleton<ICollabClient>(CollabClient);
+        });
     }
 
     async Task IAsyncLifetime.DisposeAsync()

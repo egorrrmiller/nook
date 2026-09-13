@@ -1,6 +1,6 @@
 export * from './types';
 export { ApiError, buildQuery, createHttp } from './http';
-export type { ApiConfig, Http, HttpMethod, Query, RequestOptions } from './http';
+export type { ApiConfig, Http, HttpMethod, Query, RawRequestOptions, RequestOptions } from './http';
 export { createApiClient } from './manual';
 export type { ApiClient } from './manual';
 export { decodeCollabToken, decodeJwtPayload } from './jwt';

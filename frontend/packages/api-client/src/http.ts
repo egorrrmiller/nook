@@ -36,11 +36,21 @@ export class ApiError extends Error {
 export type Query = Record<string, string | number | boolean | undefined | null>;
 
 export interface RequestOptions {
+  /** JSON-serialised unless it is a `FormData` (sent as multipart, no Content-Type set). */
   body?: unknown;
   query?: Query;
   /** Skip the `X-Workspace-Id` header (auth endpoints). */
   noWorkspace?: boolean;
   signal?: AbortSignal;
+  /**
+   * Return the raw `Response` instead of parsing JSON (binary downloads such as the export zip).
+   * Non-2xx responses still throw `ApiError`.
+   */
+  raw?: boolean;
+}
+
+export interface RawRequestOptions extends RequestOptions {
+  raw: true;
 }
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -56,16 +66,34 @@ export function buildQuery(query?: Query): string {
   return s ? `?${s}` : '';
 }
 
+function isFormData(body: unknown): body is FormData {
+  return typeof FormData !== 'undefined' && body instanceof FormData;
+}
+
+/** Parses a response body as JSON when possible, falling back to the raw text (empty → undefined). */
+async function readBody(res: Response): Promise<unknown> {
+  const text = await res.text();
+  if (!text) return undefined;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
 export function createHttp(config: ApiConfig) {
   const doFetch: typeof fetch = (input, init) => (config.fetch ?? globalThis.fetch)(input, init);
 
-  return async function request<T>(
+  async function request(method: HttpMethod, path: string, opts: RawRequestOptions): Promise<Response>;
+  async function request<T>(method: HttpMethod, path: string, opts?: RequestOptions): Promise<T>;
+  async function request<T>(
     method: HttpMethod,
     path: string,
     opts: RequestOptions = {},
-  ): Promise<T> {
-    const headers = new Headers({ Accept: 'application/json' });
-    if (opts.body !== undefined) headers.set('Content-Type', 'application/json');
+  ): Promise<T | Response> {
+    const headers = new Headers({ Accept: opts.raw ? '*/*' : 'application/json' });
+    const multipart = isFormData(opts.body);
+    if (opts.body !== undefined && !multipart) headers.set('Content-Type', 'application/json');
     if (!opts.noWorkspace) {
       const ws = config.getWorkspaceId();
       if (ws) headers.set('X-Workspace-Id', ws);
@@ -75,27 +103,25 @@ export function createHttp(config: ApiConfig) {
       method,
       headers,
       credentials: 'include',
-      body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
+      body:
+        opts.body === undefined
+          ? undefined
+          : multipart
+            ? (opts.body as FormData)
+            : JSON.stringify(opts.body),
       signal: opts.signal,
     });
 
-    if (res.status === 204) return undefined as T;
-
-    const text = await res.text();
-    let data: unknown = undefined;
-    if (text) {
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = text;
-      }
-    }
     if (!res.ok) {
       if (res.status === 401) config.onUnauthorized?.(path);
-      throw new ApiError(res.status, path, data);
+      throw new ApiError(res.status, path, await readBody(res));
     }
-    return data as T;
-  };
+    if (opts.raw) return res;
+    if (res.status === 204) return undefined as T;
+    return (await readBody(res)) as T;
+  }
+
+  return request;
 }
 
 export type Http = ReturnType<typeof createHttp>;
