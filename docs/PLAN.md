@@ -1,17 +1,23 @@
 # План: персональный self-hosted Notion (рабочее имя — `Nook`)
 
-## Статус (обновлено 2026-09-13)
+## Статус (обновлено 2026-09-14)
 
-**Волна 0 — готова и верифицирована сквозь весь стек.** Коммиты `6749df7` (фундамент), `0743e0f` (e2e реального стека).
+**Волна 1 — готова и смержена в `main`.** Шесть workstream-ов (`backend-tree`, `backend-files`, `backend-knowledge`, `frontend-shell`, `frontend-editor`, `frontend-knowledge`) выполнены параллельными агентами в git-worktree и сведены координатором; контракты волны — `docs/contracts.md` §7–§11.
 
-- Бэкенд: сборка без предупреждений, 57 тестов (unit + интеграционные против локального PostgreSQL 18), API стартует за ~8 с, `backend/openapi.json` экспортируется (19 путей). Dev-порт API — **5100** (5000 занят macOS AirPlay Receiver).
-- Collab-сервис: typecheck чист, 21 тест; Hocuspocus + `@blocknote/server-util`, persistence через C# internal API.
-- Фронтенд: typecheck, ESLint (0 замечаний), 16 unit-тестов, Playwright smoke в mock-режиме, сборка ~5 с; генерация TS-клиента из `openapi.json`.
-- **Сквозной e2e против живого стека** (`pnpm e2e:real`): один пользователь на двух устройствах — правки сходятся в обе стороны через Yjs, `POST /internal/docs/{id}/ops` появляется в обоих браузерах, live-курсоры с именем, Y.Doc + журнал апдейтов + проекция `blocks` (с tsvector, FTS-запрос находит текст) + outbox-события — всё в Postgres.
+- Бэкенд: 0 предупреждений, **122 теста** (61 unit + 61 интеграционных против локального PostgreSQL 18), **65 путей** в `backend/openapi.json`, три миграции `Wave1Files`/`Wave1Tree`/`Wave1Knowledge`.
+  - Дерево: `includeArchived`, ancestors, deep duplicate (через collab), archive/unarchive, корзина с ретеншном и часовым `trash-purge`, favorites/recents, quick find на `pg_trgm`, настройки пользователя и пространства, инвайты.
+  - Файлы: content-addressed blob store, загрузка с дедупом, Range-раздача, webp-превью (NetVips), извлечение текста (PdfPig/OpenXml), link previews с SSRF-guard, 32 обложки, `blob-gc`.
+  - Знания: links/backlinks/broken, теги (manual + inline `#`), свойства страниц, алиасы, FTS ru+en с грамматикой и `ts_headline`, граф, история со снапшотами и restore, экспорт zip и импорт md/html/csv/zip.
+- Фронтенд: typecheck и ESLint чисто, **111 unit-тестов**, **22 Playwright-теста** в mock-режиме.
+  - Оболочка: DnD-дерево, секции сайдбара, вкладки, живые breadcrumbs с dropdown соседей, палитра на quick find, корзина, экраны настроек, пикеры иконок и обложек, хоткеи.
+  - Редактор: блоки §1.1 (кроме баз/synced/button/tabs), mentions `@`/`[[`, загрузки и вьюверы, шапка страницы, инспектор, история с block-diff.
+  - Знания: панель свойств и тегов, backlinks, полнотекстовый поиск, граф на d3-force, экспорт/импорт.
+- **Сквозной e2e против живого стека** (`pnpm e2e:real`) — зелёный. Он же поймал реальный баг: на втором устройстве заголовок дублировался, потому что Y.Text засеивался из REST до синхронизации (исправлено в `c354a6f`).
+- Живой smoke: quick find, recents, поиск по содержимому, граф, обложки, загрузка PNG → скачивание байт-в-байт → webp-превью 160px.
 
-Замечено для волны 1 (полировка): выравнивание иконок в сайдбаре, breadcrumb в топбаре не обновляется при смене заголовка, плейсхолдер «Full width», пустой абзац от `Enter` в редакторе второго устройства.
+Перенесено в следующие волны: synced-блок, Tabs, Button, HTML-блок, presentation mode, мультивыбор в DnD-дереве, явный признак «расшарено мне» у узла (сейчас приближение по `effectiveRole`).
 
-Особенности окружения: `/Volumes/SSD` — сетевая SMB-шара (сборка/тесты — на локальном зеркале `~/nook-local`, см. `smb-share-workflow` в памяти); Docker отсутствует; порты 5000/7000 заняты AirPlay.
+Особенности окружения: репозиторий переехал на локальный диск `~/nook-local` (`/Volumes/SSD/notion` — устаревшая копия на SMB-шаре); Docker отсутствует; порты 5000/7000 заняты AirPlay, API — 5100.
 
 ---
 
