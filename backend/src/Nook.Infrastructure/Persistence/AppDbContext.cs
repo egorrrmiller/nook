@@ -31,6 +31,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<LinkPreview> LinkPreviews => Set<LinkPreview>();
     public DbSet<OutboxEvent> EventsOutbox => Set<OutboxEvent>();
     public DbSet<Setting> Settings => Set<Setting>();
+    public DbSet<Favorite> Favorites => Set<Favorite>();
+    public DbSet<Recent> Recents => Set<Recent>();
     public DbSet<PluginState> PluginStates => Set<PluginState>();
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -173,6 +175,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             b.Property(x => x.Value).HasColumnName("alias").HasMaxLength(500).IsRequired();
             b.HasKey(x => new { x.NodeId, x.Value });
             b.HasOne<Node>().WithMany().HasForeignKey(x => x.NodeId).OnDelete(DeleteBehavior.Cascade);
+            // --- wave1: tree --- (quick find matches aliases with pg_trgm)
+            b.HasIndex(x => x.Value).HasMethod("gin").HasOperators("gin_trgm_ops").HasDatabaseName("ix_aliases_alias_trgm");
         });
 
         modelBuilder.Entity<Blob>(b =>
@@ -205,13 +209,40 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             b.HasIndex(x => x.DispatchedAt).HasFilter("dispatched_at IS NULL").HasDatabaseName("ix_events_outbox_pending");
         });
 
+        // --- wave1: tree ---
         modelBuilder.Entity<Setting>(b =>
         {
             b.ToTable("settings");
-            b.HasKey(x => x.Key);
+            b.HasKey(x => new { x.Scope, x.ScopeId, x.Key });
+            b.Property(x => x.Scope).HasMaxLength(20).HasDefaultValue(SettingScopes.Instance);
+            b.Property(x => x.ScopeId).HasDefaultValue(Guid.Empty);
             b.Property(x => x.Key).HasMaxLength(200);
             b.Property(x => x.Value).HasColumnType("jsonb");
         });
+
+        modelBuilder.Entity<Favorite>(b =>
+        {
+            b.ToTable("favorites");
+            b.HasKey(x => new { x.UserId, x.WorkspaceId, x.NodeId });
+            b.Property(x => x.Position).HasMaxLength(128).IsRequired();
+            b.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            b.HasOne<Workspace>().WithMany().HasForeignKey(x => x.WorkspaceId).OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(x => x.Node).WithMany().HasForeignKey(x => x.NodeId).OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(x => new { x.UserId, x.WorkspaceId, x.Position });
+            b.HasIndex(x => x.NodeId);
+        });
+
+        modelBuilder.Entity<Recent>(b =>
+        {
+            b.ToTable("recents");
+            b.HasKey(x => new { x.UserId, x.WorkspaceId, x.NodeId });
+            b.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            b.HasOne<Workspace>().WithMany().HasForeignKey(x => x.WorkspaceId).OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(x => x.Node).WithMany().HasForeignKey(x => x.NodeId).OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(x => new { x.UserId, x.WorkspaceId, x.VisitedAt }).IsDescending(false, false, true);
+            b.HasIndex(x => x.NodeId);
+        });
+        // --- end wave1: tree ---
 
         modelBuilder.Entity<PluginState>(b =>
         {

@@ -27,6 +27,8 @@ public interface IAppDbContext
     DbSet<LinkPreview> LinkPreviews { get; }
     DbSet<OutboxEvent> EventsOutbox { get; }
     DbSet<Setting> Settings { get; }
+    DbSet<Favorite> Favorites { get; }
+    DbSet<Recent> Recents { get; }
     DbSet<PluginState> PluginStates { get; }
 
     DatabaseFacade Database { get; }
