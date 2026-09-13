@@ -16,7 +16,8 @@
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "gen:api": "pnpm --filter @nook/api-client gen"
+    "gen:api": "pnpm --filter @nook/api-client gen",
+    "e2e:real": "pnpm --filter @nook/web e2e:real"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
