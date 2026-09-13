@@ -35,7 +35,7 @@
 | Bulleted / numbered / to-do / toggle списки, вложенность | K | |
 | Quote, Callout (иконка + цвет фона), Divider | K | |
 | Page (вложенная страница), Link to page, Breadcrumb | K | |
-| Columns (произвольное число, ресайз, вложенные) | K | BlockNote `xl-multi-column` (AGPL — для личного self-hosted допустимо) |
+| Columns (произвольное число, ресайз, вложенные) | K | BlockNote `xl-multi-column` (**GPL-3.0 OR PROPRIETARY**, см. ADR-009 — для личного self-hosted допустимо) |
 | Simple table: header row/col, цвета ячеек, **merge cells** (05.2026), convert to database | K | |
 | Code: подсветка (Shiki), wrap, caption, copy, выбор языка; **Mermaid** | K | BlockNote 0.54 имеет math + diagram блоки из коробки |
 | Inline и block equations (KaTeX) | K | |
@@ -139,7 +139,7 @@ Teamspaces, guests, permissions/roles, permission groups, comments/suggestions, 
 
 Формат блока = формат BlockNote (`{id, type, props, content, children}`), проекция `blocks` хранит его плоско (строка на блок, `parent_id`, `position`). `schema_version` + миграции на сервере.
 
-### 2.2 Редактор: **BlockNote** (core MPL-2.0, `xl-*` AGPL-3.0)
+### 2.2 Редактор: **BlockNote** (core MPL-2.0, `xl-*` GPL-3.0 OR PROPRIETARY — ADR-009)
 
 Актуально на 09.2026: v0.54 — math/KaTeX и Mermaid-блоки, `source-with-preview` примитив для кастомных блоков, таблицы (цвета, merge), shadcn-UI пакет, Yjs вынесен в опциональный `withCollaboration`, markdown/HTML import-export, comments (не используем). Кастомные блоки — `createReactBlockSpec`; кастомные inline — `createReactInlineContentSpec` (mentions, `[[`-подсказки). Доступ к ProseMirror сохраняется (`editor._tiptapEditor`) — для тонких вещей.
 
@@ -302,7 +302,7 @@ events_outbox    -- id, type, payload jsonb, occurred_at, dispatched_at  (шин
 | Второй рантайм (Node collab-сервис) | сервис маленький (Hocuspocus + хуки + server-util), без собственной БД — всё состояние в Postgres через C#; при недоступности collab страница открывается read-only из проекции `blocks` |
 | Рассинхрон Y.Doc и проекции `blocks` | проекция перестраивается целиком при каждом сохранении; команда `nook reindex` пересобирает все проекции из Y.Doc |
 | Смена редактора в будущем | формат хранения = flatten BlockNote-блоков с `schema_version`; миграции блоков на сервере; экспорт в Markdown как страховка |
-| AGPL у `xl-multi-column` | личное self-hosted использование; при публикации кода — репозиторий под AGPL-совместимой лицензией либо своя реализация колонок позднее |
+| Лицензия `xl-multi-column` (GPL-3.0 OR PROPRIETARY, не AGPL — ADR-009) | личное self-hosted использование ничего не триггерит (у GPL нет network-use clause); при публикации кода — репозиторий под GPL-3.0 либо своя реализация колонок |
 | Объём баз данных | две фазы, v1 без вычисляемых свойств; view-config как jsonb с версионированием |
 | Мобильный редактор | BlockNote на мобильном работает базово; глубокая мобильная полировка вынесена в фазу 7 и не блокирует продукт |
 | Нативные зависимости (libvips) | только в фоновом воркере; при сбое превью не блокируют загрузку файла |
