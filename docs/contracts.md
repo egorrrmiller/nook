@@ -195,6 +195,8 @@ Attachment = { id, nodeId, blockId?, propertyId?, purpose, filename, mime, size,
                meta: { width?, height?, duration?, pages?, textExtracted?: boolean }, createdAt }
 ```
 
+Header note (implemented behaviour, 2026-09-13): `GET/DELETE /api/files/{id}`, `/thumb`, `/meta` accept requests **without** `X-Workspace-Id` (browsers can't send headers for `<img>`/`<video>`/`<a>`); the workspace is taken from the attachment and membership/share/role checks still apply. `GET /api/covers` and `POST /api/links/preview` don't need the header either. Upload/from-url/`/nodes/{id}/files` require it. Hardening covers SVG, HTML/XHTML/XML/JS (served as octet-stream inline, `nosniff`, `CSP: sandbox`).
+
 Icons/covers reference uploads by attachment id: `NodeIcon = {type:"upload", value:"<attachmentId>"}`, `NodeCover = {type:"upload"|"url"|"gallery", value, position?: number /* 0..1 vertical focus */}`. The frontend renders uploads through `/api/files/{value}` (`/thumb?w=` for icons).
 
 ```
