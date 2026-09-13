@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as AppWWorkspaceIdRouteImport } from './routes/_app.w.$workspaceId'
 import { Route as AppWWorkspaceIdIndexRouteImport } from './routes/_app.w.$workspaceId.index'
+import { Route as AppWWorkspaceIdGraphRouteImport } from './routes/_app.w.$workspaceId.graph'
 import { Route as AppWWorkspaceIdPNodeIdRouteImport } from './routes/_app.w.$workspaceId.p.$nodeId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -46,6 +47,11 @@ const AppWWorkspaceIdIndexRoute = AppWWorkspaceIdIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppWWorkspaceIdRoute,
 } as any)
+const AppWWorkspaceIdGraphRoute = AppWWorkspaceIdGraphRouteImport.update({
+  id: '/graph',
+  path: '/graph',
+  getParentRoute: () => AppWWorkspaceIdRoute,
+} as any)
 const AppWWorkspaceIdPNodeIdRoute = AppWWorkspaceIdPNodeIdRouteImport.update({
   id: '/p/$nodeId',
   path: '/p/$nodeId',
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/w/$workspaceId': typeof AppWWorkspaceIdRouteWithChildren
+  '/w/$workspaceId/graph': typeof AppWWorkspaceIdGraphRoute
   '/w/$workspaceId/': typeof AppWWorkspaceIdIndexRoute
   '/w/$workspaceId/p/$nodeId': typeof AppWWorkspaceIdPNodeIdRoute
 }
@@ -64,6 +71,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/w/$workspaceId/graph': typeof AppWWorkspaceIdGraphRoute
   '/w/$workspaceId': typeof AppWWorkspaceIdIndexRoute
   '/w/$workspaceId/p/$nodeId': typeof AppWWorkspaceIdPNodeIdRoute
 }
@@ -74,6 +82,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/_app/w/$workspaceId': typeof AppWWorkspaceIdRouteWithChildren
+  '/_app/w/$workspaceId/graph': typeof AppWWorkspaceIdGraphRoute
   '/_app/w/$workspaceId/': typeof AppWWorkspaceIdIndexRoute
   '/_app/w/$workspaceId/p/$nodeId': typeof AppWWorkspaceIdPNodeIdRoute
 }
@@ -84,6 +93,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/w/$workspaceId'
+    | '/w/$workspaceId/graph'
     | '/w/$workspaceId/'
     | '/w/$workspaceId/p/$nodeId'
   fileRoutesByTo: FileRoutesByTo
@@ -91,6 +101,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
+    | '/w/$workspaceId/graph'
     | '/w/$workspaceId'
     | '/w/$workspaceId/p/$nodeId'
   id:
@@ -100,6 +111,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/_app/w/$workspaceId'
+    | '/_app/w/$workspaceId/graph'
     | '/_app/w/$workspaceId/'
     | '/_app/w/$workspaceId/p/$nodeId'
   fileRoutesById: FileRoutesById
@@ -155,6 +167,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWWorkspaceIdIndexRouteImport
       parentRoute: typeof AppWWorkspaceIdRoute
     }
+    '/_app/w/$workspaceId/graph': {
+      id: '/_app/w/$workspaceId/graph'
+      path: '/graph'
+      fullPath: '/w/$workspaceId/graph'
+      preLoaderRoute: typeof AppWWorkspaceIdGraphRouteImport
+      parentRoute: typeof AppWWorkspaceIdRoute
+    }
     '/_app/w/$workspaceId/p/$nodeId': {
       id: '/_app/w/$workspaceId/p/$nodeId'
       path: '/p/$nodeId'
@@ -166,11 +185,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppWWorkspaceIdRouteChildren {
+  AppWWorkspaceIdGraphRoute: typeof AppWWorkspaceIdGraphRoute
   AppWWorkspaceIdIndexRoute: typeof AppWWorkspaceIdIndexRoute
   AppWWorkspaceIdPNodeIdRoute: typeof AppWWorkspaceIdPNodeIdRoute
 }
 
 const AppWWorkspaceIdRouteChildren: AppWWorkspaceIdRouteChildren = {
+  AppWWorkspaceIdGraphRoute: AppWWorkspaceIdGraphRoute,
   AppWWorkspaceIdIndexRoute: AppWWorkspaceIdIndexRoute,
   AppWWorkspaceIdPNodeIdRoute: AppWWorkspaceIdPNodeIdRoute,
 }
