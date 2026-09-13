@@ -121,4 +121,30 @@ public sealed class SignalRRealtimeNotifier(IHubContext<NookHub> hub) : IRealtim
 
     public Task TrashChangedAsync(Guid workspaceId, CancellationToken cancellationToken = default) =>
         hub.Clients.Group(NookHub.WorkspaceGroup(workspaceId)).SendAsync("trashChanged", new { workspaceId }, cancellationToken);
+    // --- wave1: knowledge (contracts §9.9) ---
+
+    public Task TagsChangedAsync(Guid workspaceId, Guid nodeId, IReadOnlyList<Application.Tags.TagDto> tags, CancellationToken cancellationToken = default) =>
+        hub.Clients.Group(NookHub.WorkspaceGroup(workspaceId)).SendAsync("tagsChanged", new { nodeId, tags }, cancellationToken);
+
+    /// <summary>Throttled to one message per node per <see cref="LinksThrottle"/> (contracts §9.9).</summary>
+    public Task LinksChangedAsync(Guid workspaceId, Guid nodeId, CancellationToken cancellationToken = default)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var send = _linksSentAt.AddOrUpdate(nodeId, now, (_, previous) => now - previous >= LinksThrottle ? now : previous) == now;
+        if (!send) return Task.CompletedTask;
+        if (_linksSentAt.Count > 10_000)
+        {
+            foreach (var (key, at) in _linksSentAt)
+            {
+                if (now - at > LinksThrottle) _linksSentAt.TryRemove(key, out _);
+            }
+        }
+        return hub.Clients.Group(NookHub.WorkspaceGroup(workspaceId)).SendAsync("linksChanged", new { nodeId }, cancellationToken);
+    }
+
+    public Task HistoryChangedAsync(Guid workspaceId, Guid nodeId, CancellationToken cancellationToken = default) =>
+        hub.Clients.Group(NookHub.WorkspaceGroup(workspaceId)).SendAsync("historyChanged", new { nodeId }, cancellationToken);
+
+    public static readonly TimeSpan LinksThrottle = TimeSpan.FromSeconds(2);
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<Guid, DateTimeOffset> _linksSentAt = new();
 }

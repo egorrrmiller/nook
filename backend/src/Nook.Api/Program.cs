@@ -136,6 +136,13 @@ api.MapFavoriteEndpoints();
 api.MapRecentEndpoints();
 api.MapQuickFindEndpoints();
 api.MapSettingsEndpoints();
+api.MapLinkEndpoints();
+api.MapTagEndpoints();
+api.MapPropertyEndpoints();
+api.MapSearchEndpoints();
+api.MapGraphEndpoints();
+api.MapHistoryEndpoints();
+api.MapExportImportEndpoints();
 api.MapNookPlugins(app.Services);
 
 app.MapInternalEndpoints();

@@ -30,6 +30,7 @@ public interface IAppDbContext
     DbSet<Favorite> Favorites { get; }
     DbSet<Recent> Recents { get; }
     DbSet<PluginState> PluginStates { get; }
+    DbSet<ImportJob> ImportJobs { get; }
 
     DatabaseFacade Database { get; }
 

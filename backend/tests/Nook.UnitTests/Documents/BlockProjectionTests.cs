@@ -126,14 +126,16 @@ public class BlockProjectionTests
         var target = Guid.NewGuid();
         var rows = BlockFlattener.Flatten(Json($$$"""
             [{"id":"a1b2c3d4-0000-4000-8000-000000000003","type":"paragraph","props":{},
-              "content":[{"type":"mention","props":{"nodeId":"{{{target}}}"}},{"type":"link","href":"/n/{{{target}}}","content":[]},{"type":"link","href":"https://ext","content":[]}],"children":[]},
+              "content":[{"type":"mention","props":{"nodeId":"{{{target}}}"}},
+                         {"type":"link","href":"/w/ws1/p/{{{target}}}","content":[]},
+                         {"type":"link","href":"https://ext","content":[]}],"children":[]},
              {"id":"a1b2c3d4-0000-4000-8000-000000000004","type":"embed","props":{"nodeId":"{{{target}}}"},"children":[]}]
             """));
         var links = LinkExtractor.Extract(Guid.NewGuid(), rows);
         Assert.Equal(4, links.Count);
         Assert.Equal(3, links.Count(l => l.TargetNodeId == target));
         Assert.Contains(links, l => l.Kind == Nook.Domain.Enums.LinkKind.Embed);
-        Assert.Contains(links, l => l.Kind == Nook.Domain.Enums.LinkKind.Wikilink && l.Href == "https://ext");
+        Assert.Contains(links, l => l.Kind == Nook.Domain.Enums.LinkKind.Url && l.Href == "https://ext");
     }
 
     private sealed class CalloutDef : IBlockTypeDefinition

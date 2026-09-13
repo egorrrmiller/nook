@@ -23,8 +23,10 @@ namespace Nook.Infrastructure.Persistence.Migrations
                 .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "link_kind", new[] { "embed", "mention", "relation", "synced", "wikilink" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "link_kind", new[] { "embed", "mention", "relation", "synced", "url", "wikilink" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "node_kind", new[] { "collection_row", "database", "file", "folder", "page" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "snapshot_kind", new[] { "auto", "manual", "pre_restore" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tag_source", new[] { "inline", "manual" });
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "workspace_role", new[] { "editor", "owner", "viewer" });
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pg_trgm");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -409,6 +411,68 @@ namespace Nook.Infrastructure.Persistence.Migrations
                     b.ToTable("favorites", (string)null);
                 });
 
+            modelBuilder.Entity("Nook.Domain.Entities.ImportJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Error")
+                        .HasColumnType("text")
+                        .HasColumnName("error");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("file_name");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("file_path");
+
+                    b.Property<DateTimeOffset?>("FinishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finished_at");
+
+                    b.Property<Guid?>("ParentNodeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parent_node_id");
+
+                    b.Property<JsonElement?>("Result")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("result");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("workspace_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_import_jobs");
+
+                    b.HasIndex("WorkspaceId", "CreatedAt")
+                        .HasDatabaseName("ix_import_jobs_workspace_id_created_at");
+
+                    b.ToTable("import_jobs", (string)null);
+                });
+
             modelBuilder.Entity("Nook.Domain.Entities.Invite", b =>
                 {
                     b.Property<Guid>("Id")
@@ -465,7 +529,8 @@ namespace Nook.Infrastructure.Persistence.Migrations
                         .HasColumnName("id");
 
                     b.Property<string>("Href")
-                        .HasColumnType("text")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
                         .HasColumnName("href");
 
                     b.Property<LinkKind>("Kind")
@@ -494,8 +559,14 @@ namespace Nook.Infrastructure.Persistence.Migrations
                     b.HasIndex("SourceNodeId")
                         .HasDatabaseName("ix_links_source_node_id");
 
+                    b.HasIndex("TargetBlockId")
+                        .HasDatabaseName("ix_links_target_block_id");
+
                     b.HasIndex("TargetNodeId")
                         .HasDatabaseName("ix_links_target_node_id");
+
+                    b.HasIndex("SourceNodeId", "Kind")
+                        .HasDatabaseName("ix_links_source_node_id_kind");
 
                     b.ToTable("links", (string)null);
                 });
@@ -664,11 +735,20 @@ namespace Nook.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("tag_id");
 
-                    b.HasKey("NodeId", "TagId")
+                    b.Property<TagSource>("Source")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tag_source")
+                        .HasDefaultValue(TagSource.Manual)
+                        .HasColumnName("source");
+
+                    b.HasKey("NodeId", "TagId", "Source")
                         .HasName("pk_node_tags");
 
                     b.HasIndex("TagId")
                         .HasDatabaseName("ix_node_tags_tag_id");
+
+                    b.HasIndex("NodeId", "Source")
+                        .HasDatabaseName("ix_node_tags_node_id_source");
 
                     b.ToTable("node_tags", (string)null);
                 });
@@ -725,9 +805,19 @@ namespace Nook.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<int>("BlockCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("block_count");
+
                     b.Property<JsonElement>("Blocks")
                         .HasColumnType("jsonb")
                         .HasColumnName("blocks");
+
+                    b.Property<SnapshotKind>("Kind")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("snapshot_kind")
+                        .HasDefaultValue(SnapshotKind.Auto)
+                        .HasColumnName("kind");
 
                     b.Property<Guid>("NodeId")
                         .HasColumnType("uuid")
@@ -752,6 +842,9 @@ namespace Nook.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_page_snapshots");
+
+                    b.HasIndex("NodeId", "Kind")
+                        .HasDatabaseName("ix_page_snapshots_node_id_kind");
 
                     b.HasIndex("NodeId", "TakenAt")
                         .HasDatabaseName("ix_page_snapshots_node_id_taken_at");
@@ -1094,6 +1187,16 @@ namespace Nook.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_favorites_workspaces_workspace_id");
 
                     b.Navigation("Node");
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.ImportJob", b =>
+                {
+                    b.HasOne("Nook.Domain.Entities.Workspace", null)
+                        .WithMany()
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_import_jobs_workspaces_workspace_id");
                 });
 
             modelBuilder.Entity("Nook.Domain.Entities.Link", b =>

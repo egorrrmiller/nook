@@ -315,6 +315,87 @@
                 }
             }
         },
+        "/api/search": {
+            "post": {
+                "tags": [
+                    "Search"
+                ],
+                "description": "Query grammar: terms are AND-ed with prefix matching, \"quoted phrase\" is a phrase, -term excludes,\ntitle:foo restricts to titles. Titles, aliases, block text and (includeFiles) extracted file text are\nsearched in both the russian and english configurations; results are collapsed to one hit per node.",
+                "operationId": "Search",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SearchRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SearchResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/graph": {
+            "get": {
+                "tags": [
+                    "Graph"
+                ],
+                "description": "Link + parent edges for the workspace (capped at 2000 nodes; truncated=true when capped).",
+                "operationId": "GetGraph",
+                "parameters": [
+                    {
+                        "name": "rootId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "depth",
+                        "in": "query",
+                        "schema": {
+                            "pattern": "^-?(?:0|[1-9]\\d*)$",
+                            "type": [
+                                "integer",
+                                "string"
+                            ],
+                            "format": "int32"
+                        }
+                    },
+                    {
+                        "name": "includeTags",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GraphResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/auth/login": {
             "post": {
                 "tags": [
@@ -1823,6 +1904,924 @@
                 }
             }
         },
+        "/api/nodes/{id}/backlinks": {
+            "get": {
+                "tags": [
+                    "Links"
+                ],
+                "description": "Links pointing at this page, including unresolved [[wikilinks]] that match its title or aliases.",
+                "operationId": "GetBacklinks",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/BacklinkDto"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/nodes/{id}/links": {
+            "get": {
+                "tags": [
+                    "Links"
+                ],
+                "operationId": "GetOutgoingLinks",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/OutgoingLinkDto"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/links/broken": {
+            "get": {
+                "tags": [
+                    "Links"
+                ],
+                "operationId": "GetBrokenLinks",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "pattern": "^-?(?:0|[1-9]\\d*)$",
+                            "type": [
+                                "integer",
+                                "string"
+                            ],
+                            "format": "int32"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/BrokenLinkDto"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/tags": {
+            "get": {
+                "tags": [
+                    "Tags"
+                ],
+                "operationId": "ListTags",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/TagDto"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Tags"
+                ],
+                "operationId": "CreateTag",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateTagRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TagDto"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/tags/{id}": {
+            "patch": {
+                "tags": [
+                    "Tags"
+                ],
+                "operationId": "PatchTag",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchTagRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TagDto"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Tags"
+                ],
+                "operationId": "DeleteTag",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/api/tags/{id}/nodes": {
+            "get": {
+                "tags": [
+                    "Tags"
+                ],
+                "operationId": "ListTagNodes",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "pattern": "^-?(?:0|[1-9]\\d*)$",
+                            "type": [
+                                "integer",
+                                "string"
+                            ],
+                            "format": "int32"
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TagNodesPage"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/nodes/{id}/tags": {
+            "get": {
+                "tags": [
+                    "Tags"
+                ],
+                "description": "Union of manual and inline (#hashtag) tags; each entry carries its source.",
+                "operationId": "GetNodeTags",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/TagDto"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Tags"
+                ],
+                "description": "Replaces the manual tag set; inline tags collected from the document text are untouched.",
+                "operationId": "SetNodeTags",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SetNodeTagsRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/TagDto"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/nodes/{id}/properties": {
+            "get": {
+                "tags": [
+                    "Properties"
+                ],
+                "operationId": "GetNodeProperties",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JsonElement"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Properties"
+                ],
+                "description": "Replaces all page properties. Values are validated by type (dates must be ISO-8601).",
+                "operationId": "SetNodeProperties",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/JsonElement"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JsonElement"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "tags": [
+                    "Properties"
+                ],
+                "description": "Merges the given properties; a null value removes that property.",
+                "operationId": "PatchNodeProperties",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/JsonElement"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JsonElement"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/nodes/{id}/aliases": {
+            "get": {
+                "tags": [
+                    "Properties"
+                ],
+                "operationId": "GetNodeAliases",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Properties"
+                ],
+                "description": "Aliases are unique (case-insensitive) per workspace; 409 carries the conflicting node id.",
+                "operationId": "SetNodeAliases",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SetAliasesRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/nodes/{id}/history": {
+            "get": {
+                "tags": [
+                    "History"
+                ],
+                "operationId": "ListNodeHistory",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "pattern": "^-?(?:0|[1-9]\\d*)$",
+                            "type": [
+                                "integer",
+                                "string"
+                            ],
+                            "format": "int32"
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/VersionListResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "History"
+                ],
+                "description": "Manual \"Save version\": snapshots the current block projection.",
+                "operationId": "CreateNodeVersion",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/VersionDto"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/nodes/{id}/history/{versionId}": {
+            "get": {
+                "tags": [
+                    "History"
+                ],
+                "operationId": "GetNodeVersion",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "versionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/VersionContentResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/nodes/{id}/history/{versionId}/restore": {
+            "post": {
+                "tags": [
+                    "History"
+                ],
+                "description": "Snapshots the current state as kind \"pre-restore\", then replaces the live document with the chosen version.",
+                "operationId": "RestoreNodeVersion",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "versionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RestoreResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/nodes/{id}/blocks": {
+            "get": {
+                "tags": [
+                    "History"
+                ],
+                "description": "Current block projection rebuilt as a tree (read-only rendering, embeds, previews).",
+                "operationId": "GetNodeBlocks",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NodeBlocksResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/blocks/{blockId}": {
+            "get": {
+                "tags": [
+                    "History"
+                ],
+                "operationId": "GetBlock",
+                "parameters": [
+                    {
+                        "name": "blockId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BlockAnchorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/export": {
+            "post": {
+                "tags": [
+                    "ExportImport"
+                ],
+                "description": "Streams a zip: <Title>.md next to a folder <Title>/ for children, frontmatter, relative internal links.",
+                "operationId": "Export",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExportRequestDto"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/api/import": {
+            "post": {
+                "tags": [
+                    "ExportImport"
+                ],
+                "description": "Imports .md/.markdown/.txt/.html/.csv/.zip. Archives over 20 MB return 202 { jobId }; poll GET /import/{jobId}.",
+                "operationId": "Import",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object",
+                                "allOf": [
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "file": {
+                                                "$ref": "#/components/schemas/IFormFile"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "parentId": {
+                                                "type": "string",
+                                                "format": "uuid"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ImportResponse"
+                                }
+                            }
+                        }
+                    },
+                    "202": {
+                        "description": "Accepted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ImportAcceptedResponse"
+                                }
+                            }
+                        }
+                    },
+                    "413": {
+                        "description": "Payload Too Large",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/import/{jobId}": {
+            "get": {
+                "tags": [
+                    "ExportImport"
+                ],
+                "operationId": "GetImportJob",
+                "parameters": [
+                    {
+                        "name": "jobId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ImportJobStatusResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/plugins/sample/ping": {
             "get": {
                 "tags": [
@@ -2144,6 +3143,87 @@
                     }
                 }
             },
+            "BacklinkDto": {
+                "required": [
+                    "sourceNode",
+                    "blockId",
+                    "kind",
+                    "snippet"
+                ],
+                "type": "object",
+                "properties": {
+                    "sourceNode": {
+                        "$ref": "#/components/schemas/NodeSummaryDto"
+                    },
+                    "blockId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "uuid"
+                    },
+                    "kind": {
+                        "type": "string"
+                    },
+                    "snippet": {
+                        "type": "string"
+                    }
+                }
+            },
+            "BlockAnchorResponse": {
+                "required": [
+                    "nodeId",
+                    "block",
+                    "breadcrumb"
+                ],
+                "type": "object",
+                "properties": {
+                    "nodeId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "block": {
+                        "$ref": "#/components/schemas/JsonElement"
+                    },
+                    "breadcrumb": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/NodeSummaryDto"
+                        }
+                    }
+                }
+            },
+            "BrokenLinkDto": {
+                "required": [
+                    "sourceNode",
+                    "blockId",
+                    "href",
+                    "targetNodeId"
+                ],
+                "type": "object",
+                "properties": {
+                    "sourceNode": {
+                        "$ref": "#/components/schemas/NodeSummaryDto"
+                    },
+                    "blockId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "href": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "targetNodeId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "uuid"
+                    }
+                }
+            },
             "ChangePasswordRequest": {
                 "required": [
                     "currentPassword",
@@ -2298,6 +3378,24 @@
                     }
                 }
             },
+            "CreateTagRequest": {
+                "required": [
+                    "name",
+                    "color"
+                ],
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "color": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    }
+                }
+            },
             "CreateWorkspaceRequest": {
                 "required": [
                     "name",
@@ -2338,6 +3436,42 @@
                         "type": [
                             "null",
                             "string"
+                        ]
+                    }
+                }
+            },
+            "ExportRequestDto": {
+                "required": [
+                    "nodeIds",
+                    "includeChildren",
+                    "format",
+                    "includeFiles"
+                ],
+                "type": "object",
+                "properties": {
+                    "nodeIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    "includeChildren": {
+                        "type": [
+                            "null",
+                            "boolean"
+                        ]
+                    },
+                    "format": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "includeFiles": {
+                        "type": [
+                            "null",
+                            "boolean"
                         ]
                     }
                 }
@@ -2397,6 +3531,103 @@
                             "null",
                             "string"
                         ]
+                    }
+                }
+            },
+            "GraphEdgeDto": {
+                "required": [
+                    "source",
+                    "target",
+                    "kind"
+                ],
+                "type": "object",
+                "properties": {
+                    "source": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "target": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "kind": {
+                        "type": "string"
+                    }
+                }
+            },
+            "GraphNodeDto": {
+                "required": [
+                    "id",
+                    "title",
+                    "icon",
+                    "kind",
+                    "degree",
+                    "tagIds"
+                ],
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "icon": {
+                        "oneOf": [
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NodeIcon"
+                            }
+                        ]
+                    },
+                    "kind": {
+                        "type": "string"
+                    },
+                    "degree": {
+                        "pattern": "^-?(?:0|[1-9]\\d*)$",
+                        "type": [
+                            "integer",
+                            "string"
+                        ],
+                        "format": "int32"
+                    },
+                    "tagIds": {
+                        "type": [
+                            "null",
+                            "array"
+                        ],
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                }
+            },
+            "GraphResponse": {
+                "required": [
+                    "nodes",
+                    "edges",
+                    "truncated"
+                ],
+                "type": "object",
+                "properties": {
+                    "nodes": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/GraphNodeDto"
+                        }
+                    },
+                    "edges": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/GraphEdgeDto"
+                        }
+                    },
+                    "truncated": {
+                        "type": "boolean"
                     }
                 }
             },
@@ -2474,6 +3705,96 @@
             "IFormFile": {
                 "type": "string",
                 "format": "binary"
+            },
+            "ImportAcceptedResponse": {
+                "required": [
+                    "jobId"
+                ],
+                "type": "object",
+                "properties": {
+                    "jobId": {
+                        "type": "string",
+                        "format": "uuid"
+                    }
+                }
+            },
+            "ImportJobStatusResponse": {
+                "required": [
+                    "jobId",
+                    "status",
+                    "result",
+                    "error",
+                    "createdAt",
+                    "finishedAt"
+                ],
+                "type": "object",
+                "properties": {
+                    "jobId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "result": {
+                        "oneOf": [
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "$ref": "#/components/schemas/ImportResponse"
+                            }
+                        ]
+                    },
+                    "error": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "finishedAt": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "date-time"
+                    }
+                }
+            },
+            "ImportResponse": {
+                "required": [
+                    "pagesCreated",
+                    "nodeIds",
+                    "warnings"
+                ],
+                "type": "object",
+                "properties": {
+                    "pagesCreated": {
+                        "pattern": "^-?(?:0|[1-9]\\d*)$",
+                        "type": [
+                            "integer",
+                            "string"
+                        ],
+                        "format": "int32"
+                    },
+                    "nodeIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    "warnings": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
             },
             "InternalDocumentPutRequest": {
                 "required": [
@@ -2787,6 +4108,30 @@
                     }
                 }
             },
+            "NodeBlocksResponse": {
+                "required": [
+                    "title",
+                    "blocks",
+                    "version"
+                ],
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string"
+                    },
+                    "blocks": {
+                        "$ref": "#/components/schemas/JsonElement"
+                    },
+                    "version": {
+                        "pattern": "^-?(?:0|[1-9]\\d*)$",
+                        "type": [
+                            "integer",
+                            "string"
+                        ],
+                        "format": "int32"
+                    }
+                }
+            },
             "NodeCover": {
                 "required": [
                     "type",
@@ -3007,6 +4352,45 @@
                     }
                 }
             },
+            "NodeSummaryDto": {
+                "required": [
+                    "id",
+                    "title",
+                    "icon",
+                    "kind",
+                    "parentId"
+                ],
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "icon": {
+                        "oneOf": [
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NodeIcon"
+                            }
+                        ]
+                    },
+                    "kind": {
+                        "type": "string"
+                    },
+                    "parentId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "uuid"
+                    }
+                }
+            },
             "OptionalOfGuid": {
                 "type": [
                     "null",
@@ -3065,6 +4449,47 @@
                     "null",
                     "string"
                 ]
+            },
+            "OutgoingLinkDto": {
+                "required": [
+                    "targetNode",
+                    "targetBlockId",
+                    "kind",
+                    "href",
+                    "broken"
+                ],
+                "type": "object",
+                "properties": {
+                    "targetNode": {
+                        "oneOf": [
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NodeSummaryDto"
+                            }
+                        ]
+                    },
+                    "targetBlockId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "uuid"
+                    },
+                    "kind": {
+                        "type": "string"
+                    },
+                    "href": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "broken": {
+                        "type": "boolean"
+                    }
+                }
             },
             "PageSettings": {
                 "type": "object",
@@ -3180,6 +4605,27 @@
                             {
                                 "$ref": "#/components/schemas/PageSettingsPatch"
                             }
+                        ]
+                    }
+                }
+            },
+            "PatchTagRequest": {
+                "required": [
+                    "name",
+                    "color"
+                ],
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "color": {
+                        "type": [
+                            "null",
+                            "string"
                         ]
                     }
                 }
@@ -3353,6 +4799,447 @@
                     }
                 }
             },
+            "RestoreResponse": {
+                "required": [
+                    "version"
+                ],
+                "type": "object",
+                "properties": {
+                    "version": {
+                        "pattern": "^-?(?:0|[1-9]\\d*)$",
+                        "type": [
+                            "integer",
+                            "string"
+                        ],
+                        "format": "int32"
+                    }
+                }
+            },
+            "SearchAttachmentDto": {
+                "required": [
+                    "id",
+                    "nodeId",
+                    "blockId",
+                    "propertyId",
+                    "filename",
+                    "mime",
+                    "size",
+                    "sha256",
+                    "url",
+                    "thumbUrl",
+                    "meta",
+                    "createdAt"
+                ],
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "nodeId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "blockId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "uuid"
+                    },
+                    "propertyId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "filename": {
+                        "type": "string"
+                    },
+                    "mime": {
+                        "type": "string"
+                    },
+                    "size": {
+                        "pattern": "^-?(?:0|[1-9]\\d*)$",
+                        "type": [
+                            "integer",
+                            "string"
+                        ],
+                        "format": "int64"
+                    },
+                    "sha256": {
+                        "type": "string"
+                    },
+                    "url": {
+                        "type": "string"
+                    },
+                    "thumbUrl": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "meta": {
+                        "oneOf": [
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "$ref": "#/components/schemas/JsonElement"
+                            }
+                        ]
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "SearchFilters": {
+                "required": [
+                    "titleOnly",
+                    "kinds",
+                    "tagIds",
+                    "createdFrom",
+                    "createdTo",
+                    "updatedFrom",
+                    "updatedTo",
+                    "includeArchived",
+                    "includeFiles",
+                    "perBlock"
+                ],
+                "type": "object",
+                "properties": {
+                    "titleOnly": {
+                        "type": [
+                            "null",
+                            "boolean"
+                        ]
+                    },
+                    "kinds": {
+                        "type": [
+                            "null",
+                            "array"
+                        ],
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "tagIds": {
+                        "type": [
+                            "null",
+                            "array"
+                        ],
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    "createdFrom": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "date-time"
+                    },
+                    "createdTo": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updatedFrom": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updatedTo": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "date-time"
+                    },
+                    "includeArchived": {
+                        "type": [
+                            "null",
+                            "boolean"
+                        ]
+                    },
+                    "includeFiles": {
+                        "type": [
+                            "null",
+                            "boolean"
+                        ]
+                    },
+                    "perBlock": {
+                        "type": [
+                            "null",
+                            "boolean"
+                        ]
+                    }
+                }
+            },
+            "SearchHitDto": {
+                "required": [
+                    "node",
+                    "breadcrumb",
+                    "blockId",
+                    "attachment",
+                    "snippet",
+                    "score",
+                    "matchedIn"
+                ],
+                "type": "object",
+                "properties": {
+                    "node": {
+                        "$ref": "#/components/schemas/NodeDto"
+                    },
+                    "breadcrumb": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/NodeSummaryDto"
+                        }
+                    },
+                    "blockId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "uuid"
+                    },
+                    "attachment": {
+                        "oneOf": [
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SearchAttachmentDto"
+                            }
+                        ]
+                    },
+                    "snippet": {
+                        "type": "string"
+                    },
+                    "score": {
+                        "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+                        "type": [
+                            "number",
+                            "string"
+                        ],
+                        "format": "double"
+                    },
+                    "matchedIn": {
+                        "type": "string"
+                    }
+                }
+            },
+            "SearchRequest": {
+                "required": [
+                    "query",
+                    "scope",
+                    "filters",
+                    "sort",
+                    "limit",
+                    "cursor"
+                ],
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string"
+                    },
+                    "scope": {
+                        "oneOf": [
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SearchScope"
+                            }
+                        ]
+                    },
+                    "filters": {
+                        "oneOf": [
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "$ref": "#/components/schemas/SearchFilters"
+                            }
+                        ]
+                    },
+                    "sort": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "limit": {
+                        "pattern": "^-?(?:0|[1-9]\\d*)$",
+                        "type": [
+                            "null",
+                            "integer",
+                            "string"
+                        ],
+                        "format": "int32"
+                    },
+                    "cursor": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    }
+                }
+            },
+            "SearchResponse": {
+                "required": [
+                    "hits",
+                    "nextCursor",
+                    "total"
+                ],
+                "type": "object",
+                "properties": {
+                    "hits": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SearchHitDto"
+                        }
+                    },
+                    "nextCursor": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "total": {
+                        "pattern": "^-?(?:0|[1-9]\\d*)$",
+                        "type": [
+                            "integer",
+                            "string"
+                        ],
+                        "format": "int32"
+                    }
+                }
+            },
+            "SearchScope": {
+                "required": [
+                    "ancestorId"
+                ],
+                "type": "object",
+                "properties": {
+                    "ancestorId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "uuid"
+                    }
+                }
+            },
+            "SetAliasesRequest": {
+                "required": [
+                    "aliases"
+                ],
+                "type": "object",
+                "properties": {
+                    "aliases": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "SetNodeTagsRequest": {
+                "required": [
+                    "tagIds",
+                    "names"
+                ],
+                "type": "object",
+                "properties": {
+                    "tagIds": {
+                        "type": [
+                            "null",
+                            "array"
+                        ],
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    "names": {
+                        "type": [
+                            "null",
+                            "array"
+                        ],
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "TagDto": {
+                "required": [
+                    "id",
+                    "name",
+                    "color",
+                    "count"
+                ],
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "color": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "count": {
+                        "pattern": "^-?(?:0|[1-9]\\d*)$",
+                        "type": [
+                            "integer",
+                            "string"
+                        ],
+                        "format": "int32"
+                    },
+                    "source": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    }
+                }
+            },
+            "TagNodesPage": {
+                "required": [
+                    "items",
+                    "nextCursor"
+                ],
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/NodeDto"
+                        }
+                    },
+                    "nextCursor": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    }
+                }
+            },
             "TrashItem": {
                 "required": [
                     "node",
@@ -3461,6 +5348,128 @@
                     }
                 }
             },
+            "VersionContentResponse": {
+                "required": [
+                    "title",
+                    "blocks",
+                    "takenAt",
+                    "user"
+                ],
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string"
+                    },
+                    "blocks": {
+                        "$ref": "#/components/schemas/JsonElement"
+                    },
+                    "takenAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "user": {
+                        "oneOf": [
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "$ref": "#/components/schemas/VersionUserDto"
+                            }
+                        ]
+                    }
+                }
+            },
+            "VersionDto": {
+                "required": [
+                    "id",
+                    "version",
+                    "takenAt",
+                    "user",
+                    "title",
+                    "blockCount",
+                    "kind"
+                ],
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "version": {
+                        "pattern": "^-?(?:0|[1-9]\\d*)$",
+                        "type": [
+                            "integer",
+                            "string"
+                        ],
+                        "format": "int32"
+                    },
+                    "takenAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "user": {
+                        "oneOf": [
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "$ref": "#/components/schemas/VersionUserDto"
+                            }
+                        ]
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "blockCount": {
+                        "pattern": "^-?(?:0|[1-9]\\d*)$",
+                        "type": [
+                            "integer",
+                            "string"
+                        ],
+                        "format": "int32"
+                    },
+                    "kind": {
+                        "type": "string"
+                    }
+                }
+            },
+            "VersionListResponse": {
+                "required": [
+                    "items",
+                    "nextCursor"
+                ],
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/VersionDto"
+                        }
+                    },
+                    "nextCursor": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    }
+                }
+            },
+            "VersionUserDto": {
+                "required": [
+                    "id",
+                    "displayName"
+                ],
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "displayName": {
+                        "type": "string"
+                    }
+                }
+            },
             "WorkspaceMemberDto": {
                 "required": [
                     "userId",
@@ -3536,6 +5545,12 @@
             "name": "Files"
         },
         {
+            "name": "Search"
+        },
+        {
+            "name": "Graph"
+        },
+        {
             "name": "ApiTokens"
         },
         {
@@ -3554,10 +5569,22 @@
             "name": "Recents"
         },
         {
-            "name": "Search"
+            "name": "Settings"
         },
         {
-            "name": "Settings"
+            "name": "Links"
+        },
+        {
+            "name": "Tags"
+        },
+        {
+            "name": "Properties"
+        },
+        {
+            "name": "History"
+        },
+        {
+            "name": "ExportImport"
         },
         {
             "name": "plugin:sample"

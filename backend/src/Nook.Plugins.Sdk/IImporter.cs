@@ -1,6 +1,6 @@
 namespace Nook.Plugins.Sdk;
 
-/// <summary>Imports external content into a workspace (e.g. an Obsidian vault). Wave 0 defines only the contract.</summary>
+/// <summary>Imports external content into a workspace (e.g. an Obsidian vault). Built-ins: <c>markdown</c>, <c>html</c>, <c>csv</c>, <c>zip</c>.</summary>
 public interface IImporter
 {
     string Id { get; }
@@ -14,9 +14,10 @@ public interface IImporter
 
 public sealed record ImportRequest(Guid WorkspaceId, Guid UserId, Guid? ParentNodeId, Stream Content, string FileName, IServiceProvider Services);
 
-public sealed record ImportResult(int PagesCreated, IReadOnlyList<string> Warnings);
+/// <param name="NodeIds">Ids of the created top-level pages (wave 1 addition; <c>null</c> when the importer does not report them).</param>
+public sealed record ImportResult(int PagesCreated, IReadOnlyList<string> Warnings, IReadOnlyList<Guid>? NodeIds = null);
 
-/// <summary>Exports nodes to an external format (e.g. Markdown zip).</summary>
+/// <summary>Exports nodes to an external format (e.g. Markdown zip). Built-ins: <c>markdown</c>, <c>html</c>.</summary>
 public interface IExporter
 {
     string Id { get; }
@@ -29,4 +30,5 @@ public interface IExporter
     Task ExportAsync(ExportRequest request, Stream output, CancellationToken cancellationToken);
 }
 
-public sealed record ExportRequest(Guid WorkspaceId, Guid UserId, IReadOnlyList<Guid> NodeIds, bool IncludeChildren, IServiceProvider Services);
+/// <param name="IncludeFiles">Bundle attachments (wave 1 addition, contracts §9.8).</param>
+public sealed record ExportRequest(Guid WorkspaceId, Guid UserId, IReadOnlyList<Guid> NodeIds, bool IncludeChildren, IServiceProvider Services, bool IncludeFiles = false);
