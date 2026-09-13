@@ -11,6 +11,8 @@ export interface TitleEditorProps {
   placeholder?: string;
   seedWhen?: boolean;
   onEnter?: () => void;
+  autoFocus?: boolean;
+  className?: string;
 }
 
 /** Replaces only the changed middle span so concurrent title edits merge per character. */
@@ -39,6 +41,8 @@ export function TitleEditor({
   placeholder = 'Untitled',
   seedWhen = true,
   onEnter,
+  autoFocus,
+  className,
 }: TitleEditorProps) {
   const [value, setValue] = useState(() => text.toString());
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -78,11 +82,12 @@ export function TitleEditor({
   return (
     <textarea
       ref={ref}
-      className="nook-editor__title"
+      className={['nook-editor__title', className].filter(Boolean).join(' ')}
       rows={1}
       value={value}
       placeholder={placeholder}
       readOnly={readOnly}
+      autoFocus={autoFocus}
       aria-label="Page title"
       data-testid="page-title"
       onChange={(e) => applyTextDiff(text, e.target.value.replace(/\n/g, ' '))}

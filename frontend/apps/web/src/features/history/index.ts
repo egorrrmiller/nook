@@ -1,7 +1,4 @@
-// Owner: frontend-editor — replace the implementation, keep the signature (contracts §10).
-// Inspector tab "History" (§9.7). Placeholder: an empty, hidden `<div data-testid="stub-…">`.
-import { createElement, type JSX } from 'react';
-
-export function PageHistoryPanel(_p: { workspaceId: string; nodeId: string }): JSX.Element {
-  return createElement('div', { 'data-testid': 'stub-page-history-panel', hidden: true });
-}
+// Owner: frontend-editor — inspector tab "History" (contracts §10 slot, §9.7 endpoints).
+export { PageHistoryPanel, historyKeys } from './PageHistoryPanel';
+export { collapseUnchanged, diffBlocks, diffWords, flattenBlocks, lcsPairs, summarise } from './diff';
+export type { BlockDiffEntry, DiffOp, DiffSummary, TextSegment } from './diff';
