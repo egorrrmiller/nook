@@ -1,9 +1,9 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Nook.Application.Collab;
 using Nook.Application.Common;
 using Nook.Application.Documents;
+using Nook.Application.Files;
 using Nook.Application.Knowledge;
 using Nook.Domain.Entities;
 using Nook.Domain.Enums;
@@ -15,13 +15,13 @@ namespace Nook.Application.Import;
 /// <summary>
 /// Page creation shared by the built-in importers: makes the node, pushes the blocks into the live document through
 /// <see cref="ICollabClient.ImportAsync"/> and rebuilds the derived projections. Attachments are written into the §8 blob
-/// store with a minimal content-addressed writer (the full store belongs to the files workstream).
+/// store through <see cref="IBlobStore"/> (§8).
 /// </summary>
 public sealed class ImportWriter(
     IAppDbContext db,
     ICollabClient collab,
     DocumentStoreService documents,
-    DataDirectory dataDir,
+    IBlobStore blobs,
     IOutbox outbox,
     IClock clock)
 {
@@ -56,13 +56,12 @@ public sealed class ImportWriter(
     /// <summary>Stores bytes in the blob store and links them to <paramref name="node"/>; returns the attachment.</summary>
     public async Task<Attachment> AddAttachmentAsync(Node node, string fileName, string mime, byte[] bytes, CancellationToken ct)
     {
-        var sha = Convert.ToHexStringLower(SHA256.HashData(bytes));
-        var path = dataDir.BlobPath(sha);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        if (!File.Exists(path)) await File.WriteAllBytesAsync(path, bytes, ct);
+        using var source = new MemoryStream(bytes, writable: false);
+        var stored = await blobs.StoreAsync(source, bytes.LongLength, ct);
+        var sha = stored.Sha256;
 
         if (!await db.Blobs.AnyAsync(b => b.Sha256 == sha, ct))
-            db.Blobs.Add(new Blob { Sha256 = sha, Size = bytes.LongLength, Mime = mime, StoredAt = clock.UtcNow });
+            db.Blobs.Add(new Blob { Sha256 = sha, Size = stored.Size, Mime = mime, StoredAt = clock.UtcNow });
 
         var attachment = new Attachment
         {

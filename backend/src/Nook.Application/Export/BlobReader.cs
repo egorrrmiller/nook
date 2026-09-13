@@ -1,17 +1,23 @@
-using Nook.Application.Knowledge;
+using Nook.Application.Files;
 
 namespace Nook.Application.Export;
 
 /// <summary>
-/// Read-only access to the §8 blob store (<c>NOOK_DATA_DIR/blobs/ab/cd/&lt;sha256&gt;</c>). The store itself is written by the
-/// files workstream; this helper only opens existing files and reports missing ones as <c>null</c>.
+/// Read-only access to the §8 blob store for the export writer: opens an existing blob or reports it as <c>null</c>
+/// (an attachment row whose bytes are gone must not fail a whole export).
 /// </summary>
-public sealed class BlobReader(DataDirectory dataDir)
+public sealed class BlobReader(IBlobStore blobs)
 {
     public Stream? Open(string sha256)
     {
-        if (string.IsNullOrWhiteSpace(sha256) || sha256.Length < 4) return null;
-        var path = dataDir.BlobPath(sha256);
-        return File.Exists(path) ? new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 64 * 1024, useAsync: true) : null;
+        if (string.IsNullOrWhiteSpace(sha256) || sha256.Length < 4 || !blobs.Exists(sha256)) return null;
+        try
+        {
+            return blobs.OpenRead(sha256);
+        }
+        catch (FileNotFoundException)
+        {
+            return null;
+        }
     }
 }
