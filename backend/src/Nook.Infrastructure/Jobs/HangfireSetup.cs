@@ -26,10 +26,11 @@ public static class HangfireSetup
         services.AddHangfireServer(o =>
         {
             o.WorkerCount = Math.Max(2, Environment.ProcessorCount / 2);
-            o.Queues = ["default", "plugins"];
+            o.Queues = ["default", "plugins", "imports", "files"];
         });
         services.AddScoped<PluginJobRunner>();
         services.AddScoped<MaintenanceJobs>();
+        services.AddSingleton<ImportJobRunner>();
         return services;
     }
 

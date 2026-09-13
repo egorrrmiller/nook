@@ -31,6 +31,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<OutboxEvent> EventsOutbox => Set<OutboxEvent>();
     public DbSet<Setting> Settings => Set<Setting>();
     public DbSet<PluginState> PluginStates => Set<PluginState>();
+    public DbSet<ImportJob> ImportJobs => Set<ImportJob>();
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -161,7 +162,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
         modelBuilder.Entity<NodeTag>(b =>
         {
-            b.HasKey(x => new { x.NodeId, x.TagId });
+            // --- wave1: knowledge --- the same tag can be attached manually and inline, so `source` is part of the key.
+            b.HasKey(x => new { x.NodeId, x.TagId, x.Source });
             b.HasOne<Node>().WithMany().HasForeignKey(x => x.NodeId).OnDelete(DeleteBehavior.Cascade);
             b.HasOne<Tag>().WithMany().HasForeignKey(x => x.TagId).OnDelete(DeleteBehavior.Cascade);
         });
@@ -219,6 +221,46 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             b.Property(x => x.PluginId).HasMaxLength(100);
             b.Property(x => x.Key).HasMaxLength(200);
             b.Property(x => x.Value).HasColumnType("jsonb");
+        });
+
+        // --- wave1: knowledge -------------------------------------------------------------------------------------
+        // (contracts §9; entities themselves are configured above — this block adds the wave-1 columns and indexes.)
+        modelBuilder.Entity<Link>(b =>
+        {
+            b.Property(x => x.Href).HasMaxLength(2000);
+            b.HasIndex(x => new { x.SourceNodeId, x.Kind });
+            b.HasIndex(x => x.TargetBlockId);
+        });
+
+        modelBuilder.Entity<PageSnapshot>(b =>
+        {
+            b.Property(x => x.Kind).HasDefaultValue(Domain.Enums.SnapshotKind.Auto);
+            b.HasIndex(x => new { x.NodeId, x.Kind });
+        });
+
+        modelBuilder.Entity<NodeTag>(b =>
+        {
+            b.Property(x => x.Source).HasDefaultValue(Domain.Enums.TagSource.Manual);
+            b.HasIndex(x => new { x.NodeId, x.Source });
+        });
+
+        modelBuilder.Entity<Alias>(b =>
+        {
+            // Aliases are unique case-insensitively per workspace; the workspace is reached through the node, so the
+            // database guarantees global ci-uniqueness of (node, alias) and AliasService enforces the workspace rule.
+            b.HasIndex(x => x.Value).HasMethod("gin").HasOperators("gin_trgm_ops").HasDatabaseName("ix_aliases_alias_trgm");
+        });
+
+        modelBuilder.Entity<ImportJob>(b =>
+        {
+            b.ToTable("import_jobs");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.FileName).HasMaxLength(1000).IsRequired();
+            b.Property(x => x.FilePath).HasMaxLength(2000).IsRequired();
+            b.Property(x => x.Status).HasMaxLength(20).IsRequired();
+            b.Property(x => x.Result).HasColumnType("jsonb");
+            b.HasOne<Workspace>().WithMany().HasForeignKey(x => x.WorkspaceId).OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(x => new { x.WorkspaceId, x.CreatedAt });
         });
     }
 

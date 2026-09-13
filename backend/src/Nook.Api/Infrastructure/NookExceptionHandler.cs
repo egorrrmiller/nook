@@ -22,6 +22,7 @@ public sealed class NookExceptionHandler(IProblemDetailsService problemDetails) 
             403 => "Forbidden",
             404 => "Not Found",
             409 => "Conflict",
+            413 => "Payload Too Large",
             410 => "Gone",
             502 => "Bad Gateway",
             503 => "Service Unavailable",

@@ -27,6 +27,8 @@ public static class DbContextConfiguration
             npgsql.MapEnum<Domain.Enums.WorkspaceRole>("workspace_role");
             npgsql.MapEnum<Domain.Enums.NodeKind>("node_kind");
             npgsql.MapEnum<Domain.Enums.LinkKind>("link_kind");
+            npgsql.MapEnum<Domain.Enums.TagSource>("tag_source");
+            npgsql.MapEnum<Domain.Enums.SnapshotKind>("snapshot_kind");
             npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.GetName().Name);
             npgsql.MigrationsHistoryTable("__ef_migrations_history");
         });

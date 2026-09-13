@@ -27,6 +27,7 @@ public interface IAppDbContext
     DbSet<OutboxEvent> EventsOutbox { get; }
     DbSet<Setting> Settings { get; }
     DbSet<PluginState> PluginStates { get; }
+    DbSet<ImportJob> ImportJobs { get; }
 
     DatabaseFacade Database { get; }
 
