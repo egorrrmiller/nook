@@ -122,11 +122,12 @@ export function PageView({ workspaceId, nodeId }: { workspaceId: string; nodeId:
             toast={toast}
             uploadFile={uploads.upload}
             createPage={(title) => create.mutateAsync({ kind: 'page', title, parentId: nodeId })}
-            header={({ titleText, focusEditor, readOnly: ro }) => (
+            header={({ titleText, focusEditor, readOnly: ro, synced }) => (
               <>
                 <PageHeader
                   node={node}
                   titleText={titleText}
+                  synced={synced}
                   readOnly={ro}
                   onTitleChange={setTitle}
                   onIconChange={(icon: NodeIcon | null) => update.mutate({ id: nodeId, icon })}

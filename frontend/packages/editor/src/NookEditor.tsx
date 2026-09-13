@@ -50,6 +50,11 @@ export interface EditorHeaderContext {
   titleText: Y.Text;
   focusEditor: () => void;
   readOnly: boolean;
+  /**
+   * True once the document reflects the server's state (or the session is local). Seeding the title Y.Text from a
+   * REST-loaded `node.title` before this flips would append it a second time when the remote state arrives.
+   */
+  synced: boolean;
 }
 
 export interface NookEditorProps {
@@ -132,7 +137,8 @@ function OfflineFallback({
   const titleText = useMemo(() => session.doc.getText('title'), [session.doc]);
   return (
     <div className={['nook-editor', className].filter(Boolean).join(' ')} data-readonly>
-      {header?.({ titleText, focusEditor: () => {}, readOnly: true })}
+      {/* No provider here, so no remote state can arrive: seeding the title from REST is the only source. */}
+      {header?.({ titleText, focusEditor: () => {}, readOnly: true, synced: true })}
       <div role="alert" className="nook-editor-banner nook-editor-banner--error" data-testid="collab-fallback">
         Live editing unavailable — showing the last saved version of this page.
       </div>
@@ -313,6 +319,7 @@ function NookEditorInner({
   );
 
   const titleText = useMemo(() => doc.getText('title'), [doc]);
+  const docSynced = session.synced || session.status === 'local';
 
   return (
     <div className={['nook-editor', className].filter(Boolean).join(' ')} data-readonly={readOnly || undefined}>
@@ -325,7 +332,7 @@ function NookEditorInner({
           You have view-only access to this page.
         </div>
       ) : null}
-      {header ? header({ titleText, focusEditor: () => editor.focus(), readOnly }) : null}
+      {header ? header({ titleText, focusEditor: () => editor.focus(), readOnly, synced: docSynced }) : null}
       {showTitle && !header ? (
         <TitleEditor
           text={titleText}
@@ -333,6 +340,7 @@ function NookEditorInner({
           onChange={onTitleChange}
           readOnly={readOnly}
           placeholder={titlePlaceholder}
+          seedWhen={docSynced}
           autoFocus={autofocusTitle}
           onEnter={() => editor.focus()}
         />

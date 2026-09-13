@@ -11,6 +11,7 @@ import { CoverPicker, IconPicker } from '../pickers';
 export function PageHeader({
   node,
   titleText,
+  synced,
   readOnly,
   onTitleChange,
   onIconChange,
@@ -20,6 +21,8 @@ export function PageHeader({
 }: {
   node: Node;
   titleText: Y.Text;
+  /** Only seed the shared title once the Y.Doc holds the server's state (see EditorHeaderContext.synced). */
+  synced: boolean;
   readOnly?: boolean;
   onTitleChange?: (title: string) => void;
   onIconChange: (icon: NodeIconValue | null) => void;
@@ -62,6 +65,7 @@ export function PageHeader({
       <TitleEditor
         text={titleText}
         initialTitle={node.title}
+        seedWhen={synced}
         onChange={onTitleChange}
         readOnly={readOnly}
         onEnter={onEnter}
