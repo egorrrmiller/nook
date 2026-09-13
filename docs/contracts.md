@@ -258,7 +258,8 @@ Stored in `nodes.properties` (jsonb, GIN). Changes emit `nodeChanged` (Node carr
 
 ```
 GET /api/nodes/{id}/aliases              -> string[]
-PUT /api/nodes/{id}/aliases  {aliases: string[]}   -> string[]   (unique ci per workspace across nodes; 409 lists the conflicting node)
+PUT /api/nodes/{id}/aliases  {aliases: string[]}   -> string[]
+     409 ProblemDetails carries the extension `conflicts: [{ alias: string, node: NodeSummary }]` — every alias already taken and the node holding it (unique ci per workspace across nodes and page titles).
 ```
 
 ### 9.5 Full-text search
@@ -300,6 +301,7 @@ Automatic snapshots: every 25 stores (existing) **and** at most once per 10 minu
 
 ```
 POST /api/export   { nodeIds: string[], includeChildren: boolean, format: "markdown" | "html", includeFiles: boolean }
+     The client reads the zip's name from `Content-Disposition` (`api.exportZip` returns `{blob, filename}`).
      -> 200 application/zip (streamed; Content-Disposition attachment; filename "<title or workspace>-export.zip")
      Layout follows Notion: `<Title>.md` next to a folder `<Title>/` for children; frontmatter (`title`, `tags`, `properties`, `aliases`, `created`, `updated`, `id`);
      internal links rewritten to relative paths (`[Title](../Title.md#block-id)`), attachments under `files/<sha8>-<name>` when includeFiles; HTML export inlines a minimal stylesheet.

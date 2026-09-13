@@ -89,11 +89,25 @@ import type {
  *   tags        §9.2   list, create, update, remove, nodes
  *   graph       §9.6   get
  *   blocks      §9.7   get
- *   exportZip   §9.8   → Blob
+ *   exportZip   §9.8   → {blob, filename}
  *   importFile  §9.8   multipart; importStatus for the 202 job path
  *   collab      §3
  *   health      §1
  */
+/** RFC 5987 / RFC 6266: pull the filename out of a `Content-Disposition` header. */
+export function filenameFromDisposition(disposition: string | null): string | null {
+  if (!disposition) return null;
+  const star = /filename\*=(?:UTF-8'')?([^;]+)/i.exec(disposition);
+  const plain = /filename="?([^";]+)"?/i.exec(disposition);
+  const raw = star?.[1] ?? plain?.[1];
+  if (!raw) return null;
+  try {
+    return decodeURIComponent(raw.trim());
+  } catch {
+    return raw.trim();
+  }
+}
+
 export function createApiClient(config: ApiConfig) {
   const http = createHttp(config);
   const enc = encodeURIComponent;
@@ -348,10 +362,13 @@ export function createApiClient(config: ApiConfig) {
       get: (blockId: string, signal?: AbortSignal) =>
         http<BlockAnchor>('GET', `/api/blocks/${blockId}`, { signal }),
     },
-    /** §9.8 `POST /api/export` → application/zip as a Blob. */
-    exportZip: async (body: ExportRequest, signal?: AbortSignal): Promise<Blob> => {
+    /** §9.8 `POST /api/export` → the zip plus the server's filename from Content-Disposition. */
+    exportZip: async (
+      body: ExportRequest,
+      signal?: AbortSignal,
+    ): Promise<{ blob: Blob; filename: string | null }> => {
       const res = await http('POST', '/api/export', { body, raw: true, signal });
-      return res.blob();
+      return { blob: await res.blob(), filename: filenameFromDisposition(res.headers.get('content-disposition')) };
     },
     /** §9.8 `POST /api/import` multipart: file, parentId? → ImportResult | 202 {jobId}. */
     importFile: (file: File | Blob, opts: ImportOptions = {}, signal?: AbortSignal) => {

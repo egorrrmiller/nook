@@ -8,11 +8,6 @@ import { nodeTitle } from '../../../lib/utils';
 
 type Phase = { kind: 'idle' } | { kind: 'working' } | { kind: 'done'; size: number; filename: string } | { kind: 'error'; message: string };
 
-function fileNameFrom(disposition: string | null, fallback: string): string {
-  const m = disposition && /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
-  return m?.[1] ? decodeURIComponent(m[1]) : fallback;
-}
-
 function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
@@ -38,8 +33,8 @@ export function ExportDialog({ workspaceId, nodeIds, open, onOpenChange }: { wor
   const run = async () => {
     setPhase({ kind: 'working' });
     try {
-      const blob = await api.exportZip({ nodeIds, includeChildren, format, includeFiles });
-      const filename = fileNameFrom(null, `${baseName}-export.zip`);
+      const { blob, filename: served } = await api.exportZip({ nodeIds, includeChildren, format, includeFiles });
+      const filename = served ?? `${baseName}-export.zip`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
