@@ -11,7 +11,7 @@ Monorepo. Plan of record: `docs/PLAN.md` (copy of the approved plan). Cross-serv
 ## Environment (this machine)
 - .NET SDK 10, Node 22 (`/opt/homebrew/bin/node`), pnpm 12. **No Docker.**
 - PostgreSQL 18 (EDB) on `127.0.0.1:5432`, user `postgres`, password `123`; DBs `nook` (dev) and `nook_test` (tests). psql lives at `/Library/PostgreSQL/18/bin/psql`; set `PGGSSENCMODE=disable`. Extensions available: `pg_trgm` (yes), `vector` (no).
-- Ports: API `5000`, collab `1234`, Vite dev `5173` (proxies `/api`, `/hub`, `/collab`).
+- Ports: API `5100`, collab `1234` (ws) / `1235` (internal), Vite dev `5173` (proxies `/api`, `/hub`, `/collab`). **Never use 5000 or 7000** — macOS AirPlay Receiver holds them on `*`, and `localhost` resolves to `::1` first, so requests silently hit AirPlay (HTTP 403).
 
 ## Conventions
 - C#: nullable on, warnings as errors, file-scoped namespaces, Minimal APIs grouped per feature (`MapXxxEndpoints`), no Repository layer over EF Core (`IAppDbContext` in Application). Vertical slices in `Nook.Application/<Feature>/`. Every query is scoped by `WorkspaceContext` — never query `nodes` without `workspace_id`.

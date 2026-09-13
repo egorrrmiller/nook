@@ -22,7 +22,7 @@ can never reach it; only the backend on the internal network talks to 1235.
 | `COLLAB_PORT` | `1234` | WebSocket port |
 | `COLLAB_INTERNAL_PORT` | `1235` | Internal HTTP API port |
 | `COLLAB_HOST` | `0.0.0.0` | Bind address for both listeners |
-| `COLLAB_API_BASE` | `http://localhost:5000` | Backend base URL (`GET/PUT /internal/documents/{id}`) |
+| `COLLAB_API_BASE` | `http://localhost:5100` | Backend base URL (`GET/PUT /internal/documents/{id}`) |
 | `NOOK_INTERNAL_TOKEN` | — (required) | Shared secret: sent to the backend as `X-Internal-Token` and required from callers of our internal API |
 | `NOOK_COLLAB_JWT_SECRET` | — (required) | HS256 secret for the collab JWT issued by `GET /api/collab/token` |
 | `COLLAB_STORE_DEBOUNCE_MS` | `2000` | Debounce before persisting a changed document |

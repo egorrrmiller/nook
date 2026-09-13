@@ -18,7 +18,7 @@ Node 22 (`/opt/homebrew/bin/node`) and pnpm 12. `pnpm install` from this directo
 ## Develop
 
 ```sh
-pnpm dev                 # http://localhost:5173, proxies /api + /hub → :5000, /collab → :1234 (ws)
+pnpm dev                 # http://localhost:5173, proxies /api + /hub → :5100, /collab → :1234 (ws)
 VITE_MOCK=1 pnpm dev     # no backend needed: MSW serves contracts §1–§3 in memory
 ```
 
@@ -49,7 +49,7 @@ pnpm build               # → apps/web/dist (the backend copies it into wwwroot
 ## API client generation
 
 ```sh
-pnpm gen:api             # reads ../backend/openapi.json (or OPENAPI_URL=http://localhost:5000/openapi/v1.json)
+pnpm gen:api             # reads ../backend/openapi.json (or OPENAPI_URL=http://localhost:5100/openapi/v1.json)
 ```
 
 Writes `packages/api-client/src/generated` with `@hey-api/openapi-ts`. When the spec is absent the

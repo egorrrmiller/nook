@@ -23,7 +23,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      ASPNETCORE_URLS: http://0.0.0.0:5000
+      ASPNETCORE_URLS: http://0.0.0.0:5100
       NOOK_DB: "Host=postgres;Port=5432;Database=nook;Username=nook;Password=${POSTGRES_PASSWORD}"
       NOOK_DATA_DIR: /data
       NOOK_OWNER_EMAIL: ${NOOK_OWNER_EMAIL:?set NOOK_OWNER_EMAIL}
@@ -43,7 +43,7 @@ services:
     environment:
       COLLAB_PORT: "1234"
       COLLAB_INTERNAL_PORT: "1235"
-      COLLAB_API_BASE: http://api:5000
+      COLLAB_API_BASE: http://api:5100
       NOOK_COLLAB_JWT_SECRET: ${NOOK_COLLAB_JWT_SECRET}
       NOOK_INTERNAL_TOKEN: ${NOOK_INTERNAL_TOKEN}
 

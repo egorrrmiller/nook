@@ -13,6 +13,6 @@
 
 	# API, SignalR hub, OpenAPI, Hangfire dashboard and the SPA itself
 	handle {
-		reverse_proxy api:5000
+		reverse_proxy api:5100
 	}
 }

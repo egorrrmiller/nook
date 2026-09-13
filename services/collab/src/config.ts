@@ -66,7 +66,7 @@ export function loadConfig(overrides: Partial<CollabConfig> = {}): CollabConfig 
     port: intEnv("COLLAB_PORT", 1234),
     internalPort: intEnv("COLLAB_INTERNAL_PORT", 1235),
     host: env.COLLAB_HOST ?? "0.0.0.0",
-    apiBase: (env.COLLAB_API_BASE ?? "http://localhost:5000").replace(/\/+$/, ""),
+    apiBase: (env.COLLAB_API_BASE ?? "http://localhost:5100").replace(/\/+$/, ""),
     internalToken: env.NOOK_INTERNAL_TOKEN ?? "",
     jwtSecret: env.NOOK_COLLAB_JWT_SECRET ?? "",
     storeDebounceMs: intEnv("COLLAB_STORE_DEBOUNCE_MS", 2000),

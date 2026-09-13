@@ -36,7 +36,7 @@ tests/Nook.IntegrationTests  WebApplicationFactory against a per-class PostgreSQ
 
 ```bash
 cd backend
-dotnet run --project src/Nook.Api          # http://localhost:5000 (launchSettings sets Development)
+dotnet run --project src/Nook.Api          # http://localhost:5100 (launchSettings sets Development)
 ```
 
 - `GET /api/health` – liveness incl. DB check

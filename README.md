@@ -9,7 +9,7 @@ Personal self-hosted Notion: Notion-grade block editor, real-time collaboration 
 
 ```bash
 cp .env.example .env            # adjust if needed
-dotnet run --project backend/src/Nook.Api            # http://localhost:5000
+dotnet run --project backend/src/Nook.Api            # http://localhost:5100
 (cd services/collab && pnpm install && pnpm dev)     # ws://localhost:1234
 (cd frontend && pnpm install && pnpm dev)            # http://localhost:5173
 ```

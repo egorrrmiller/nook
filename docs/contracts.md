@@ -89,4 +89,4 @@ SignalR hub at `/hub`. Server → client messages: `nodeChanged {node}`, `nodeDe
 
 ## 6. Ports & dev proxy
 
-API `http://localhost:5000` (serves `/api`, `/hub`, `/internal`, and the built SPA in production). Collab `http://localhost:1234` (WebSocket at `/` — proxied under `/collab`). Vite dev server `5173` proxies `/api`, `/hub` (ws), `/collab` (ws, rewrite to `/`). OpenAPI JSON at `GET /openapi/v1.json` (Scalar UI at `/scalar`) — frontend generates its client from it (`pnpm gen:api`, expects the API running on 5000 or reads `backend/openapi.json` checked in by the backend build).
+API `http://localhost:5100` (serves `/api`, `/hub`, `/internal`, and the built SPA in production). Collab `http://localhost:1234` (WebSocket at `/` — proxied under `/collab`). Vite dev server `5173` proxies `/api`, `/hub` (ws), `/collab` (ws, rewrite to `/`). OpenAPI JSON at `GET /openapi/v1.json` (Scalar UI at `/scalar`) — frontend generates its client from it (`pnpm gen:api`, expects the API running on 5000 or reads `backend/openapi.json` checked in by the backend build).

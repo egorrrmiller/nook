@@ -16,5 +16,5 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=api /out .
 COPY --from=web /src/frontend/apps/web/dist ./wwwroot
-EXPOSE 5000
+EXPOSE 5100
 ENTRYPOINT ["dotnet", "Nook.Api.dll"]

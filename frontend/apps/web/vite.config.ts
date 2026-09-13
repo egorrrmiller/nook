@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-const API = process.env.NOOK_API_URL ?? 'http://localhost:5000';
+const API = process.env.NOOK_API_URL ?? 'http://localhost:5100';
 const COLLAB = process.env.NOOK_COLLAB_URL ?? 'http://localhost:1234';
 
 // https://vite.dev/config/
