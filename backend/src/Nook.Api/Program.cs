@@ -113,6 +113,7 @@ if (options.BackgroundJobs) HangfireSetup.RegisterRecurringJobs(app.Services);
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseSerilogRequestLogging();
+app.UseClientDisconnectAs499(); // must sit inside the request logger (see ClientDisconnectMiddleware)
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
