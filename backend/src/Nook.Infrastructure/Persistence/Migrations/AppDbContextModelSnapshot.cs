@@ -120,6 +120,10 @@ namespace Nook.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("ExtractedText")
+                        .HasColumnType("text")
+                        .HasColumnName("extracted_text");
+
                     b.Property<string>("Filename")
                         .IsRequired()
                         .HasMaxLength(1000)
@@ -145,6 +149,14 @@ namespace Nook.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("property_id");
 
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("content")
+                        .HasColumnName("purpose");
+
                     b.Property<long>("Size")
                         .HasColumnType("bigint")
                         .HasColumnName("size");
@@ -152,6 +164,18 @@ namespace Nook.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("WorkspaceId")
                         .HasColumnType("uuid")
                         .HasColumnName("workspace_id");
+
+                    b.Property<NpgsqlTsVector>("text_en")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("tsvector")
+                        .HasColumnName("text_en")
+                        .HasComputedColumnSql("to_tsvector('english', coalesce(extracted_text, ''))", true);
+
+                    b.Property<NpgsqlTsVector>("text_ru")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("tsvector")
+                        .HasColumnName("text_ru")
+                        .HasComputedColumnSql("to_tsvector('russian', coalesce(extracted_text, ''))", true);
 
                     b.HasKey("Id")
                         .HasName("pk_attachments");
@@ -162,8 +186,18 @@ namespace Nook.Infrastructure.Persistence.Migrations
                     b.HasIndex("NodeId")
                         .HasDatabaseName("ix_attachments_node_id");
 
-                    b.HasIndex("WorkspaceId")
-                        .HasDatabaseName("ix_attachments_workspace_id");
+                    b.HasIndex("text_en")
+                        .HasDatabaseName("ix_attachments_text_en");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("text_en"), "gin");
+
+                    b.HasIndex("text_ru")
+                        .HasDatabaseName("ix_attachments_text_ru");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("text_ru"), "gin");
+
+                    b.HasIndex("WorkspaceId", "NodeId")
+                        .HasDatabaseName("ix_attachments_workspace_id_node_id");
 
                     b.ToTable("attachments", (string)null);
                 });
@@ -419,6 +453,33 @@ namespace Nook.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_links_target_node_id");
 
                     b.ToTable("links", (string)null);
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.LinkPreview", b =>
+                {
+                    b.Property<string>("UrlHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("url_hash");
+
+                    b.Property<JsonElement>("Data")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("data");
+
+                    b.Property<DateTimeOffset>("FetchedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("fetched_at");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)")
+                        .HasColumnName("url");
+
+                    b.HasKey("UrlHash")
+                        .HasName("pk_link_previews");
+
+                    b.ToTable("link_previews", (string)null);
                 });
 
             modelBuilder.Entity("Nook.Domain.Entities.Node", b =>

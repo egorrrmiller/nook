@@ -1,0 +1,194 @@
+[
+  {
+    "id": "gradient-sunset",
+    "name": "Sunset",
+    "group": "Gradients",
+    "file": "gradient-sunset.svg"
+  },
+  {
+    "id": "gradient-ocean",
+    "name": "Ocean",
+    "group": "Gradients",
+    "file": "gradient-ocean.svg"
+  },
+  {
+    "id": "gradient-aurora",
+    "name": "Aurora",
+    "group": "Gradients",
+    "file": "gradient-aurora.svg"
+  },
+  {
+    "id": "gradient-lavender",
+    "name": "Lavender",
+    "group": "Gradients",
+    "file": "gradient-lavender.svg"
+  },
+  {
+    "id": "gradient-peach",
+    "name": "Peach",
+    "group": "Gradients",
+    "file": "gradient-peach.svg"
+  },
+  {
+    "id": "gradient-midnight",
+    "name": "Midnight",
+    "group": "Gradients",
+    "file": "gradient-midnight.svg"
+  },
+  {
+    "id": "gradient-berry",
+    "name": "Berry",
+    "group": "Gradients",
+    "file": "gradient-berry.svg"
+  },
+  {
+    "id": "gradient-ember",
+    "name": "Ember",
+    "group": "Gradients",
+    "file": "gradient-ember.svg"
+  },
+  {
+    "id": "gradient-mint",
+    "name": "Mint",
+    "group": "Gradients",
+    "file": "gradient-mint.svg"
+  },
+  {
+    "id": "gradient-dusk",
+    "name": "Dusk",
+    "group": "Gradients",
+    "file": "gradient-dusk.svg"
+  },
+  {
+    "id": "solid-red",
+    "name": "Red",
+    "group": "Solid",
+    "file": "solid-red.svg"
+  },
+  {
+    "id": "solid-orange",
+    "name": "Orange",
+    "group": "Solid",
+    "file": "solid-orange.svg"
+  },
+  {
+    "id": "solid-yellow",
+    "name": "Yellow",
+    "group": "Solid",
+    "file": "solid-yellow.svg"
+  },
+  {
+    "id": "solid-green",
+    "name": "Green",
+    "group": "Solid",
+    "file": "solid-green.svg"
+  },
+  {
+    "id": "solid-blue",
+    "name": "Blue",
+    "group": "Solid",
+    "file": "solid-blue.svg"
+  },
+  {
+    "id": "solid-purple",
+    "name": "Purple",
+    "group": "Solid",
+    "file": "solid-purple.svg"
+  },
+  {
+    "id": "solid-gray",
+    "name": "Gray",
+    "group": "Solid",
+    "file": "solid-gray.svg"
+  },
+  {
+    "id": "solid-black",
+    "name": "Black",
+    "group": "Solid",
+    "file": "solid-black.svg"
+  },
+  {
+    "id": "nature-hills",
+    "name": "Green hills",
+    "group": "Nature",
+    "file": "nature-hills.svg"
+  },
+  {
+    "id": "nature-dunes",
+    "name": "Dunes",
+    "group": "Nature",
+    "file": "nature-dunes.svg"
+  },
+  {
+    "id": "nature-night",
+    "name": "Night sky",
+    "group": "Nature",
+    "file": "nature-night.svg"
+  },
+  {
+    "id": "nature-waves",
+    "name": "Waves",
+    "group": "Nature",
+    "file": "nature-waves.svg"
+  },
+  {
+    "id": "nature-sunrise",
+    "name": "Sunrise",
+    "group": "Nature",
+    "file": "nature-sunrise.svg"
+  },
+  {
+    "id": "nature-forest",
+    "name": "Forest",
+    "group": "Nature",
+    "file": "nature-forest.svg"
+  },
+  {
+    "id": "pattern-dots",
+    "name": "Dots",
+    "group": "Patterns",
+    "file": "pattern-dots.svg"
+  },
+  {
+    "id": "pattern-grid",
+    "name": "Grid",
+    "group": "Patterns",
+    "file": "pattern-grid.svg"
+  },
+  {
+    "id": "pattern-diagonal",
+    "name": "Diagonal",
+    "group": "Patterns",
+    "file": "pattern-diagonal.svg"
+  },
+  {
+    "id": "pattern-checker",
+    "name": "Checker",
+    "group": "Patterns",
+    "file": "pattern-checker.svg"
+  },
+  {
+    "id": "pattern-hex",
+    "name": "Hexagons",
+    "group": "Patterns",
+    "file": "pattern-hex.svg"
+  },
+  {
+    "id": "pattern-triangles",
+    "name": "Triangles",
+    "group": "Patterns",
+    "file": "pattern-triangles.svg"
+  },
+  {
+    "id": "pattern-cross",
+    "name": "Crosses",
+    "group": "Patterns",
+    "file": "pattern-cross.svg"
+  },
+  {
+    "id": "pattern-waves",
+    "name": "Ripples",
+    "group": "Patterns",
+    "file": "pattern-waves.svg"
+  }
+]

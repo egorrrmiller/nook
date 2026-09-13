@@ -121,6 +121,95 @@
                 }
             }
         },
+        "/api/nodes/{id}/files": {
+            "get": {
+                "tags": [
+                    "Files"
+                ],
+                "operationId": "ListNodeFiles",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/AttachmentDto"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/covers": {
+            "get": {
+                "tags": [
+                    "Files"
+                ],
+                "description": "Built-in cover gallery served from /covers/*.",
+                "operationId": "ListCovers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CoverDto"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/links/preview": {
+            "post": {
+                "tags": [
+                    "Files"
+                ],
+                "description": "OpenGraph/Twitter/oEmbed preview, cached 7 days. Failures answer 200 with just {url, finalUrl}.",
+                "operationId": "PreviewLink",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LinkPreviewRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LinkPreviewDto"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/auth/login": {
             "post": {
                 "tags": [
@@ -743,6 +832,208 @@
                 }
             }
         },
+        "/api/files": {
+            "post": {
+                "tags": [
+                    "Files"
+                ],
+                "description": "multipart/form-data: file, nodeId (required), blockId?, propertyId?, purpose? (content|icon|cover). 413 when NOOK_MAX_UPLOAD_MB is exceeded.",
+                "operationId": "UploadFile",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UploadFileForm"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AttachmentDto"
+                                }
+                            }
+                        }
+                    },
+                    "413": {
+                        "description": "Payload Too Large",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/files/from-url": {
+            "post": {
+                "tags": [
+                    "Files"
+                ],
+                "description": "Server-side fetch (SSRF-guarded: public http(s) hosts only, 10 s header timeout, upload size limit).",
+                "operationId": "UploadFileFromUrl",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FromUrlRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AttachmentDto"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/files/{id}": {
+            "get": {
+                "tags": [
+                    "Files"
+                ],
+                "description": "Bytes with Range support (206), ETag = sha256, Cache-Control: private, max-age=31536000. Inline unless ?download=1. SVG/HTML are served as application/octet-stream unless downloaded.",
+                "operationId": "GetFile",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "download",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Files"
+                ],
+                "description": "Deletes the attachment row; the blob is removed by the daily blob-gc job once unreferenced for 24 h.",
+                "operationId": "DeleteFile",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/api/files/{id}/thumb": {
+            "get": {
+                "tags": [
+                    "Files"
+                ],
+                "description": "image/webp derivative; w \u2208 {160, 320, 640, 1280, 1920} (default 640). 404 for non-images, 503 when libvips is unavailable.",
+                "operationId": "GetFileThumb",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "w",
+                        "in": "query",
+                        "schema": {
+                            "pattern": "^-?(?:0|[1-9]\\d*)$",
+                            "type": [
+                                "integer",
+                                "string"
+                            ],
+                            "format": "int32"
+                        }
+                    }
+                ],
+                "responses": {
+                    "503": {
+                        "description": "Service Unavailable",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/files/{id}/meta": {
+            "get": {
+                "tags": [
+                    "Files"
+                ],
+                "operationId": "GetFileMeta",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AttachmentDto"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/plugins/sample/ping": {
             "get": {
                 "tags": [
@@ -922,6 +1213,130 @@
                     }
                 }
             },
+            "AttachmentDto": {
+                "required": [
+                    "id",
+                    "nodeId",
+                    "blockId",
+                    "propertyId",
+                    "purpose",
+                    "filename",
+                    "mime",
+                    "size",
+                    "sha256",
+                    "url",
+                    "thumbUrl",
+                    "meta",
+                    "createdAt"
+                ],
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "nodeId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "blockId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "uuid"
+                    },
+                    "propertyId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "purpose": {
+                        "type": "string"
+                    },
+                    "filename": {
+                        "type": "string"
+                    },
+                    "mime": {
+                        "type": "string"
+                    },
+                    "size": {
+                        "pattern": "^-?(?:0|[1-9]\\d*)$",
+                        "type": [
+                            "integer",
+                            "string"
+                        ],
+                        "format": "int64"
+                    },
+                    "sha256": {
+                        "type": "string"
+                    },
+                    "url": {
+                        "type": "string"
+                    },
+                    "thumbUrl": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/AttachmentMeta"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "AttachmentMeta": {
+                "type": "object",
+                "properties": {
+                    "width": {
+                        "pattern": "^-?(?:0|[1-9]\\d*)$",
+                        "type": [
+                            "null",
+                            "integer",
+                            "string"
+                        ],
+                        "format": "int32"
+                    },
+                    "height": {
+                        "pattern": "^-?(?:0|[1-9]\\d*)$",
+                        "type": [
+                            "null",
+                            "integer",
+                            "string"
+                        ],
+                        "format": "int32"
+                    },
+                    "duration": {
+                        "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+                        "type": [
+                            "null",
+                            "number",
+                            "string"
+                        ],
+                        "format": "double"
+                    },
+                    "pages": {
+                        "pattern": "^-?(?:0|[1-9]\\d*)$",
+                        "type": [
+                            "null",
+                            "integer",
+                            "string"
+                        ],
+                        "format": "int32"
+                    },
+                    "textExtracted": {
+                        "type": [
+                            "null",
+                            "boolean"
+                        ]
+                    }
+                }
+            },
             "AuthResponse": {
                 "required": [
                     "user",
@@ -951,6 +1366,33 @@
                         "type": "string"
                     },
                     "wsUrl": {
+                        "type": "string"
+                    }
+                }
+            },
+            "CoverDto": {
+                "required": [
+                    "id",
+                    "name",
+                    "group",
+                    "url",
+                    "thumbUrl"
+                ],
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "group": {
+                        "type": "string"
+                    },
+                    "url": {
+                        "type": "string"
+                    },
+                    "thumbUrl": {
                         "type": "string"
                     }
                 }
@@ -1074,6 +1516,44 @@
                     }
                 }
             },
+            "FromUrlRequest": {
+                "required": [
+                    "url",
+                    "nodeId",
+                    "blockId",
+                    "propertyId",
+                    "purpose"
+                ],
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string"
+                    },
+                    "nodeId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "blockId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "uuid"
+                    },
+                    "propertyId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "purpose": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    }
+                }
+            },
             "HealthResponse": {
                 "required": [
                     "status",
@@ -1144,6 +1624,10 @@
                         }
                     }
                 }
+            },
+            "IFormFile": {
+                "type": "string",
+                "format": "binary"
             },
             "InternalDocumentPutRequest": {
                 "required": [
@@ -1274,6 +1758,138 @@
                 }
             },
             "JsonElement": {},
+            "LinkEmbedDto": {
+                "required": [
+                    "provider",
+                    "html",
+                    "url",
+                    "width",
+                    "height",
+                    "aspectRatio"
+                ],
+                "type": "object",
+                "properties": {
+                    "provider": {
+                        "type": "string"
+                    },
+                    "html": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "url": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "width": {
+                        "pattern": "^-?(?:0|[1-9]\\d*)$",
+                        "type": [
+                            "null",
+                            "integer",
+                            "string"
+                        ],
+                        "format": "int32"
+                    },
+                    "height": {
+                        "pattern": "^-?(?:0|[1-9]\\d*)$",
+                        "type": [
+                            "null",
+                            "integer",
+                            "string"
+                        ],
+                        "format": "int32"
+                    },
+                    "aspectRatio": {
+                        "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+                        "type": [
+                            "null",
+                            "number",
+                            "string"
+                        ],
+                        "format": "double"
+                    }
+                }
+            },
+            "LinkPreviewDto": {
+                "required": [
+                    "url",
+                    "finalUrl",
+                    "title",
+                    "description",
+                    "imageUrl",
+                    "faviconUrl",
+                    "siteName",
+                    "embed",
+                    "fetchedAt"
+                ],
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string"
+                    },
+                    "finalUrl": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "description": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "imageUrl": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "faviconUrl": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "siteName": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "embed": {
+                        "oneOf": [
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "$ref": "#/components/schemas/LinkEmbedDto"
+                            }
+                        ]
+                    },
+                    "fetchedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "LinkPreviewRequest": {
+                "required": [
+                    "url"
+                ],
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string"
+                    }
+                }
+            },
             "LoginRequest": {
                 "required": [
                     "email",
@@ -1644,6 +2260,44 @@
                     }
                 }
             },
+            "UploadFileForm": {
+                "required": [
+                    "file",
+                    "nodeId",
+                    "blockId",
+                    "propertyId",
+                    "purpose"
+                ],
+                "type": "object",
+                "properties": {
+                    "file": {
+                        "$ref": "#/components/schemas/IFormFile"
+                    },
+                    "nodeId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "blockId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "uuid"
+                    },
+                    "propertyId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "purpose": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    }
+                }
+            },
             "UserDto": {
                 "required": [
                     "id",
@@ -1750,6 +2404,9 @@
         },
         {
             "name": "Collab"
+        },
+        {
+            "name": "Files"
         },
         {
             "name": "ApiTokens"

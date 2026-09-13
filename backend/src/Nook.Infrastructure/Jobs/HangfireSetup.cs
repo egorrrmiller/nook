@@ -26,10 +26,13 @@ public static class HangfireSetup
         services.AddHangfireServer(o =>
         {
             o.WorkerCount = Math.Max(2, Environment.ProcessorCount / 2);
-            o.Queues = ["default", "plugins"];
+            o.Queues = ["default", "files", "plugins"];
         });
         services.AddScoped<PluginJobRunner>();
         services.AddScoped<MaintenanceJobs>();
+        services.AddScoped<FileExtractionJob>();
+        services.AddScoped<BlobGcJob>();
+        services.AddSingleton<Nook.Application.Files.IFileJobs, HangfireFileJobs>();
         return services;
     }
 
@@ -38,6 +41,7 @@ public static class HangfireSetup
     {
         var recurring = services.GetRequiredService<IRecurringJobManager>();
         recurring.AddOrUpdate<MaintenanceJobs>("outbox-cleanup", j => j.CleanupOutboxAsync(CancellationToken.None), Cron.Daily());
+        recurring.AddOrUpdate<BlobGcJob>("blob-gc", j => j.RunAsync(CancellationToken.None), Cron.Daily(4), new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
 
         var registry = services.GetRequiredService<PluginRegistry>();
         foreach (var plugin in registry.Plugins)

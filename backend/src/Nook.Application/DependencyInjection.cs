@@ -4,6 +4,7 @@ using Nook.Application.Auth;
 using Nook.Application.Collab;
 using Nook.Application.Common;
 using Nook.Application.Documents;
+using Nook.Application.Files;
 using Nook.Application.Nodes;
 using Nook.Application.Workspaces;
 
@@ -24,6 +25,9 @@ public static class DependencyInjection
         services.AddScoped<NodeService>();
         services.AddScoped<CollabTokenService>();
         services.AddScoped<DocumentStoreService>();
+        services.AddScoped<FileService>();
+        services.AddScoped<LinkPreviewService>();
+        services.TryAddSingleton<IFileJobs, NullFileJobs>();
         return services;
     }
 }
