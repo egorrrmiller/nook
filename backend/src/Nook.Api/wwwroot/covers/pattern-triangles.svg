@@ -1,0 +1,1 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400" preserveAspectRatio="xMidYMid slice"><defs><pattern id="p" width="30" height="30" patternUnits="userSpaceOnUse"><polygon points="0,30 15,0 30,30" fill="#fbcfe8"/></pattern></defs><rect width="1200" height="400" fill="#fdf2f8"/><rect width="1200" height="400" fill="url(#p)"/></svg>

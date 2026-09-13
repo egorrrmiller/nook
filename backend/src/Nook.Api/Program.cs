@@ -45,6 +45,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddNookApplication();
 builder.Services.AddNookInfrastructure(options.Db, options.BackgroundJobs, pluginAssemblies);
+builder.Services.AddNookFiles(options.DataDir, options.MaxUploadBytes);
+builder.Services.AddSingleton<CoverGallery>();
 builder.Services.AddNookPlugins(builder.Configuration, pluginAssemblies);
 
 builder.Services.ConfigureHttpJsonOptions(o =>
@@ -127,6 +129,7 @@ api.MapAuthEndpoints();
 api.MapWorkspaceEndpoints();
 api.MapNodeEndpoints();
 api.MapCollabEndpoints();
+api.MapFileEndpoints();
 api.MapNookPlugins(app.Services);
 
 app.MapInternalEndpoints();
@@ -138,6 +141,18 @@ if (options.BackgroundJobs)
     {
         Authorization = [new OwnerOnlyDashboardFilter()],
         DashboardTitle = "Nook jobs",
+    });
+}
+
+// Built-in cover gallery (wwwroot/covers) is served even when the SPA is not built.
+var coversDir = CoverGallery.CoversDirectory(app.Environment);
+if (Directory.Exists(coversDir))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        RequestPath = "/covers",
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(coversDir),
+        OnPrepareResponse = ctx => ctx.Context.Response.Headers.CacheControl = "public, max-age=604800",
     });
 }
 

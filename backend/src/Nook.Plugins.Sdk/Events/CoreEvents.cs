@@ -11,3 +11,7 @@ public sealed record NodeMoved(Guid WorkspaceId, Guid NodeId, Guid? OldParentId,
 public sealed record NodeDeleted(Guid WorkspaceId, Guid NodeId, Guid? UserId) : INookEvent;
 
 public sealed record UserRegistered(Guid WorkspaceId, Guid UserId, string Email) : INookEvent;
+
+public sealed record AttachmentCreated(Guid WorkspaceId, Guid NodeId, Guid AttachmentId) : INookEvent;
+
+public sealed record AttachmentDeleted(Guid WorkspaceId, Guid NodeId, Guid AttachmentId) : INookEvent;

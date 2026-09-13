@@ -14,7 +14,8 @@ public sealed record NookOptions(
     string? PublicUrl,
     bool AutoMigrate,
     bool BackgroundJobs,
-    string CookieName)
+    string CookieName,
+    long MaxUploadBytes)
 {
     public static NookOptions Load(IConfiguration config, IHostEnvironment env)
     {
@@ -23,6 +24,7 @@ public sealed record NookOptions(
         var db = Get("NOOK_DB", "Db") ?? config.GetConnectionString("Nook") ?? AppDbContextFactory.DefaultConnectionString;
         var autoMigrate = ParseBool(Get("NOOK_AUTO_MIGRATE", "AutoMigrate")) ?? env.IsDevelopment();
         var jobs = ParseBool(Get("NOOK_BACKGROUND_JOBS", "BackgroundJobs")) ?? true;
+        var maxUploadMb = int.TryParse(Get("NOOK_MAX_UPLOAD_MB", "MaxUploadMb"), out var mb) && mb > 0 ? mb : Nook.Application.Files.FilesOptions.DefaultMaxUploadMb;
         return new NookOptions(
             Db: db,
             DataDir: Get("NOOK_DATA_DIR", "DataDir") ?? "./data",
@@ -34,7 +36,8 @@ public sealed record NookOptions(
             PublicUrl: Get("NOOK_PUBLIC_URL", "PublicUrl"),
             AutoMigrate: autoMigrate,
             BackgroundJobs: jobs,
-            CookieName: "nook_session");
+            CookieName: "nook_session",
+            MaxUploadBytes: maxUploadMb * 1024L * 1024L);
     }
 
     private static bool? ParseBool(string? value) => value?.ToLowerInvariant() switch

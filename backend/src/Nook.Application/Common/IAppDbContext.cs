@@ -24,6 +24,7 @@ public interface IAppDbContext
     DbSet<Alias> Aliases { get; }
     DbSet<Attachment> Attachments { get; }
     DbSet<Blob> Blobs { get; }
+    DbSet<LinkPreview> LinkPreviews { get; }
     DbSet<OutboxEvent> EventsOutbox { get; }
     DbSet<Setting> Settings { get; }
     DbSet<PluginState> PluginStates { get; }

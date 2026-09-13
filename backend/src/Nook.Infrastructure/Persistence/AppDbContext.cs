@@ -28,6 +28,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<Alias> Aliases => Set<Alias>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
     public DbSet<Blob> Blobs => Set<Blob>();
+    public DbSet<LinkPreview> LinkPreviews => Set<LinkPreview>();
     public DbSet<OutboxEvent> EventsOutbox => Set<OutboxEvent>();
     public DbSet<Setting> Settings => Set<Setting>();
     public DbSet<PluginState> PluginStates => Set<PluginState>();
@@ -220,6 +221,28 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             b.Property(x => x.Key).HasMaxLength(200);
             b.Property(x => x.Value).HasColumnType("jsonb");
         });
+
+        // --- wave1: files ---
+        modelBuilder.Entity<Attachment>(b =>
+        {
+            b.Property(x => x.Purpose).HasMaxLength(20).IsRequired().HasDefaultValue("content");
+            b.Property(x => x.ExtractedText);
+            b.Property<NpgsqlTsVector>("text_ru").HasComputedColumnSql("to_tsvector('russian', coalesce(extracted_text, ''))", stored: true);
+            b.Property<NpgsqlTsVector>("text_en").HasComputedColumnSql("to_tsvector('english', coalesce(extracted_text, ''))", stored: true);
+            b.HasIndex("text_ru").HasMethod("gin").HasDatabaseName("ix_attachments_text_ru");
+            b.HasIndex("text_en").HasMethod("gin").HasDatabaseName("ix_attachments_text_en");
+            b.HasIndex(x => new { x.WorkspaceId, x.NodeId });
+        });
+
+        modelBuilder.Entity<LinkPreview>(b =>
+        {
+            b.ToTable("link_previews");
+            b.HasKey(x => x.UrlHash);
+            b.Property(x => x.UrlHash).HasMaxLength(64);
+            b.Property(x => x.Url).HasMaxLength(2048).IsRequired();
+            b.Property(x => x.Data).HasColumnType("jsonb");
+        });
+        // --- end wave1: files ---
     }
 
     private static ValueConverter<T?, string?> JsonConverter<T>() where T : class =>

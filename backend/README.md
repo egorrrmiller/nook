@@ -23,7 +23,8 @@ tests/Nook.IntegrationTests  WebApplicationFactory against a per-class PostgreSQ
 | Variable | Purpose |
 |---|---|
 | `NOOK_DB` | Npgsql connection string |
-| `NOOK_DATA_DIR` | blob storage directory (default `./data`) |
+| `NOOK_DATA_DIR` | blob storage directory (default `./data`): `blobs/`, `derivatives/`, `tmp/` |
+| `NOOK_MAX_UPLOAD_MB` | upload size limit for `/api/files` and `/api/files/from-url` (default 512; 413 beyond) |
 | `NOOK_OWNER_EMAIL` / `NOOK_OWNER_PASSWORD` | instance owner, seeded once when the `users` table is empty |
 | `NOOK_COLLAB_JWT_SECRET` | HS256 secret shared with `services/collab` |
 | `NOOK_INTERNAL_TOKEN` | `X-Internal-Token` for `/internal/**` (collab → backend) |
