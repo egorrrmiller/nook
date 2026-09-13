@@ -20,10 +20,12 @@ public sealed class NookHub(
 {
     public static string WorkspaceGroup(Guid workspaceId) => $"ws:{workspaceId}";
     public static string NodeGroup(Guid nodeId) => $"node:{nodeId}";
+    /// <summary>Per-user group so the server can target one user's connections (favoritesChanged, §7.6).</summary>
+    public static string UserGroup(Guid userId) => $"user:{userId}";
 
     private Guid UserId => NookClaims.GetUserId(Context.User) ?? throw new HubException("Unauthenticated.");
 
-    public override Task OnConnectedAsync()
+    public override async Task OnConnectedAsync()
     {
         var user = Context.User;
         var id = UserId;
@@ -31,7 +33,8 @@ public sealed class NookHub(
             id,
             user?.FindFirst(NookClaims.Name)?.Value ?? user?.FindFirst(NookClaims.Email)?.Value ?? "user",
             UserColor.For(id)));
-        return base.OnConnectedAsync();
+        await Groups.AddToGroupAsync(Context.ConnectionId, UserGroup(id), Context.ConnectionAborted);
+        await base.OnConnectedAsync();
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
@@ -104,4 +107,18 @@ public sealed class SignalRRealtimeNotifier(IHubContext<NookHub> hub) : IRealtim
 
     public Task DocumentChangedAsync(Guid workspaceId, Guid nodeId, int version, CancellationToken cancellationToken = default) =>
         hub.Clients.Group(NookHub.WorkspaceGroup(workspaceId)).SendAsync("documentChanged", new { nodeId, version }, cancellationToken);
+
+    // --- wave1: tree (contracts §7.6) ---
+
+    public Task FavoritesChangedAsync(Guid userId, Guid workspaceId, CancellationToken cancellationToken = default) =>
+        hub.Clients.Group(NookHub.UserGroup(userId)).SendAsync("favoritesChanged", new { workspaceId }, cancellationToken);
+
+    public Task NodeArchivedAsync(Guid workspaceId, Guid nodeId, DateTimeOffset? archivedAt, CancellationToken cancellationToken = default) =>
+        hub.Clients.Group(NookHub.WorkspaceGroup(workspaceId)).SendAsync("nodeArchived", new { id = nodeId, archivedAt }, cancellationToken);
+
+    public Task NodeRestoredAsync(Guid workspaceId, Application.Contracts.NodeDto node, CancellationToken cancellationToken = default) =>
+        hub.Clients.Group(NookHub.WorkspaceGroup(workspaceId)).SendAsync("nodeRestored", new { node }, cancellationToken);
+
+    public Task TrashChangedAsync(Guid workspaceId, CancellationToken cancellationToken = default) =>
+        hub.Clients.Group(NookHub.WorkspaceGroup(workspaceId)).SendAsync("trashChanged", new { workspaceId }, cancellationToken);
 }

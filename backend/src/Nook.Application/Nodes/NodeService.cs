@@ -13,6 +13,7 @@ public sealed class NodeService(
     IAppDbContext db,
     IWorkspaceContextAccessor contextAccessor,
     NodeAccess access,
+    TreeQueries tree,
     IClock clock,
     IOutbox outbox,
     IRealtimeNotifier realtime)
@@ -21,7 +22,8 @@ public sealed class NodeService(
 
     private IQueryable<Node> Scoped => db.Nodes.Where(n => n.WorkspaceId == Ctx.WorkspaceId);
 
-    public async Task<IReadOnlyList<NodeDto>> ListAsync(Guid? parentId, NodeKind? kind, CancellationToken ct)
+    /// <summary>Children of <paramref name="parentId"/> (roots when null). Archived nodes are hidden unless <paramref name="includeArchived"/>; trashed never listed.</summary>
+    public async Task<IReadOnlyList<NodeDto>> ListAsync(Guid? parentId, NodeKind? kind, bool includeArchived, CancellationToken ct)
     {
         var ctx = Ctx;
         List<Node> nodes;
@@ -33,14 +35,16 @@ public sealed class NodeService(
             var parentRole = await access.EffectiveRoleAsync(parent, ct) ?? throw new ForbiddenException("No access to the parent node.");
             var q = Scoped.AsNoTracking().Where(n => n.ParentId == pid && n.DeletedAt == null);
             if (kind is not null) q = q.Where(n => n.Kind == kind);
+            if (!includeArchived) q = q.Where(n => n.ArchivedAt == null);
             nodes = await q.OrderBy(n => n.Position).ThenBy(n => n.CreatedAt).ToListAsync(ct);
+            var withChildren = await tree.WithLiveChildrenAsync(nodes.Select(n => n.Id).ToList(), ct);
             // Every child inherits at least the parent's role; no per-child lookup needed unless a share upgrades it.
             var result = new List<NodeDto>(nodes.Count);
             foreach (var n in nodes)
             {
                 access.Remember(n);
                 var role = ctx.Shares.TryGetValue(n.Id, out var own) ? parentRole.Max(own) : parentRole;
-                result.Add(NodeDto.From(n, role));
+                result.Add(NodeDto.From(n, role, withChildren.Contains(n.Id)));
             }
             return result;
         }
@@ -49,36 +53,52 @@ public sealed class NodeService(
         {
             var q = Scoped.AsNoTracking().Where(n => n.ParentId == null && n.DeletedAt == null);
             if (kind is not null) q = q.Where(n => n.Kind == kind);
+            if (!includeArchived) q = q.Where(n => n.ArchivedAt == null);
             nodes = await q.OrderBy(n => n.Position).ThenBy(n => n.CreatedAt).ToListAsync(ct);
-            var result = new List<NodeDto>(nodes.Count);
-            foreach (var n in nodes)
-            {
-                access.Remember(n);
-                result.Add(NodeDto.From(n, await access.EffectiveRoleAsync(n, ct)));
-            }
-            return result;
+            var dtos = await tree.ToDtosAsync(nodes, ct);
+            return nodes.Where(n => dtos.ContainsKey(n.Id)).Select(n => dtos[n.Id]).ToList();
         }
 
         // Share-only caller: "roots" are the subtrees shared with them.
         var sharedIds = ctx.Shares.Keys.ToArray();
         var sharedQuery = Scoped.AsNoTracking().Where(n => sharedIds.Contains(n.Id) && n.DeletedAt == null);
         if (kind is not null) sharedQuery = sharedQuery.Where(n => n.Kind == kind);
+        if (!includeArchived) sharedQuery = sharedQuery.Where(n => n.ArchivedAt == null);
         nodes = await sharedQuery.OrderBy(n => n.Title).ToListAsync(ct);
-        var shared = new List<NodeDto>(nodes.Count);
-        foreach (var n in nodes)
-        {
-            access.Remember(n);
-            shared.Add(NodeDto.From(n, await access.EffectiveRoleAsync(n, ct)));
-        }
-        return shared;
+        var sharedDtos = await tree.ToDtosAsync(nodes, ct);
+        return nodes.Where(n => sharedDtos.ContainsKey(n.Id)).Select(n => sharedDtos[n.Id]).ToList();
     }
 
     public async Task<NodeDto> GetAsync(Guid id, CancellationToken ct)
     {
         var node = await Scoped.AsNoTracking().FirstOrDefaultAsync(n => n.Id == id && n.DeletedAt == null, ct)
                    ?? throw new NotFoundException("Node not found.");
-        var role = await access.EffectiveRoleAsync(node, ct) ?? throw new ForbiddenException("No access to this node.");
-        return NodeDto.From(node, role);
+        return await tree.ToDtoAsync(node, ct) ?? throw new ForbiddenException("No access to this node.");
+    }
+
+    /// <summary>Contracts §7.1: <c>GET /nodes/{id}/ancestors</c> — root → parent, self excluded.</summary>
+    public async Task<IReadOnlyList<NodeSummary>> AncestorsAsync(Guid id, CancellationToken ct)
+    {
+        var (node, _) = await RequireAsync(id, WorkspaceRole.Viewer, ct);
+        return await tree.BreadcrumbAsync(node.Id, node.ParentId, ct);
+    }
+
+    /// <summary>Contracts §7.1: sets/clears <c>archivedAt</c> on the node only (descendants inherit visibility client-side).</summary>
+    public async Task<NodeDto> SetArchivedAsync(Guid id, bool archived, CancellationToken ct)
+    {
+        var ctx = Ctx;
+        var (node, _) = await RequireAsync(id, WorkspaceRole.Editor, ct, tracking: true);
+        if ((node.ArchivedAt is not null) != archived)
+        {
+            node.ArchivedAt = archived ? clock.UtcNow : null;
+            node.UpdatedAt = clock.UtcNow;
+            outbox.Enqueue(new NodeArchived(ctx.WorkspaceId, node.Id, archived, ctx.UserId));
+            await db.SaveChangesAsync(ct);
+        }
+        var dto = await tree.ToDtoAsync(node, ct) ?? NodeDto.From(node, null);
+        await realtime.NodeArchivedAsync(ctx.WorkspaceId, node.Id, node.ArchivedAt, ct);
+        await realtime.NodeChangedAsync(ctx.WorkspaceId, dto with { EffectiveRole = null }, ct);
+        return dto;
     }
 
     /// <summary>Loads a live node and asserts the caller holds at least <paramref name="minimum"/> on it.</summary>
@@ -99,9 +119,11 @@ public sealed class NodeService(
         var title = (request.Title ?? "").Trim();
         if (title.Length > 1000) throw new ValidationException("Title is too long (max 1000 chars).");
 
+        var parentHadChildren = true;
         if (request.ParentId is Guid parentId)
         {
             await RequireAsync(parentId, WorkspaceRole.Editor, ct);
+            parentHadChildren = await tree.HasLiveChildrenAsync(parentId, ct);
         }
         else if (ctx.MembershipRole is null || !ctx.MembershipRole.Value.CanEdit())
         {
@@ -126,8 +148,14 @@ public sealed class NodeService(
         await db.SaveChangesAsync(ct);
 
         access.Remember(node);
-        var dto = NodeDto.From(node, await access.EffectiveRoleAsync(node, ct));
+        var dto = NodeDto.From(node, await access.EffectiveRoleAsync(node, ct), hasChildren: false);
         await realtime.NodeChangedAsync(ctx.WorkspaceId, dto with { EffectiveRole = null }, ct);
+        if (!parentHadChildren && request.ParentId is Guid pidChanged)
+        {
+            // The parent just gained its first child: push it so sidebars can show the expander without a refetch.
+            var parent = await Scoped.AsNoTracking().FirstOrDefaultAsync(n => n.Id == pidChanged, ct);
+            if (parent is not null) await realtime.NodeChangedAsync(ctx.WorkspaceId, NodeDto.From(parent, null, hasChildren: true), ct);
+        }
         return dto;
     }
 
@@ -147,7 +175,13 @@ public sealed class NodeService(
         }
         if (request.Icon.HasValue) { node.Icon = request.Icon.Value; changed.Add("icon"); }
         if (request.Cover.HasValue) { node.Cover = request.Cover.Value; changed.Add("cover"); }
-        if (request.PageSettings is not null) { node.PageSettings = request.PageSettings; changed.Add("pageSettings"); }
+        if (request.PageSettings is not null)
+        {
+            if (request.PageSettings.Font is { } font && !PageSettingsPatch.Fonts.Contains(font))
+                throw new ValidationException("pageSettings.font must be default|serif|mono.");
+            var merged = request.PageSettings.ApplyTo(node.PageSettings);
+            if (merged != node.PageSettings) { node.PageSettings = merged; changed.Add("pageSettings"); }
+        }
 
         if (request.ParentId.HasValue && request.ParentId.Value != node.ParentId)
         {
@@ -173,15 +207,14 @@ public sealed class NodeService(
             moved = true;
         }
 
-        if (changed.Count == 0 && !moved) return NodeDto.From(node, role);
+        if (changed.Count == 0 && !moved) return NodeDto.From(node, role, await tree.HasLiveChildrenAsync(node.Id, ct));
 
         node.UpdatedAt = clock.UtcNow;
         if (changed.Count > 0) outbox.Enqueue(new NodeUpdated(ctx.WorkspaceId, node.Id, changed.ToArray(), ctx.UserId));
         if (moved) outbox.Enqueue(new NodeMoved(ctx.WorkspaceId, node.Id, oldParent, node.ParentId, node.Position, ctx.UserId));
         await db.SaveChangesAsync(ct);
 
-        access.Remember(node);
-        var dto = NodeDto.From(node, await access.EffectiveRoleAsync(node, ct));
+        var dto = await tree.ToDtoAsync(node, ct) ?? NodeDto.From(node, null);
         if (changed.Count > 0) await realtime.NodeChangedAsync(ctx.WorkspaceId, dto with { EffectiveRole = null }, ct);
         if (moved) await realtime.NodeMovedAsync(ctx.WorkspaceId, node.Id, node.ParentId, node.Position, ct);
         return dto;
@@ -205,6 +238,7 @@ public sealed class NodeService(
         outbox.Enqueue(new NodeDeleted(ctx.WorkspaceId, node.Id, ctx.UserId));
         await db.SaveChangesAsync(ct);
         await realtime.NodeDeletedAsync(ctx.WorkspaceId, node.Id, ct);
+        await realtime.TrashChangedAsync(ctx.WorkspaceId, ct);
     }
 
     // --- shares -----------------------------------------------------------------------------------------------------

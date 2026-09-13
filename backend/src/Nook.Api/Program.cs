@@ -128,6 +128,11 @@ api.MapAuthEndpoints();
 api.MapWorkspaceEndpoints();
 api.MapNodeEndpoints();
 api.MapCollabEndpoints();
+api.MapTrashEndpoints();
+api.MapFavoriteEndpoints();
+api.MapRecentEndpoints();
+api.MapQuickFindEndpoints();
+api.MapSettingsEndpoints();
 api.MapNookPlugins(app.Services);
 
 app.MapInternalEndpoints();

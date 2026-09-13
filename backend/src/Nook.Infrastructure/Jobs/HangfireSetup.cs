@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nook.Infrastructure.Auth;
+using Nook.Application.Trash;
 using Nook.Infrastructure.Persistence;
 using Nook.Plugins.Sdk.Hosting;
 
@@ -38,6 +39,8 @@ public static class HangfireSetup
     {
         var recurring = services.GetRequiredService<IRecurringJobManager>();
         recurring.AddOrUpdate<MaintenanceJobs>("outbox-cleanup", j => j.CleanupOutboxAsync(CancellationToken.None), Cron.Daily());
+        // wave1: tree — contracts §7.2 retention (`trash.retentionDays`, default 30).
+        recurring.AddOrUpdate<MaintenanceJobs>("trash-purge", j => j.PurgeTrashAsync(CancellationToken.None), Cron.Hourly(), new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
 
         var registry = services.GetRequiredService<PluginRegistry>();
         foreach (var plugin in registry.Plugins)
@@ -80,11 +83,14 @@ public sealed class PluginJobRunner(PluginRegistry registry, IServiceProvider se
     }
 }
 
-public sealed class MaintenanceJobs(AppDbContext db)
+public sealed class MaintenanceJobs(AppDbContext db, TrashRetentionService trashRetention)
 {
     public Task<int> CleanupOutboxAsync(CancellationToken ct)
     {
         var cutoff = DateTimeOffset.UtcNow.AddDays(-7);
         return db.EventsOutbox.Where(e => e.DispatchedAt != null && e.DispatchedAt < cutoff).ExecuteDeleteAsync(ct);
     }
+
+    /// <summary>Recurring job <c>trash-purge</c> (hourly): see <see cref="TrashRetentionService"/>.</summary>
+    public Task<int> PurgeTrashAsync(CancellationToken ct) => trashRetention.PurgeExpiredAsync(ct);
 }

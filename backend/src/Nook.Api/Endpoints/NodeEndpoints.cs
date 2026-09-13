@@ -13,14 +13,38 @@ public static class NodeEndpoints
     {
         var g = api.MapGroup("/nodes").WithTags("Nodes").AddEndpointFilter<WorkspaceContextFilter>();
 
-        g.MapGet("/", async Task<Ok<IReadOnlyList<NodeDto>>> (Guid? parentId, string? kind, NodeService service, CancellationToken ct) =>
+        g.MapGet("/", async Task<Ok<IReadOnlyList<NodeDto>>> (Guid? parentId, string? kind, bool? includeArchived, NodeService service, CancellationToken ct) =>
             {
                 NodeKind? k = null;
                 if (!string.IsNullOrEmpty(kind)) k = NodeKindExtensions.ParseWire(kind) ?? throw new ValidationException("Invalid kind.");
-                return TypedResults.Ok(await service.ListAsync(parentId, k, ct));
+                return TypedResults.Ok(await service.ListAsync(parentId, k, includeArchived ?? false, ct));
             })
             .WithName("ListNodes")
-            .WithDescription("Children of parentId (roots when omitted). Requires the X-Workspace-Id header.");
+            .WithDescription("Children of parentId (roots when omitted). Archived nodes are hidden unless includeArchived=true; trashed nodes are never listed. Requires the X-Workspace-Id header.");
+
+        // --- wave1: tree (contracts §7.1) ---
+        g.MapGet("/{id:guid}/ancestors", async Task<Ok<IReadOnlyList<NodeSummary>>> (Guid id, NodeService service, CancellationToken ct) =>
+                TypedResults.Ok(await service.AncestorsAsync(id, ct)))
+            .WithName("GetNodeAncestors")
+            .WithDescription("Breadcrumb: root → parent (self excluded).");
+
+        g.MapPost("/{id:guid}/duplicate", async Task<Created<NodeDto>> (Guid id, DuplicateNodeRequest? request, HttpContext http, NodeDuplicateService service, CancellationToken ct) =>
+            {
+                var result = await service.DuplicateAsync(id, request ?? new DuplicateNodeRequest(null, null), ct);
+                // RFC 9110 Warning header: 199 = miscellaneous warning (page content could not be copied because collab was unavailable).
+                foreach (var w in result.Warnings) http.Response.Headers.Append("Warning", $"199 - \"{w.Replace("\"", "'")}\"");
+                return TypedResults.Created($"/api/nodes/{result.Node.Id}", result.Node);
+            })
+            .WithName("DuplicateNode")
+            .WithDescription("Deep-copies the subtree (title of the root gets \" (copy)\"), including page content via the collab service. A `Warning: 199` header is set when content could not be copied.");
+
+        g.MapPost("/{id:guid}/archive", async Task<Ok<NodeDto>> (Guid id, NodeService service, CancellationToken ct) =>
+                TypedResults.Ok(await service.SetArchivedAsync(id, true, ct)))
+            .WithName("ArchiveNode");
+
+        g.MapPost("/{id:guid}/unarchive", async Task<Ok<NodeDto>> (Guid id, NodeService service, CancellationToken ct) =>
+                TypedResults.Ok(await service.SetArchivedAsync(id, false, ct)))
+            .WithName("UnarchiveNode");
 
         g.MapGet("/{id:guid}", async Task<Ok<NodeDto>> (Guid id, NodeService service, CancellationToken ct) =>
                 TypedResults.Ok(await service.GetAsync(id, ct)))

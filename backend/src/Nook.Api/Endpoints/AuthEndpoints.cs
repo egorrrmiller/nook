@@ -55,6 +55,36 @@ public static class AuthEndpoints
             .WithTags("Auth")
             .WithName("Me");
 
+        // --- wave1: tree (contracts §7.5) ---
+        api.MapPatch("/me", async Task<Ok<UserDto>> (PatchMeRequest request, AuthService service, CancellationToken ct) =>
+                TypedResults.Ok(await service.PatchMeAsync(request, ct)))
+            .WithTags("Auth")
+            .WithName("PatchMe");
+
+        api.MapPost("/me/password", async Task<NoContent> (ChangePasswordRequest request, AuthService service, CancellationToken ct) =>
+            {
+                await service.ChangePasswordAsync(request, ct);
+                return TypedResults.NoContent();
+            })
+            .WithTags("Auth")
+            .WithName("ChangePassword")
+            .ProducesValidationProblem();
+
+        api.MapGet("/invites", async Task<Ok<IReadOnlyList<InviteDto>>> (AuthService service, CancellationToken ct) =>
+                TypedResults.Ok(await service.ListInvitesAsync(ct)))
+            .WithTags("Auth")
+            .WithMetadata(new RequireAdminScopeAttribute())
+            .WithName("ListInvites");
+
+        api.MapDelete("/invites/{code}", async Task<NoContent> (string code, AuthService service, CancellationToken ct) =>
+            {
+                await service.DeleteInviteAsync(code, ct);
+                return TypedResults.NoContent();
+            })
+            .WithTags("Auth")
+            .WithMetadata(new RequireAdminScopeAttribute())
+            .WithName("DeleteInvite");
+
         api.MapPost("/invites", async Task<Created<InviteCreatedResponse>> (CreateInviteRequest request, HttpContext http, AuthService service, NookOptions options, CancellationToken ct) =>
             {
                 var baseUrl = options.PublicUrl ?? $"{http.Request.Scheme}://{http.Request.Host}";

@@ -4,7 +4,12 @@ using Nook.Application.Auth;
 using Nook.Application.Collab;
 using Nook.Application.Common;
 using Nook.Application.Documents;
+using Nook.Application.Favorites;
 using Nook.Application.Nodes;
+using Nook.Application.Recents;
+using Nook.Application.Search;
+using Nook.Application.Settings;
+using Nook.Application.Trash;
 using Nook.Application.Workspaces;
 
 namespace Nook.Application;
@@ -24,6 +29,15 @@ public static class DependencyInjection
         services.AddScoped<NodeService>();
         services.AddScoped<CollabTokenService>();
         services.AddScoped<DocumentStoreService>();
+        // --- wave1: tree ---
+        services.AddScoped<TreeQueries>();
+        services.AddScoped<NodeDuplicateService>();
+        services.AddScoped<TrashService>();
+        services.AddScoped<TrashRetentionService>();
+        services.AddScoped<FavoriteService>();
+        services.AddScoped<RecentService>();
+        services.AddScoped<QuickFindService>();
+        services.AddScoped<SettingsService>();
         return services;
     }
 }

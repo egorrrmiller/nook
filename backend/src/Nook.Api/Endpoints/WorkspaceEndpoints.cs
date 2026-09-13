@@ -22,6 +22,19 @@ public static class WorkspaceEndpoints
             })
             .WithName("CreateWorkspace");
 
+        // --- wave1: tree (contracts §7.5) ---
+        g.MapPatch("/{id:guid}", async Task<Ok<WorkspaceSummary>> (Guid id, PatchWorkspaceRequest request, WorkspaceService service, CancellationToken ct) =>
+                TypedResults.Ok(await service.PatchAsync(id, request, ct)))
+            .WithName("PatchWorkspace");
+
+        g.MapDelete("/{id:guid}", async Task<NoContent> (Guid id, WorkspaceService service, CancellationToken ct) =>
+            {
+                await service.DeleteAsync(id, ct);
+                return TypedResults.NoContent();
+            })
+            .WithName("DeleteWorkspace")
+            .WithDescription("Owner only; refuses to delete the caller's personal workspace (400).");
+
         g.MapGet("/{id:guid}/members", async Task<Ok<IReadOnlyList<WorkspaceMemberDto>>> (Guid id, WorkspaceService service, CancellationToken ct) =>
                 TypedResults.Ok(await service.ListMembersAsync(id, ct)))
             .WithName("ListWorkspaceMembers");

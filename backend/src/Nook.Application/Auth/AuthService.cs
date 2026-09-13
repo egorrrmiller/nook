@@ -47,6 +47,56 @@ public sealed class AuthService(
     public async Task<AuthResponse> BuildAuthResponseAsync(User user, CancellationToken ct) =>
         new(UserDto.From(user), await workspaces.ListForUserAsync(user.Id, ct));
 
+    // --- account (contracts §7.5) -----------------------------------------------------------------------------------
+
+    public async Task<UserDto> PatchMeAsync(PatchMeRequest request, CancellationToken ct)
+    {
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == currentUser.UserId, ct) ?? throw new UnauthorizedException();
+        if (request.DisplayName is not null)
+        {
+            var name = request.DisplayName.Trim();
+            if (name.Length is 0 or > 100) throw new ValidationException("displayName is required (max 100 chars).");
+            user.DisplayName = name;
+        }
+        if (request.AvatarUrl.HasValue)
+        {
+            var url = string.IsNullOrWhiteSpace(request.AvatarUrl.Value) ? null : request.AvatarUrl.Value.Trim();
+            if (url is not null && (url.Length > 2000 || !(url.StartsWith('/') || Uri.TryCreate(url, UriKind.Absolute, out _))))
+                throw new ValidationException("avatarUrl must be a URL or a site-relative path (max 2000 chars).");
+            user.AvatarUrl = url;
+        }
+        await db.SaveChangesAsync(ct);
+        return UserDto.From(user);
+    }
+
+    public async Task ChangePasswordAsync(ChangePasswordRequest request, CancellationToken ct)
+    {
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == currentUser.UserId, ct) ?? throw new UnauthorizedException();
+        if ((request.NewPassword ?? "").Length < MinPasswordLength)
+            throw new ValidationException($"Password must be at least {MinPasswordLength} characters.", new Dictionary<string, string[]> { ["newPassword"] = [$"At least {MinPasswordLength} characters."] });
+        if (hasher.Verify(user, user.PasswordHash, request.CurrentPassword ?? "") is null)
+            throw new ValidationException("Current password is incorrect.", new Dictionary<string, string[]> { ["currentPassword"] = ["Incorrect password."] });
+        user.PasswordHash = hasher.Hash(user, request.NewPassword!);
+        await db.SaveChangesAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<InviteDto>> ListInvitesAsync(CancellationToken ct)
+    {
+        if (!currentUser.IsInstanceOwner) throw new ForbiddenException("Only the instance owner can manage invites.");
+        return await db.Invites.AsNoTracking()
+            .OrderByDescending(i => i.CreatedAt)
+            .Select(i => new InviteDto(i.Code, i.Email, i.ExpiresAt, i.UsedAt, i.CreatedAt))
+            .ToListAsync(ct);
+    }
+
+    public async Task DeleteInviteAsync(string code, CancellationToken ct)
+    {
+        if (!currentUser.IsInstanceOwner) throw new ForbiddenException("Only the instance owner can manage invites.");
+        var invite = await db.Invites.FirstOrDefaultAsync(i => i.Code == code, ct) ?? throw new NotFoundException("Invite not found.");
+        db.Invites.Remove(invite);
+        await db.SaveChangesAsync(ct);
+    }
+
     // --- invites --------------------------------------------------------------------------------------------------
 
     public async Task<InviteCheckResponse> CheckInviteAsync(string code, CancellationToken ct)

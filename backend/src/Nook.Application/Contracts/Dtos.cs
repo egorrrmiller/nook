@@ -74,7 +74,8 @@ public sealed record PatchNodeRequest(
     Optional<NodeCover?> Cover,
     Optional<Guid?> ParentId,
     string? Position,
-    PageSettings? PageSettings);
+    /// <summary>Contracts §7.1: partial page settings, merged into the stored ones (wave1: tree).</summary>
+    Nodes.PageSettingsPatch? PageSettings);
 
 public sealed record NodeShareDto(Guid NodeId, Guid UserId, string Email, string DisplayName, string Role, DateTimeOffset CreatedAt);
 

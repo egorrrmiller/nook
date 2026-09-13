@@ -73,6 +73,39 @@ public sealed class WorkspaceService(IAppDbContext db, ICurrentUser currentUser,
         await db.SaveChangesAsync(ct);
     }
 
+    // --- wave1: tree (contracts §7.5) -----------------------------------------------------------------------------
+
+    public async Task<WorkspaceSummary> PatchAsync(Guid workspaceId, PatchWorkspaceRequest request, CancellationToken ct)
+    {
+        await RequireRoleAsync(workspaceId, WorkspaceRole.Owner, ct);
+        var ws = await db.Workspaces.FirstOrDefaultAsync(w => w.Id == workspaceId, ct) ?? throw new NotFoundException("Workspace not found.");
+        if (request.Name is not null)
+        {
+            var name = request.Name.Trim();
+            if (name.Length is 0 or > 200) throw new ValidationException("Name is required (max 200 chars).");
+            ws.Name = name;
+        }
+        if (request.Icon.HasValue) ws.Icon = request.Icon.Value;
+        await db.SaveChangesAsync(ct);
+        return WorkspaceSummary.From(ws, WorkspaceRole.Owner);
+    }
+
+    /// <summary>Deletes a workspace with everything inside it. Personal workspaces are refused (400).</summary>
+    public async Task DeleteAsync(Guid workspaceId, CancellationToken ct)
+    {
+        await RequireRoleAsync(workspaceId, WorkspaceRole.Owner, ct);
+        var ws = await db.Workspaces.FirstOrDefaultAsync(w => w.Id == workspaceId, ct) ?? throw new NotFoundException("Workspace not found.");
+        if (ws.IsPersonal) throw new ValidationException("Personal workspaces cannot be deleted.");
+
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        // Nodes first in one statement (self-referencing FK is checked at statement end); everything hanging off them cascades.
+        await db.Database.ExecuteSqlAsync($"DELETE FROM nodes WHERE workspace_id = {workspaceId}", ct);
+        await db.Database.ExecuteSqlAsync($"DELETE FROM settings WHERE scope = {Domain.Entities.SettingScopes.Workspace} AND scope_id = {workspaceId}", ct);
+        db.Workspaces.Remove(ws);
+        await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+    }
+
     private async Task RequireRoleAsync(Guid workspaceId, WorkspaceRole minimum, CancellationToken ct)
     {
         var role = await db.WorkspaceMembers.AsNoTracking()

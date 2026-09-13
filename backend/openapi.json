@@ -58,9 +58,91 @@
                         }
                     }
                 }
+            },
+            "patch": {
+                "tags": [
+                    "Auth"
+                ],
+                "operationId": "PatchMe",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchMeRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserDto"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/me/password": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "operationId": "ChangePassword",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChangePasswordRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "/api/invites": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "operationId": "ListInvites",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/InviteDto"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "post": {
                 "tags": [
                     "Auth"
@@ -86,6 +168,29 @@
                                 }
                             }
                         }
+                    }
+                }
+            }
+        },
+        "/api/invites/{code}": {
+            "delete": {
+                "tags": [
+                    "Auth"
+                ],
+                "operationId": "DeleteInvite",
+                "parameters": [
+                    {
+                        "name": "code",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
                     }
                 }
             }
@@ -370,6 +475,70 @@
                 }
             }
         },
+        "/api/workspaces/{id}": {
+            "patch": {
+                "tags": [
+                    "Workspaces"
+                ],
+                "operationId": "PatchWorkspace",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchWorkspaceRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkspaceSummary"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Workspaces"
+                ],
+                "description": "Owner only; refuses to delete the caller's personal workspace (400).",
+                "operationId": "DeleteWorkspace",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
         "/api/workspaces/{id}/members": {
             "get": {
                 "tags": [
@@ -481,7 +650,7 @@
                 "tags": [
                     "Nodes"
                 ],
-                "description": "Children of parentId (roots when omitted). Requires the X-Workspace-Id header.",
+                "description": "Children of parentId (roots when omitted). Archived nodes are hidden unless includeArchived=true; trashed nodes are never listed. Requires the X-Workspace-Id header.",
                 "operationId": "ListNodes",
                 "parameters": [
                     {
@@ -497,6 +666,13 @@
                         "in": "query",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    {
+                        "name": "includeArchived",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean"
                         }
                     }
                 ],
@@ -534,6 +710,151 @@
                 "responses": {
                     "201": {
                         "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NodeDto"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/nodes/{id}/ancestors": {
+            "get": {
+                "tags": [
+                    "Nodes"
+                ],
+                "description": "Breadcrumb: root \u2192 parent (self excluded).",
+                "operationId": "GetNodeAncestors",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/NodeSummary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/nodes/{id}/duplicate": {
+            "post": {
+                "tags": [
+                    "Nodes"
+                ],
+                "description": "Deep-copies the subtree (title of the root gets \" (copy)\"), including page content via the collab service. A `Warning: 199` header is set when content could not be copied.",
+                "operationId": "DuplicateNode",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "oneOf": [
+                                    {
+                                        "type": "null"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/DuplicateNodeRequest"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NodeDto"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/nodes/{id}/archive": {
+            "post": {
+                "tags": [
+                    "Nodes"
+                ],
+                "operationId": "ArchiveNode",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NodeDto"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/nodes/{id}/unarchive": {
+            "post": {
+                "tags": [
+                    "Nodes"
+                ],
+                "operationId": "UnarchiveNode",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -743,6 +1064,474 @@
                 }
             }
         },
+        "/api/trash": {
+            "get": {
+                "tags": [
+                    "Trash"
+                ],
+                "description": "Trashed subtree roots, newest first. `q` filters by title (ci substring), `limit` defaults to 50 (max 200).",
+                "operationId": "ListTrash",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "pattern": "^-?(?:0|[1-9]\\d*)$",
+                            "type": [
+                                "integer",
+                                "string"
+                            ],
+                            "format": "int32"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/TrashItem"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Trash"
+                ],
+                "description": "Permanently deletes everything in the trash the caller may edit.",
+                "operationId": "EmptyTrash",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/api/trash/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Trash"
+                ],
+                "description": "Restores the subtree. Target = parentId ?? original parent if alive ?? workspace root.",
+                "operationId": "RestoreNode",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "oneOf": [
+                                    {
+                                        "type": "null"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/RestoreNodeRequest"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NodeDto"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/trash/{id}": {
+            "delete": {
+                "tags": [
+                    "Trash"
+                ],
+                "description": "Permanently deletes the trashed subtree (nodes, documents, updates, blocks, links, snapshots, attachment rows).",
+                "operationId": "PurgeNode",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/api/favorites": {
+            "get": {
+                "tags": [
+                    "Favorites"
+                ],
+                "description": "The caller's favorites in this workspace, ordered by position (fractional index).",
+                "operationId": "ListFavorites",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/FavoriteDto"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/favorites/{nodeId}": {
+            "put": {
+                "tags": [
+                    "Favorites"
+                ],
+                "description": "Idempotent. `position` omitted = append (or keep the current position when already a favorite).",
+                "operationId": "PutFavorite",
+                "parameters": [
+                    {
+                        "name": "nodeId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "oneOf": [
+                                    {
+                                        "type": "null"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/PutFavoriteRequest"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FavoriteDto"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Favorites"
+                ],
+                "operationId": "DeleteFavorite",
+                "parameters": [
+                    {
+                        "name": "nodeId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/api/recents": {
+            "get": {
+                "tags": [
+                    "Recents"
+                ],
+                "description": "Newest first; trashed nodes excluded. `limit` defaults to 20 (max 100).",
+                "operationId": "ListRecents",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "pattern": "^-?(?:0|[1-9]\\d*)$",
+                            "type": [
+                                "integer",
+                                "string"
+                            ],
+                            "format": "int32"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/RecentDto"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/recents/{nodeId}": {
+            "post": {
+                "tags": [
+                    "Recents"
+                ],
+                "description": "Records a visit; the server keeps the last 100 per user and workspace.",
+                "operationId": "RecordRecent",
+                "parameters": [
+                    {
+                        "name": "nodeId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/api/search/quick": {
+            "get": {
+                "tags": [
+                    "Search"
+                ],
+                "description": "Title + alias lookup: exact > prefix > trigram similarity (pg_trgm, threshold 0.2). Trashed excluded, archived last. Empty `q` = most recently updated pages. `kinds` = comma-separated NodeKind list.",
+                "operationId": "QuickFind",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "pattern": "^-?(?:0|[1-9]\\d*)$",
+                            "type": [
+                                "integer",
+                                "string"
+                            ],
+                            "format": "int32"
+                        }
+                    },
+                    {
+                        "name": "kinds",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/QuickHit"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/me/settings": {
+            "get": {
+                "tags": [
+                    "Settings"
+                ],
+                "operationId": "GetUserSettings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/me/settings/{key}": {
+            "put": {
+                "tags": [
+                    "Settings"
+                ],
+                "description": "`value` is any JSON (\u2264 16 KB).",
+                "operationId": "PutUserSetting",
+                "parameters": [
+                    {
+                        "name": "key",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PutSettingRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/api/workspaces/{id}/settings": {
+            "get": {
+                "tags": [
+                    "Settings"
+                ],
+                "description": "Members read.",
+                "operationId": "GetWorkspaceSettings",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/workspaces/{id}/settings/{key}": {
+            "put": {
+                "tags": [
+                    "Settings"
+                ],
+                "description": "Owner writes. `trash.retentionDays` (integer 1..3650, default 30) drives the hourly `trash-purge` job.",
+                "operationId": "PutWorkspaceSetting",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "key",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PutSettingRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
         "/api/plugins/sample/ping": {
             "get": {
                 "tags": [
@@ -940,6 +1729,21 @@
                     }
                 }
             },
+            "ChangePasswordRequest": {
+                "required": [
+                    "currentPassword",
+                    "newPassword"
+                ],
+                "type": "object",
+                "properties": {
+                    "currentPassword": {
+                        "type": "string"
+                    },
+                    "newPassword": {
+                        "type": "string"
+                    }
+                }
+            },
             "CollabTokenResponse": {
                 "required": [
                     "token",
@@ -1071,6 +1875,48 @@
                                 "$ref": "#/components/schemas/NodeIcon"
                             }
                         ]
+                    }
+                }
+            },
+            "DuplicateNodeRequest": {
+                "required": [
+                    "parentId",
+                    "position"
+                ],
+                "type": "object",
+                "properties": {
+                    "parentId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "uuid"
+                    },
+                    "position": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    }
+                }
+            },
+            "FavoriteDto": {
+                "required": [
+                    "nodeId",
+                    "position",
+                    "node"
+                ],
+                "type": "object",
+                "properties": {
+                    "nodeId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "position": {
+                        "type": "string"
+                    },
+                    "node": {
+                        "$ref": "#/components/schemas/NodeDto"
                     }
                 }
             },
@@ -1273,6 +2119,42 @@
                     }
                 }
             },
+            "InviteDto": {
+                "required": [
+                    "code",
+                    "email",
+                    "expiresAt",
+                    "usedAt",
+                    "createdAt"
+                ],
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "expiresAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "usedAt": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "date-time"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
             "JsonElement": {},
             "LoginRequest": {
                 "required": [
@@ -1413,7 +2295,12 @@
                             "null",
                             "string"
                         ]
-                    }
+                    },
+                    "hasChildren": {
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "properties": {}
                 }
             },
             "NodeIcon": {
@@ -1462,6 +2349,45 @@
                     "createdAt": {
                         "type": "string",
                         "format": "date-time"
+                    }
+                }
+            },
+            "NodeSummary": {
+                "required": [
+                    "id",
+                    "title",
+                    "icon",
+                    "kind",
+                    "parentId"
+                ],
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "icon": {
+                        "oneOf": [
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NodeIcon"
+                            }
+                        ]
+                    },
+                    "kind": {
+                        "type": "string"
+                    },
+                    "parentId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "uuid"
                     }
                 }
             },
@@ -1518,6 +2444,12 @@
                     }
                 }
             },
+            "OptionalOfstring": {
+                "type": [
+                    "null",
+                    "string"
+                ]
+            },
             "PageSettings": {
                 "type": "object",
                 "properties": {
@@ -1536,6 +2468,59 @@
                     "locked": {
                         "type": "boolean",
                         "default": false
+                    }
+                }
+            },
+            "PageSettingsPatch": {
+                "required": [
+                    "font",
+                    "smallText",
+                    "fullWidth",
+                    "locked"
+                ],
+                "type": "object",
+                "properties": {
+                    "font": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "smallText": {
+                        "type": [
+                            "null",
+                            "boolean"
+                        ]
+                    },
+                    "fullWidth": {
+                        "type": [
+                            "null",
+                            "boolean"
+                        ]
+                    },
+                    "locked": {
+                        "type": [
+                            "null",
+                            "boolean"
+                        ]
+                    }
+                }
+            },
+            "PatchMeRequest": {
+                "required": [
+                    "displayName",
+                    "avatarUrl"
+                ],
+                "type": "object",
+                "properties": {
+                    "displayName": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "avatarUrl": {
+                        "$ref": "#/components/schemas/OptionalOfstring"
                     }
                 }
             },
@@ -1577,9 +2562,27 @@
                                 "type": "null"
                             },
                             {
-                                "$ref": "#/components/schemas/PageSettings"
+                                "$ref": "#/components/schemas/PageSettingsPatch"
                             }
                         ]
+                    }
+                }
+            },
+            "PatchWorkspaceRequest": {
+                "required": [
+                    "name",
+                    "icon"
+                ],
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "icon": {
+                        "$ref": "#/components/schemas/OptionalOfNodeIcon"
                     }
                 }
             },
@@ -1621,6 +2624,81 @@
                     }
                 }
             },
+            "PutFavoriteRequest": {
+                "required": [
+                    "position"
+                ],
+                "type": "object",
+                "properties": {
+                    "position": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    }
+                }
+            },
+            "PutSettingRequest": {
+                "required": [
+                    "value"
+                ],
+                "type": "object",
+                "properties": {
+                    "value": {
+                        "$ref": "#/components/schemas/JsonElement"
+                    }
+                }
+            },
+            "QuickHit": {
+                "required": [
+                    "node",
+                    "breadcrumb",
+                    "matchedAlias",
+                    "score"
+                ],
+                "type": "object",
+                "properties": {
+                    "node": {
+                        "$ref": "#/components/schemas/NodeDto"
+                    },
+                    "breadcrumb": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/NodeSummary"
+                        }
+                    },
+                    "matchedAlias": {
+                        "type": [
+                            "null",
+                            "string"
+                        ]
+                    },
+                    "score": {
+                        "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+                        "type": [
+                            "number",
+                            "string"
+                        ],
+                        "format": "double"
+                    }
+                }
+            },
+            "RecentDto": {
+                "required": [
+                    "node",
+                    "visitedAt"
+                ],
+                "type": "object",
+                "properties": {
+                    "node": {
+                        "$ref": "#/components/schemas/NodeDto"
+                    },
+                    "visitedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
             "RegisterRequest": {
                 "required": [
                     "inviteCode",
@@ -1641,6 +2719,55 @@
                     },
                     "displayName": {
                         "type": "string"
+                    }
+                }
+            },
+            "RestoreNodeRequest": {
+                "required": [
+                    "parentId"
+                ],
+                "type": "object",
+                "properties": {
+                    "parentId": {
+                        "type": [
+                            "null",
+                            "string"
+                        ],
+                        "format": "uuid"
+                    }
+                }
+            },
+            "TrashItem": {
+                "required": [
+                    "node",
+                    "deletedAt",
+                    "originalParent",
+                    "breadcrumb"
+                ],
+                "type": "object",
+                "properties": {
+                    "node": {
+                        "$ref": "#/components/schemas/NodeDto"
+                    },
+                    "deletedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "originalParent": {
+                        "oneOf": [
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NodeSummary"
+                            }
+                        ]
+                    },
+                    "breadcrumb": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/NodeSummary"
+                        }
                     }
                 }
             },
@@ -1759,6 +2886,21 @@
         },
         {
             "name": "Nodes"
+        },
+        {
+            "name": "Trash"
+        },
+        {
+            "name": "Favorites"
+        },
+        {
+            "name": "Recents"
+        },
+        {
+            "name": "Search"
+        },
+        {
+            "name": "Settings"
         },
         {
             "name": "plugin:sample"
