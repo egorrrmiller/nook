@@ -36,6 +36,12 @@ export default defineConfig({
       devOptions: { enabled: false },
     }),
   ],
+  // pnpm keeps one React copy per resolution path; dedupe + pre-bundling the drag-and-drop
+  // packages together keeps them on the app's React (otherwise: "Invalid hook call" in useSortable).
+  resolve: { dedupe: ['react', 'react-dom'] },
+  optimizeDeps: {
+    include: ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
+  },
   server: {
     port: 5173,
     strictPort: true,

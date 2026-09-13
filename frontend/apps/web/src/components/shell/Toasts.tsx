@@ -12,6 +12,7 @@ export function Toasts() {
         <div
           key={t.id}
           role="status"
+          data-testid="toast"
           className="pointer-events-auto rounded-[var(--radius)] bg-[rgb(15,15,15)] px-3 py-2 text-sm text-white shadow-[var(--shadow)]"
         >
           {t.message}

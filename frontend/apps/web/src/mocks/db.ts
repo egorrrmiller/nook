@@ -357,6 +357,232 @@ export function fakeJwt(claims: Record<string, unknown>): string {
 
 // --- tree helpers (frontend-shell) ---
 
+import type { NodeSummary, Breadcrumb, TrashItem, QuickHit, Favorite, Recent } from '@nook/api-client';
+
+export function nodeSummary(n: Node): NodeSummary {
+  return { id: n.id, title: n.title, icon: n.icon ?? null, kind: n.kind, parentId: n.parentId ?? null };
+}
+
+/** root → … → parent (self excluded), following parent links through live or deleted nodes. */
+export function breadcrumbOf(state: MockState, nodeId: string): Breadcrumb {
+  const byId = new Map(state.nodes.map((n) => [n.id, n]));
+  const chain: NodeSummary[] = [];
+  const seen = new Set<string>();
+  let id = byId.get(nodeId)?.parentId ?? null;
+  while (id && !seen.has(id)) {
+    seen.add(id);
+    const n = byId.get(id);
+    if (!n) break;
+    chain.unshift(nodeSummary(n));
+    id = n.parentId ?? null;
+  }
+  return chain;
+}
+
+export function refreshHasChildren(state: MockState, nodeId: string | null | undefined): void {
+  if (!nodeId) return;
+  const node = state.nodes.find((n) => n.id === nodeId);
+  if (node) node.hasChildren = state.nodes.some((c) => c.parentId === nodeId && !c.deletedAt);
+}
+
+function subtree(state: MockState, rootId: string, includeDeleted: boolean): Node[] {
+  const out: Node[] = [];
+  const stack = [rootId];
+  while (stack.length) {
+    const id = stack.pop()!;
+    for (const c of state.nodes) {
+      if (c.parentId === id && (includeDeleted || !c.deletedAt)) {
+        out.push(c);
+        stack.push(c.id);
+      }
+    }
+  }
+  return out;
+}
+
+export function listTrash(state: MockState, workspaceId: string, q: string | undefined, limit: number): TrashItem[] {
+  const byId = new Map(state.nodes.map((n) => [n.id, n]));
+  const needle = q?.trim().toLowerCase();
+  return state.nodes
+    .filter((n) => n.workspaceId === workspaceId && n.deletedAt)
+    .filter((n) => !n.parentId || !byId.get(n.parentId)?.deletedAt)
+    .filter((n) => !needle || n.title.toLowerCase().includes(needle))
+    .sort((a, b) => (a.deletedAt! < b.deletedAt! ? 1 : -1))
+    .slice(0, limit)
+    .map((n) => {
+      const parent = n.parentId ? byId.get(n.parentId) : null;
+      return {
+        node: n,
+        deletedAt: n.deletedAt!,
+        originalParent: parent ? nodeSummary(parent) : null,
+        breadcrumb: breadcrumbOf(state, n.id),
+      };
+    });
+}
+
+export function restoreNode(state: MockState, id: string, parentId: string | null | undefined): Node | null {
+  const node = state.nodes.find((n) => n.id === id && n.deletedAt);
+  if (!node) return null;
+  const original = node.parentId ? state.nodes.find((n) => n.id === node.parentId) : null;
+  const target = parentId !== undefined ? parentId : original && !original.deletedAt ? original.id : null;
+  const oldParent = node.parentId ?? null;
+  for (const n of [node, ...subtree(state, node.id, true)]) n.deletedAt = null;
+  node.parentId = target;
+  node.updatedAt = new Date().toISOString();
+  refreshHasChildren(state, oldParent);
+  refreshHasChildren(state, target);
+  return node;
+}
+
+export function purgeNode(state: MockState, id: string): boolean {
+  const node = state.nodes.find((n) => n.id === id && n.deletedAt);
+  if (!node) return false;
+  const ids = new Set([node.id, ...subtree(state, node.id, true).map((n) => n.id)]);
+  state.nodes = state.nodes.filter((n) => !ids.has(n.id));
+  state.favorites = state.favorites.filter((f) => !ids.has(f.nodeId));
+  state.recents = state.recents.filter((r) => !ids.has(r.nodeId));
+  return true;
+}
+
+export function emptyTrash(state: MockState, workspaceId: string): void {
+  for (const item of listTrash(state, workspaceId, undefined, Number.MAX_SAFE_INTEGER)) purgeNode(state, item.node.id);
+}
+
+export function setArchived(state: MockState, id: string, archived: boolean): Node | null {
+  const node = state.nodes.find((n) => n.id === id && !n.deletedAt);
+  if (!node) return null;
+  node.archivedAt = archived ? new Date().toISOString() : null;
+  node.updatedAt = new Date().toISOString();
+  return node;
+}
+
+export function duplicateNode(
+  state: MockState,
+  id: string,
+  body: { parentId?: string | null; position?: string },
+): Node | null {
+  const src = state.nodes.find((n) => n.id === id && !n.deletedAt);
+  if (!src) return null;
+  const stamp = new Date().toISOString();
+  const copy = (n: Node, parentId: string | null, isRoot: boolean): Node => {
+    const dup: Node = {
+      ...n,
+      id: uuid(),
+      parentId,
+      title: isRoot ? `${n.title || 'Untitled'} (copy)` : n.title,
+      position: isRoot ? (body.position ?? n.position + 'V') : n.position,
+      createdAt: stamp,
+      updatedAt: stamp,
+    };
+    state.nodes.push(dup);
+    for (const c of state.nodes.filter((x) => x.parentId === n.id && !x.deletedAt)) copy(c, dup.id, false);
+    return dup;
+  };
+  const target = body.parentId !== undefined ? body.parentId : (src.parentId ?? null);
+  const dup = copy(src, target, true);
+  refreshHasChildren(state, target);
+  return dup;
+}
+
+/** Dice coefficient over character bigrams — a stand-in for pg_trgm similarity. */
+function similarity(a: string, b: string): number {
+  const grams = (s: string) => {
+    const g = new Map<string, number>();
+    const t = ` ${s} `;
+    for (let i = 0; i < t.length - 1; i++) {
+      const k = t.slice(i, i + 2);
+      g.set(k, (g.get(k) ?? 0) + 1);
+    }
+    return g;
+  };
+  const ga = grams(a);
+  const gb = grams(b);
+  let inter = 0;
+  let total = 0;
+  for (const [k, v] of ga) {
+    total += v;
+    inter += Math.min(v, gb.get(k) ?? 0);
+  }
+  for (const v of gb.values()) total += v;
+  return total ? (2 * inter) / total : 0;
+}
+
+export function quickFind(
+  state: MockState,
+  workspaceId: string,
+  q: string | undefined,
+  limit: number,
+  kinds: string[] | undefined,
+): QuickHit[] {
+  const live = state.nodes.filter(
+    (n) => n.workspaceId === workspaceId && !n.deletedAt && (!kinds?.length || kinds.includes(n.kind)),
+  );
+  const needle = q?.trim().toLowerCase() ?? '';
+  if (!needle) {
+    return live
+      .filter((n) => !n.archivedAt)
+      .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
+      .slice(0, limit)
+      .map((n) => ({ node: n, breadcrumb: breadcrumbOf(state, n.id), score: 1 }));
+  }
+  const score = (value: string): number => {
+    const v = value.toLowerCase();
+    if (v === needle) return 3;
+    if (v.startsWith(needle)) return 2;
+    if (v.includes(needle)) return 1.5;
+    const sim = similarity(v, needle);
+    return sim >= 0.2 ? sim : 0;
+  };
+  const hits: QuickHit[] = [];
+  for (const n of live) {
+    let best = score(n.title);
+    let matchedAlias: string | undefined;
+    for (const a of state.aliases.filter((x) => x.nodeId === n.id)) {
+      const s = score(a.value);
+      if (s > best) {
+        best = s;
+        matchedAlias = a.value;
+      }
+    }
+    if (best > 0) hits.push({ node: n, breadcrumb: breadcrumbOf(state, n.id), matchedAlias, score: best });
+  }
+  return hits
+    .sort((a, b) => Number(!!a.node.archivedAt) - Number(!!b.node.archivedAt) || b.score - a.score)
+    .slice(0, limit);
+}
+
+export function listFavorites(state: MockState, userId: string, workspaceId: string): Favorite[] {
+  const byId = new Map(state.nodes.map((n) => [n.id, n]));
+  return state.favorites
+    .filter((f) => f.userId === userId && f.workspaceId === workspaceId)
+    .map((f) => ({ f, node: byId.get(f.nodeId) }))
+    .filter((x): x is { f: MockFavorite; node: Node } => !!x.node && !x.node.deletedAt)
+    .sort((a, b) => (a.f.position < b.f.position ? -1 : 1))
+    .map(({ f, node }) => ({ nodeId: f.nodeId, position: f.position, node }));
+}
+
+export function listRecents(state: MockState, userId: string, workspaceId: string, limit: number): Recent[] {
+  const byId = new Map(state.nodes.map((n) => [n.id, n]));
+  return state.recents
+    .filter((r) => r.userId === userId && r.workspaceId === workspaceId)
+    .sort((a, b) => (a.visitedAt < b.visitedAt ? 1 : -1))
+    .map((r) => ({ node: byId.get(r.nodeId), visitedAt: r.visitedAt }))
+    .filter((r): r is Recent => !!r.node && !r.node.deletedAt)
+    .slice(0, limit);
+}
+
+export function getSettings(state: MockState, scope: MockSetting['scope'], scopeId: string): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const s of state.settings) if (s.scope === scope && s.scopeId === scopeId) out[s.key] = s.value;
+  return out;
+}
+
+export function putSetting(state: MockState, scope: MockSetting['scope'], scopeId: string, key: string, value: unknown) {
+  const existing = state.settings.find((s) => s.scope === scope && s.scopeId === scopeId && s.key === key);
+  if (existing) existing.value = value;
+  else state.settings.push({ scope, scopeId, key, value });
+}
+
 // --- files helpers (frontend-editor) ---
 
 // --- knowledge helpers (frontend-knowledge) ---

@@ -9,7 +9,8 @@ test('login → sidebar → create page → open it', async ({ page }) => {
   await expect(page).toHaveURL(/\/w\//);
   const sidebar = page.getByTestId('sidebar');
   await expect(sidebar).toBeVisible();
-  await expect(sidebar.getByText('Getting started')).toBeVisible();
+  // "Getting started" is seeded as a favourite, so it now appears in both sidebar sections.
+  await expect(sidebar.getByTestId('tree-private').getByText('Getting started')).toBeVisible();
 
   await page.getByTestId('new-page').click();
   await expect(page).toHaveURL(/\/w\/[^/]+\/p\/[^/]+$/);
@@ -17,7 +18,7 @@ test('login → sidebar → create page → open it', async ({ page }) => {
 
   const title = page.getByTestId('page-title');
   await title.fill('Smoke test page');
-  await expect(sidebar.getByText('Smoke test page')).toBeVisible();
+  await expect(sidebar.getByTestId('tree-private').getByText('Smoke test page')).toBeVisible();
 
   // The BlockNote editor mounted.
   await expect(page.locator('.bn-editor')).toBeVisible();
@@ -25,6 +26,6 @@ test('login → sidebar → create page → open it', async ({ page }) => {
   // Open it again from the tree after visiting home.
   await page.getByTestId('nav-home').click();
   await expect(page.getByTestId('home-greeting')).toBeVisible();
-  await sidebar.getByText('Smoke test page').click();
+  await sidebar.getByTestId('tree-private').getByText('Smoke test page').click();
   await expect(page.getByTestId('page-title')).toHaveValue('Smoke test page');
 });

@@ -5,11 +5,130 @@
 /* Tailwind must scan workspace packages and @blocknote/shadcn's components (they ship as class names, not CSS). */
 @source '../../../../packages/ui/src';
 @source '../../../../packages/editor/src';
+@source '../../../../packages/plugin-sdk/src';
 @source '../../../../plugins';
 @source '../../../../node_modules/.pnpm/@blocknote+shadcn@*/node_modules/@blocknote/shadcn/dist/blocknote-shadcn.js';
 
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
-a {
-  color: inherit;
+/*
+ * Design tokens → Tailwind utilities. Two naming schemes coexist on purpose:
+ *  - shadcn-style (`bg-background`, `text-muted-foreground`, `bg-accent`, …) used by @nook/ui;
+ *  - short app-style (`bg-bg`, `bg-bg-hover`, `text-fg-muted`, …) used by the shell.
+ * Both resolve to the same CSS variables from @nook/ui/styles.css, so themes stay in one place.
+ */
+@theme inline {
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+  --font-mono: var(--font-mono);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--popover);
+  --color-card-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--muted);
+  --color-secondary-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-tertiary: var(--foreground-tertiary);
+
+  --color-bg: var(--background);
+  --color-bg-sidebar: var(--sidebar);
+  --color-bg-muted: var(--muted);
+  --color-bg-hover: var(--accent);
+  --color-bg-active: var(--accent-strong);
+  --color-bg-popover: var(--popover);
+  --color-fg: var(--foreground);
+  --color-fg-secondary: var(--foreground-secondary);
+  --color-fg-muted: var(--foreground-tertiary);
+  --color-fg-disabled: var(--foreground-disabled);
+  --color-brand: var(--primary);
+  --color-brand-foreground: var(--primary-foreground);
+  --color-danger: var(--destructive);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    overscroll-behavior: none;
+  }
+  #root {
+    height: 100dvh;
+  }
+  * {
+    border-color: var(--border);
+  }
+  button {
+    cursor: pointer;
+  }
+  a {
+    color: inherit;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--accent-strong);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+}
+
+/* Sidebar tree: indent guides + drop indicator (see components/tree). */
+.nook-tree-guide {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+  pointer-events: none;
+}
+.nook-drop-line {
+  position: absolute;
+  right: 4px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--primary);
+  pointer-events: none;
+}
+.nook-drop-line::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  background: var(--background);
 }

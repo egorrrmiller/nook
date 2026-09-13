@@ -28,8 +28,12 @@ In mock mode the editor runs on a local Y.Doc (no websocket); with real services
 
 Override proxy targets with `NOOK_API_URL` / `NOOK_COLLAB_URL`.
 
-Keyboard: `⌘K` command palette (pages, new page, theme, sidebar, plugin commands), `⌘\` toggle sidebar.
-Theme: `data-theme="light|dark|hc"` on `<html>`; unset follows `prefers-color-scheme`.
+Keyboard: `⌘K`/`⌘P` quick find (pages via `GET /api/search/quick`, recents, actions, plugin commands),
+`⌘⇧F` search everything, `⌘\` sidebar, `⌘T`/`⌘W`/`⌘⇧[`/`⌘⇧]` tabs, `⌘⇧N` new page, `⌘D` duplicate,
+`⌘⇧P` move to…, `⌘,` settings, `Esc` closes. The full list lives in the in-app "Keyboard shortcuts"
+dialog (⌘K → "Keyboard shortcuts").
+Theme: `data-theme="light|dark|hc"` on `<html>`; unset follows `prefers-color-scheme`. Theme and
+sidebar width are mirrored to `PUT /api/me/settings/{key}` so they follow the user across devices.
 
 ## Test
 
@@ -37,7 +41,8 @@ Theme: `data-theme="light|dark|hc"` on `<html>`; unset follows `prefers-color-sc
 pnpm typecheck
 pnpm lint
 pnpm test                # Vitest (+ Testing Library + MSW) across packages
-pnpm e2e                 # Playwright smoke; starts `VITE_MOCK=1 pnpm dev` itself (needs `pnpm exec playwright install chromium` once)
+pnpm e2e                 # Playwright (smoke + shell); starts Vite itself (needs `pnpm exec playwright install chromium` once)
+NOOK_E2E_PORT=5174 pnpm e2e   # run against another port (parallel agents, contracts §11.1)
 ```
 
 ## Build
