@@ -204,7 +204,7 @@ export function createMockState(): MockState {
   const rowNodes = projectRows.map((row, index) => ({
     ...mk(personal.id, row.title, `a${index}`, projectsDatabase.id, row.icon?.type === 'emoji' ? row.icon.value : null, 'collection_row'),
     id: row.id,
-    properties: row.properties as Node['properties'],
+    properties: row.properties as unknown as Node['properties'],
   }));
   projects.hasChildren = true;
   projectsDatabase.hasChildren = true;

@@ -2,7 +2,9 @@
 
 set -Eeuo pipefail
 
-REPO_ARCHIVE_URL="https://github.com/egorrrmiller/nook/archive/refs/heads/main.tar.gz"
+# The installer intentionally downloads only the deployment files when it is
+# piped from GitHub. Application code is already packaged in GHCR images.
+RAW_DEPLOY_URL="https://raw.githubusercontent.com/egorrrmiller/nook/main/deploy"
 
 SCRIPT_DIR=""
 COMPOSE_FILE=""
@@ -15,12 +17,16 @@ usage() {
   cat <<'EOF'
 Usage: bash install.sh [--no-start]
 
-Prepare deploy/.env, validate Docker Compose, and start Nook.
+Prepare deploy/.env, validate Docker Compose, pull the release images from
+GHCR, and start Nook.
 
   --no-start  only prepare and validate the configuration
 
-When run from the raw GitHub URL, the repository archive is downloaded to
-NOOK_INSTALL_DIR or the current directory automatically.
+For private GHCR images, export GHCR_USERNAME and GHCR_TOKEN before running
+the installer. The token is used only for `docker login` and is not saved.
+
+When run from the raw GitHub URL outside a checkout, the deployment files are
+downloaded to NOOK_INSTALL_DIR or the current directory automatically.
 EOF
 }
 
@@ -29,23 +35,36 @@ fail() {
   exit 1
 }
 
-if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-  usage
-  exit 0
-fi
-
 NO_START=0
-if [[ "${1:-}" == "--no-start" ]]; then
-  NO_START=1
-elif [[ -n "${1:-}" ]]; then
-  usage >&2
-  exit 2
-fi
+for argument in "$@"; do
+  case "$argument" in
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    --no-start)
+      NO_START=1
+      ;;
+    *)
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
 
 check_docker() {
   command -v docker >/dev/null 2>&1 || fail "Docker is not installed or is not on PATH"
   docker info >/dev/null 2>&1 || fail "Docker Engine is not running; start Docker and run this script again"
   docker compose version >/dev/null 2>&1 || fail "Docker Compose v2 is not available as 'docker compose'"
+}
+
+login_to_ghcr_if_configured() {
+  if [[ -n "${GHCR_TOKEN:-}" ]]; then
+    [[ -n "${GHCR_USERNAME:-}" ]] || fail "GHCR_USERNAME is required when GHCR_TOKEN is set"
+    printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GHCR_USERNAME" --password-stdin \
+      || fail "could not log in to GHCR"
+    printf 'install: authenticated to GHCR as %s\n' "$GHCR_USERNAME"
+  fi
 }
 
 resolve_existing_script_dir() {
@@ -60,42 +79,45 @@ resolve_existing_script_dir() {
     fi
   fi
 
-  if [[ -f "$PWD/docker-compose.yml" && -f "$PWD/.env.example" ]]; then
-    printf '%s\n' "$PWD"
-  elif [[ -f "$PWD/deploy/docker-compose.yml" && -f "$PWD/deploy/.env.example" ]]; then
+  if [[ -f "$PWD/deploy/docker-compose.yml" && -f "$PWD/deploy/.env.example" ]]; then
     printf '%s\n' "$PWD/deploy"
+  elif [[ -f "$PWD/docker-compose.yml" && -f "$PWD/.env.example" ]]; then
+    printf '%s\n' "$PWD"
   fi
 }
 
-bootstrap_repository() {
+bootstrap_deploy_files() {
   local install_root="${NOOK_INSTALL_DIR:-$PWD}"
-  local archive
+  local deploy_dir
 
   [[ "$install_root" != "/" ]] || fail "NOOK_INSTALL_DIR cannot be /"
   command -v curl >/dev/null 2>&1 || fail "curl is required to download Nook"
-  command -v tar >/dev/null 2>&1 || fail "tar is required to unpack Nook"
 
   mkdir -p "$install_root"
   BOOTSTRAP_ROOT="$(cd -- "$install_root" && pwd)"
+  deploy_dir="$BOOTSTRAP_ROOT/deploy"
+  mkdir -p "$deploy_dir"
+
   BOOTSTRAP_TMP="$(mktemp -d)"
   trap 'if [[ -n "$BOOTSTRAP_TMP" ]]; then rm -rf -- "$BOOTSTRAP_TMP"; fi' EXIT
-  archive="$BOOTSTRAP_TMP/nook-main.tar.gz"
 
-  printf 'install: downloading Nook source archive\n'
-  curl -fsSL "$REPO_ARCHIVE_URL" -o "$archive"
-  tar -xzf "$archive" --strip-components=1 -C "$BOOTSTRAP_ROOT"
+  printf 'install: downloading deployment files\n'
+  curl -fsSL --retry 3 --retry-all-errors "$RAW_DEPLOY_URL/docker-compose.yml" -o "$deploy_dir/docker-compose.yml"
+  curl -fsSL --retry 3 --retry-all-errors "$RAW_DEPLOY_URL/.env.example" -o "$deploy_dir/.env.example"
+  curl -fsSL --retry 3 --retry-all-errors "$RAW_DEPLOY_URL/backup.sh" -o "$deploy_dir/backup.sh"
+  chmod 700 "$deploy_dir/backup.sh"
 
-  [[ -f "$BOOTSTRAP_ROOT/deploy/install.sh" ]] || fail "downloaded archive does not contain deploy/install.sh"
-  printf 'install: source installed in %s\n' "$BOOTSTRAP_ROOT"
+  [[ -s "$deploy_dir/docker-compose.yml" ]] || fail "downloaded docker-compose.yml is empty"
+  [[ -s "$deploy_dir/.env.example" ]] || fail "downloaded .env.example is empty"
+  printf 'install: deployment files installed in %s\n' "$deploy_dir"
 }
 
 check_docker
 
 SCRIPT_DIR="$(resolve_existing_script_dir || true)"
 if [[ -z "$SCRIPT_DIR" ]]; then
-  bootstrap_repository
-  bash "$BOOTSTRAP_ROOT/deploy/install.sh" "$@"
-  exit $?
+  bootstrap_deploy_files
+  SCRIPT_DIR="$BOOTSTRAP_ROOT/deploy"
 fi
 
 COMPOSE_FILE="$SCRIPT_DIR/docker-compose.yml"
@@ -229,9 +251,12 @@ if (( generated_owner_password )); then
 fi
 
 if (( NO_START )); then
-  printf 'install: skipped startup (--no-start)\n'
+  printf 'install: skipped image pull and startup (--no-start)\n'
   exit 0
 fi
 
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --build
+login_to_ghcr_if_configured
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" pull \
+  || fail "could not pull Nook images from GHCR"
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --remove-orphans
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps

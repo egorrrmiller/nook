@@ -4,7 +4,7 @@ import { AlertCircleIcon, DatabaseIcon, RefreshCwIcon } from 'lucide-react';
 import { Button, Skeleton } from '@nook/ui';
 import { useNode } from '../../lib/queries';
 import { useUpdateCollectionRow, useUpdateCollectionView, useCollection } from './queries';
-import type { CollectionRow, CollectionViewConfig } from './model';
+import type { CollectionRow, CollectionViewConfig, CollectionViewKind } from './model';
 import { cloneViewConfig, DEFAULT_COLLECTION_VIEW_CONFIG } from './model';
 import { applyViewConfig } from './views/view-utils';
 import { BoardView } from './views/BoardView';
@@ -57,6 +57,7 @@ export function CollectionViewScreen({ workspaceId, nodeId, readOnly = false, ro
 
   if (collectionQuery.isPending || !node) return <CollectionLoading />;
   if (collectionQuery.isError) return <CollectionError onRetry={() => void collectionQuery.refetch()} />;
+  if (!collection) return <CollectionError onRetry={() => void collectionQuery.refetch()} />;
   if (!activeView) return <CollectionEmptyState title={node.title || collection.name} message="This database has no views yet. The backend view schema is required before rows can be displayed." />;
   const viewConfig = config.visiblePropertyIds.length || config.filters.children.length || config.sorts.length || config.groupBy ? config : activeView.config;
   const viewProps = { properties: collection.properties, rows: filteredRows, config: viewConfig, onOpenRow: openRow };

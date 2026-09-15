@@ -39,9 +39,15 @@ function matchesRule(row: CollectionRow, rule: CollectionFilterRule): boolean {
     case 'does_not_contain':
       return !text.includes(expectedText);
     case 'greater_than':
-      return (comparable(actual) as number | string | null) > (comparable(expected) as number | string | null);
-    case 'less_than':
-      return (comparable(actual) as number | string | null) < (comparable(expected) as number | string | null);
+    case 'less_than': {
+      const actualComparable = comparable(actual);
+      const expectedComparable = comparable(expected);
+      if (actualComparable === null || expectedComparable === null) return false;
+      const result = typeof actualComparable === 'number' && typeof expectedComparable === 'number'
+        ? actualComparable - expectedComparable
+        : String(actualComparable).localeCompare(String(expectedComparable));
+      return rule.operator === 'greater_than' ? result > 0 : result < 0;
+    }
     case 'on_or_before':
       return text !== '' && text <= expectedText;
     case 'on_or_after':
@@ -96,4 +102,3 @@ export function groupRows(rows: CollectionRow[], propertyId: string | null | und
   }
   return [...groups.values()];
 }
-

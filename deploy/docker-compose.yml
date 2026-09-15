@@ -15,9 +15,7 @@ services:
       retries: 20
 
   api:
-    build:
-      context: ..
-      dockerfile: deploy/api.Dockerfile
+    image: ghcr.io/egorrrmiller/nook-api:${NOOK_IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -32,9 +30,7 @@ services:
       - nookdata:/data
 
   collab:
-    build:
-      context: ../services/collab
-      dockerfile: Dockerfile
+    image: ghcr.io/egorrrmiller/nook-collab:${NOOK_IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       api:
@@ -44,9 +40,7 @@ services:
       NOOK_INTERNAL_TOKEN: ${NOOK_INTERNAL_TOKEN:?set NOOK_INTERNAL_TOKEN in deploy/.env}
 
   web:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
+    image: ghcr.io/egorrrmiller/nook-web:${NOOK_IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       api:
@@ -54,7 +48,7 @@ services:
       collab:
         condition: service_started
     ports:
-      - "80:80"
+      - "${NOOK_HTTP_PORT:-80}:80"
 
 volumes:
   pgdata:

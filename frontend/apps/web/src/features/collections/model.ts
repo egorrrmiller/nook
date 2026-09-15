@@ -112,7 +112,9 @@ export function cloneJson<T extends JsonValue>(value: T): T {
 
 /** Copy a view config before editing it, including unknown future keys from the server payload. */
 export function cloneViewConfig(config: CollectionViewConfig): CollectionViewConfig {
-  return cloneJson(config);
+  // CollectionViewConfig is a typed view of an open JSON object. Keep unknown
+  // server-side keys while making the deep clone type-safe at this boundary.
+  return cloneJson(config as unknown as JsonValue) as unknown as CollectionViewConfig;
 }
 
 export function isJsonRecord(value: JsonValue | undefined): value is { [key: string]: JsonValue } {
@@ -144,4 +146,3 @@ export function propertyOptions(property: CollectionPropertyDefinition): string[
 export function propertyLabel(properties: CollectionPropertyDefinition[], id: string): string {
   return properties.find((property) => property.id === id)?.name ?? id;
 }
-

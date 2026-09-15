@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { FilterIcon, GroupIcon, PlusIcon, Settings2Icon, SortAscIcon, XIcon } from 'lucide-react';
 import { Button, Checkbox, Input, Popover, PopoverContent, PopoverTrigger, Select, cn } from '@nook/ui';
 import type { CollectionFilterGroup, CollectionFilterOperator, CollectionPropertyDefinition, CollectionSort, CollectionView, CollectionViewConfig } from './model';
