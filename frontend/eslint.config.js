@@ -48,7 +48,7 @@ export default tseslint.config(
         'error',
         {
           selector: 'ExportDefaultDeclaration',
-          message: 'No default exports (see CLAUDE.md conventions).',
+          message: 'Shared components must not use default exports.',
         },
       ],
     },

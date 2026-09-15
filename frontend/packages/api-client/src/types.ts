@@ -1,4 +1,4 @@
-// Hand-written types for docs/contracts.md §1–§9. Replaced by src/generated when
+// Hand-written API types. Replaced by src/generated when
 // `pnpm gen:api` finds an OpenAPI document.
 
 export type Role = 'owner' | 'editor' | 'viewer';
@@ -15,7 +15,7 @@ export interface User {
 export interface WorkspaceSummary {
   id: string;
   name: string;
-  icon?: string | null;
+  icon?: NodeIcon | null;
   role: Role;
   isPersonal: boolean;
 }
@@ -80,13 +80,13 @@ export interface CreateApiTokenRequest {
 
 export interface CreateWorkspaceRequest {
   name: string;
-  icon?: string;
+  icon?: NodeIcon;
 }
 
 /** §7.5 `PATCH /api/workspaces/{id}`. */
 export interface UpdateWorkspaceRequest {
   name?: string;
-  icon?: string | null;
+  icon?: NodeIcon | null;
 }
 
 export interface WorkspaceMember {

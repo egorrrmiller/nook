@@ -1,6 +1,5 @@
 import { useLocation, useNavigate, useParams } from '@tanstack/react-router';
 import {
-  ChevronsRightIcon,
   ClockIcon,
   DownloadIcon,
   HistoryIcon,
@@ -27,12 +26,13 @@ import {
   MenuSubContent,
   MenuSubTrigger,
   MenuTrigger,
+  ToggleButton,
   Tooltip,
   cn,
 } from '@nook/ui';
 import { ExportDialog } from '../../features/knowledge';
 import { useFavorites, useNode, useSetFavorite, useUpdateNode } from '../../lib/queries';
-import { modKey, relativeTime } from '../../lib/utils';
+import { relativeTime } from '../../lib/utils';
 import { usePresenceStore } from '../../stores/presence';
 import { useUiStore, type InspectorTab } from '../../stores/ui';
 import { Breadcrumbs } from './Breadcrumbs';
@@ -51,8 +51,6 @@ const INSPECTORS: { value: InspectorTab; label: string; icon: typeof InfoIcon }[
 ];
 
 export function TopBar({ workspaceId }: { workspaceId: string }) {
-  const sidebarOpen = useUiStore((s) => s.sidebarOpen);
-  const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const peekNodeId = useUiStore((s) => s.peekNodeId);
   const setPeek = useUiStore((s) => s.setPeek);
   const inspector = useUiStore((s) => s.inspector);
@@ -88,13 +86,6 @@ export function TopBar({ workspaceId }: { workspaceId: string }) {
       data-testid="topbar"
       className="flex h-[var(--topbar-height)] shrink-0 items-center gap-1 px-2 text-sm"
     >
-      {!sidebarOpen ? (
-        <Tooltip content={`Open sidebar (${modKey()}\\)`}>
-          <IconButton label="Open sidebar" onClick={toggleSidebar}>
-            <ChevronsRightIcon />
-          </IconButton>
-        </Tooltip>
-      ) : null}
       <div className="flex min-w-0 flex-1 items-center px-1">
         {nodeId ? (
           <Breadcrumbs workspaceId={workspaceId} nodeId={nodeId} />
@@ -177,21 +168,21 @@ export function TopBar({ workspaceId }: { workspaceId: string }) {
                   <MenuLabel>Style</MenuLabel>
                   <div className="flex gap-1 px-2 pb-1.5">
                     {FONTS.map((f) => (
-                      <button
+                      <ToggleButton
                         key={f.value}
-                        type="button"
+                        pressed={settings.font === f.value}
                         disabled={readOnly}
                         onClick={() => patch({ font: f.value })}
                         data-testid={`font-${f.value}`}
                         className={cn(
-                          'flex h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)] border border-border text-[11px] text-fg-secondary transition-colors hover:bg-bg-hover disabled:opacity-50',
+                          'h-12 flex-1 flex-col gap-0.5 rounded-[var(--radius-sm)] border-border bg-transparent text-[11px] text-fg-secondary transition-colors hover:bg-bg-hover aria-pressed:bg-transparent disabled:opacity-50',
                           f.className,
                           settings.font === f.value && 'border-brand text-fg',
                         )}
                       >
                         <span className="text-base leading-none">Ag</span>
                         {f.label}
-                      </button>
+                      </ToggleButton>
                     ))}
                   </div>
                   <MenuCheckboxItem

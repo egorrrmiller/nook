@@ -3,10 +3,12 @@ import { persist } from 'zustand/middleware';
 
 export type ThemeSetting = 'system' | 'light' | 'dark' | 'hc';
 export const THEMES: ThemeSetting[] = ['system', 'light', 'dark', 'hc'];
+export type PageMode = 'edit' | 'focus' | 'read';
 
-export const SIDEBAR_MIN = 200;
-export const SIDEBAR_DEFAULT = 240;
-export const SIDEBAR_MAX = 400;
+// Keep enough room for readable page titles and comfortable pointer targets.
+export const SIDEBAR_MIN = 220;
+export const SIDEBAR_DEFAULT = 280;
+export const SIDEBAR_MAX = 440;
 
 interface UiState {
   theme: ThemeSetting;
@@ -44,6 +46,11 @@ interface UiState {
   /** Full-text SearchDialog visibility (contracts §10). Not persisted. */
   searchOpen: boolean;
   setSearchOpen: (open: boolean) => void;
+  /** Page presentation mode. Kept transient so a new page always opens normally. */
+  pageMode: PageMode;
+  setPageMode: (mode: PageMode) => void;
+  toggleFocusMode: () => void;
+  toggleReadMode: () => void;
 }
 
 export type InspectorTab = 'backlinks' | 'history' | 'info';
@@ -93,6 +100,10 @@ export const useUiStore = create<UiState>()(
       toggleInspector: (v) => set({ inspector: get().inspector === v ? null : v }),
       searchOpen: false,
       setSearchOpen: (searchOpen) => set({ searchOpen }),
+      pageMode: 'edit',
+      setPageMode: (pageMode) => set({ pageMode }),
+      toggleFocusMode: () => set({ pageMode: get().pageMode === 'focus' ? 'edit' : 'focus' }),
+      toggleReadMode: () => set({ pageMode: get().pageMode === 'read' ? 'edit' : 'read' }),
     }),
     {
       name: 'nook.ui',

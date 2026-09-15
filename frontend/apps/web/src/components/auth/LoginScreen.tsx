@@ -6,6 +6,7 @@ import { Button, Field } from '@nook/ui';
 import { api, IS_MOCK } from '../../lib/api';
 import { queryKeys } from '../../lib/queries';
 import { pickWorkspace } from '../../app/auth';
+import { AuthAlert } from './AuthAlert';
 import { AuthLayout } from './AuthLayout';
 
 export function LoginScreen() {
@@ -65,14 +66,7 @@ export function LoginScreen() {
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)} />
-        {error ? (
-          <p
-            role="alert"
-            className="rounded-[var(--radius-sm)] bg-danger-bg px-3 py-2 text-sm text-danger"
-          >
-            {error}
-          </p>
-        ) : null}
+        {error ? <AuthAlert>{error}</AuthAlert> : null}
         <Button type="submit" variant="default" size="lg" disabled={busy}>
           {busy ? 'Signing in…' : 'Sign in'}
         </Button>

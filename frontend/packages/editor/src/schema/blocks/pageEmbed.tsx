@@ -2,6 +2,7 @@ import { createReactBlockSpec, type ReactCustomBlockRenderProps } from '@blockno
 import { useEffect, useState, type ComponentProps } from 'react';
 import type { Block } from '@nook/api-client';
 import { ArrowUpRightIcon, RefreshCwIcon } from 'lucide-react';
+import { IconButton } from '@nook/ui';
 import { pageHref, useEditorHost } from '../../host-context';
 import { NodeIcon } from '../../components/NodeIcon';
 import { PagePicker } from '../../components/PagePicker';
@@ -67,9 +68,17 @@ function PageEmbedView({ block, editor }: ReactCustomBlockRenderProps<typeof pag
           {nodeTitle(info.node) || block.props.title}
         </a>
         <span className="nook-page-embed__spacer" />
-        <button type="button" title="Refresh" onClick={() => setTick((t) => t + 1)}>
+        <IconButton
+          label="Refresh"
+          tooltip={false}
+          size="icon-sm"
+          variant="subtle"
+          type="button"
+          title="Refresh"
+          onClick={() => setTick((t) => t + 1)}
+        >
           <RefreshCwIcon size={14} />
-        </button>
+        </IconButton>
         <a href={href} title="Open page" onClick={(e) => (e.preventDefault(), host.navigate(href))}>
           <ArrowUpRightIcon size={14} />
         </a>
@@ -84,7 +93,11 @@ function PageEmbedView({ block, editor }: ReactCustomBlockRenderProps<typeof pag
         ) : blocks.length === 0 ? (
           <p className="nook-page-embed__note">Empty page.</p>
         ) : (
-          <BlocksView blocks={blocks} schema={editor.schema as unknown as ComponentProps<typeof BlocksView>['schema']} compact />
+          <BlocksView
+            blocks={blocks}
+            schema={editor.schema as unknown as ComponentProps<typeof BlocksView>['schema']}
+            compact
+          />
         )}
       </div>
     </section>

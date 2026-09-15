@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { ArrowDownUpIcon, ClockIcon, FileSearchIcon, Loader2Icon, SearchIcon, SearchXIcon, XIcon } from 'lucide-react';
+import { ArrowDownUpIcon, ChevronRightIcon, ClockIcon, FileSearchIcon, Loader2Icon, SearchIcon, SearchXIcon, XIcon } from 'lucide-react';
 import type { SearchHit, SearchSort } from '@nook/api-client';
-import { Dialog, DialogContent, Kbd, Menu, MenuContent, MenuItem, MenuTrigger, Skeleton, cn } from '@nook/ui';
+import { Button, Dialog, DialogContent, IconButton, Input, Kbd, Menu, MenuContent, MenuItem, MenuTrigger, Skeleton, Toolbar, cn } from '@nook/ui';
 import { nodeTitle } from '../../../lib/utils';
 import { useSearch, useTags } from '../api/queries';
 import { clearRecentSearches, getRecentSearches, pushRecentSearch } from '../lib/recent-searches';
-import { parseSnippet } from '../lib/snippet';
+import { highlightTerms, parseSnippet } from '../lib/snippet';
 import { EmptyState } from '../ui/EmptyState';
 import { Marked } from '../ui/Marked';
 import { NodeIcon } from '../ui/NodeIcon';
@@ -79,6 +79,15 @@ export function SearchDialog({
   const search = useSearch(workspaceId, body, enabled);
   const hits = useMemo(() => search.data?.pages.flatMap((p) => p.hits) ?? [], [search.data]);
   const total = search.data?.pages[0]?.total ?? 0;
+  const terms = useMemo(() => debounced.trim().split(/\s+/).filter(Boolean), [debounced]);
+  const groups = useMemo(() => {
+    const pages = hits.filter((hit) => !hit.attachment && hit.matchedIn !== 'file');
+    const files = hits.filter((hit) => hit.attachment || hit.matchedIn === 'file');
+    return [
+      ...(pages.length ? [{ label: 'Pages', hits: pages }] : []),
+      ...(files.length ? [{ label: 'Attachments', hits: files }] : []),
+    ];
+  }, [hits]);
 
   useEffect(() => setActive(0), [body]);
   useEffect(() => {
@@ -114,10 +123,16 @@ export function SearchDialog({
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setActive((a) => Math.min(hits.length - 1, a + 1));
+      if (hits.length) setActive((a) => Math.min(hits.length - 1, Math.max(0, a + 1)));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setActive((a) => Math.max(0, a - 1));
+      if (hits.length) setActive((a) => Math.max(0, a - 1));
+    } else if (e.key === 'Home' && hits.length) {
+      e.preventDefault();
+      setActive(0);
+    } else if (e.key === 'End' && hits.length) {
+      e.preventDefault();
+      setActive(hits.length - 1);
     } else if (e.key === 'Enter') {
       const hit = hits[active];
       if (hit) {
@@ -139,31 +154,32 @@ export function SearchDialog({
         aria-label="Search"
         data-testid="search-dialog"
         initialFocus={inputRef}
-        className="top-[10%] flex max-h-[80vh] w-[min(720px,calc(100vw-32px))] max-w-none -translate-y-0 flex-col gap-0 overflow-hidden p-0"
+        className="nook-search-dialog top-[10%] flex max-h-[80vh] w-[min(720px,calc(100vw-32px))] max-w-none -translate-y-0 flex-col gap-0 overflow-hidden p-0"
       >
-        <div className="flex items-center gap-2 border-b border-border px-3">
+        <div className="nook-search__header flex items-center gap-2 border-b border-border px-3">
           {search.isFetching && enabled ? <Loader2Icon className="size-4 shrink-0 animate-spin text-muted-foreground" /> : <SearchIcon className="size-4 shrink-0 text-muted-foreground" />}
-          <input
+          <Input
             ref={inputRef}
             data-testid="search-input"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onKeyDown}
+            aria-activedescendant={hits[active] ? `search-result-${active}` : undefined}
             placeholder={`Search ${filters.inCurrentTree && currentNodeId ? 'in this page tree' : 'everything'}…`}
             aria-label="Search query"
             autoComplete="off"
             spellCheck={false}
-            className="h-12 w-full bg-transparent text-base outline-none placeholder:text-muted-foreground"
+            className="h-12 w-full rounded-none border-0 bg-transparent px-0 text-base shadow-none focus-visible:border-0 focus-visible:ring-0"
           />
           {query ? (
-            <button type="button" aria-label="Clear query" onClick={() => setQuery('')} className="rounded-sm p-1 text-muted-foreground hover:bg-accent hover:text-foreground">
+            <IconButton label="Clear query" size="icon-sm" tooltip={false} onClick={() => setQuery('')} className="text-muted-foreground hover:bg-accent hover:text-foreground">
               <XIcon className="size-4" />
-            </button>
+            </IconButton>
           ) : null}
           <Kbd className="hidden sm:inline-flex">esc</Kbd>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5 border-b border-border px-3 py-2" data-testid="search-filters">
+        <Toolbar aria-label="Search filters" className="nook-search__filters flex-wrap gap-1.5 border-b border-border px-3 py-2" data-testid="search-filters">
           <ToggleChip testId="search-filter-title-only" active={filters.titleOnly} onClick={() => setFilters((f) => ({ ...f, titleOnly: !f.titleOnly }))}>
             Title only
           </ToggleChip>
@@ -183,9 +199,9 @@ export function SearchDialog({
             Files
           </ToggleChip>
           {nFilters ? (
-            <button type="button" onClick={() => setFilters(EMPTY_FILTERS)} className="text-xs text-muted-foreground underline-offset-2 hover:underline">
+            <Button type="button" variant="link" size="xs" onClick={() => setFilters(EMPTY_FILTERS)} className="h-auto px-1 text-xs font-normal text-muted-foreground">
               Clear {nFilters}
-            </button>
+            </Button>
           ) : null}
           <span className="ml-auto" />
           <Menu>
@@ -200,38 +216,42 @@ export function SearchDialog({
               ))}
             </MenuContent>
           </Menu>
-        </div>
+        </Toolbar>
 
-        <div className="min-h-0 flex-1 overflow-y-auto" data-testid="search-results">
+        <div className="nook-search__results min-h-0 flex-1 overflow-y-auto" data-testid="search-results">
           {showRecent ? (
             <div className="p-2">
               {recent.length ? (
                 <>
                   <div className="flex items-center px-2 py-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
                     Recent searches
-                    <button
+                    <Button
                       type="button"
+                      variant="link"
+                      size="xs"
                       onClick={() => {
                         clearRecentSearches(workspaceId);
                         setRecent([]);
                       }}
-                      className="ml-auto font-normal normal-case hover:text-foreground"
+                      className="ml-auto h-auto px-1 font-normal normal-case text-muted-foreground hover:text-foreground"
                     >
                       Clear
-                    </button>
+                    </Button>
                   </div>
                   <ul>
                     {recent.map((r) => (
                       <li key={r}>
-                        <button
+                        <Button
                           type="button"
+                          variant="subtle"
+                          size="sm"
                           data-testid="recent-search"
                           onClick={() => setQuery(r)}
-                          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent"
+                          className="h-auto w-full justify-start rounded-md px-2 py-1.5 text-left font-normal"
                         >
                           <ClockIcon className="size-4 text-muted-foreground" />
                           <span className="truncate">{r}</span>
-                        </button>
+                        </Button>
                       </li>
                     ))}
                   </ul>
@@ -275,54 +295,80 @@ export function SearchDialog({
           ) : (
             <>
               <ul ref={listRef} role="listbox" aria-label="Search results" className="p-1">
-                {hits.map((hit, i) => (
-                  <li
-                    key={`${hit.node.id}:${hit.blockId ?? ''}:${hit.attachment?.id ?? ''}`}
-                    role="option"
-                    aria-selected={i === active}
-                    data-index={i}
-                    data-testid="search-result"
-                    onMouseEnter={() => setActive(i)}
-                    onClick={() => openHit(hit)}
-                    className={cn('flex cursor-pointer items-start gap-2.5 rounded-md px-2 py-2', i === active && 'bg-accent')}
-                  >
-                    <NodeIcon icon={hit.node.icon} kind={hit.node.kind} className="mt-0.5" />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate text-sm font-medium">{nodeTitle(hit.node.title)}</span>
-                        <span className="shrink-0 rounded-sm bg-muted px-1 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">{MATCHED_LABEL[hit.matchedIn]}</span>
-                        <span className="ml-auto shrink-0 text-[11px] text-muted-foreground">{ago(hit.node.updatedAt)}</span>
-                      </div>
-                      {hit.breadcrumb.length ? (
-                        <div className="truncate text-[11px] text-muted-foreground">{hit.breadcrumb.map((b) => nodeTitle(b.title)).join(' / ')}</div>
-                      ) : null}
-                      {hit.snippet ? (
-                        <Marked parts={parseSnippet(hit.snippet)} className="mt-0.5 line-clamp-2 block text-[13px] leading-snug text-foreground/85" />
-                      ) : null}
-                      {hit.attachment ? <div className="truncate text-[11px] text-muted-foreground">📎 {hit.attachment.filename}</div> : null}
+                {groups.map((group) => (
+                  <li key={group.label} role="presentation">
+                    <div className="nook-search__group-label">
+                      <span>{group.label}</span>
+                      <span>{group.hits.length}</span>
                     </div>
+                    <ul>
+                      {group.hits.map((hit) => {
+                        const i = hits.indexOf(hit);
+                        return (
+                          <li
+                            key={`${hit.node.id}:${hit.blockId ?? ''}:${hit.attachment?.id ?? ''}`}
+                            id={`search-result-${i}`}
+                            role="option"
+                            aria-selected={i === active}
+                            data-index={i}
+                            data-testid="search-result"
+                            onMouseEnter={() => setActive(i)}
+                            onClick={() => openHit(hit)}
+                            className={cn('nook-search__result', i === active && 'nook-search__result--active')}
+                          >
+                            <NodeIcon icon={hit.node.icon} kind={hit.node.kind} className="mt-0.5" />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex min-w-0 items-center gap-2">
+                                <Marked
+                                  parts={highlightTerms(nodeTitle(hit.node.title), terms)}
+                                  className="min-w-0 flex-1 truncate text-sm font-medium"
+                                />
+                                <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">{MATCHED_LABEL[hit.matchedIn]}</span>
+                                <span className="shrink-0 text-[11px] text-muted-foreground">{ago(hit.node.updatedAt)}</span>
+                              </div>
+                              {hit.breadcrumb.length ? (
+                                <div className="nook-search__breadcrumb">
+                                  {hit.breadcrumb.map((b, breadcrumbIndex) => (
+                                    <span key={b.id} className="inline-flex min-w-0 items-center">
+                                      {breadcrumbIndex ? <ChevronRightIcon className="size-3 shrink-0" /> : null}
+                                      <span className="truncate">{nodeTitle(b.title)}</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : null}
+                              {hit.snippet ? (
+                                <Marked parts={parseSnippet(hit.snippet)} className="mt-1 line-clamp-2 block text-[13px] leading-snug text-foreground/80" />
+                              ) : null}
+                              {hit.attachment ? <div className="nook-search__attachment">{hit.attachment.filename}</div> : null}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </li>
                 ))}
               </ul>
               <div ref={sentinel} className="h-px" />
               {search.hasNextPage ? (
                 <div className="flex justify-center p-2">
-                  <button
+                  <Button
                     type="button"
+                    variant="subtle"
+                    size="sm"
                     data-testid="search-load-more"
                     disabled={search.isFetchingNextPage}
                     onClick={() => void search.fetchNextPage()}
-                    className="rounded-md px-3 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
+                    className="text-xs text-muted-foreground"
                   >
                     {search.isFetchingNextPage ? 'Loading…' : 'Load more'}
-                  </button>
+                  </Button>
                 </div>
               ) : null}
             </>
           )}
         </div>
 
-        <div className="flex items-center gap-3 border-t border-border px-3 py-1.5 text-[11px] text-muted-foreground">
+        <div className="nook-search__footer flex items-center gap-3 border-t border-border px-3 py-1.5 text-[11px] text-muted-foreground">
           <span className="flex items-center gap-1">
             <Kbd>↑</Kbd>
             <Kbd>↓</Kbd> navigate

@@ -3,7 +3,7 @@ import { ApiError } from '@nook/api-client';
 import { Avatar, Button, Field } from '@nook/ui';
 import { useChangePassword, useMe, useUpdateMe } from '../../lib/queries';
 import { toast } from '../../stores/toast';
-import { SettingsGroup, SettingsPageHeader, SettingsRow } from './SettingsSection';
+import { SettingsForm, SettingsGroup, SettingsPageHeader, SettingsRow } from './SettingsSection';
 
 export function AccountSettings() {
   const { data: me } = useMe();
@@ -31,7 +31,7 @@ export function AccountSettings() {
         <SettingsRow title="Avatar" description="Paste an image URL; uploads land in a later wave.">
           <Avatar name={displayName || 'User'} src={avatarUrl || null} size="lg" />
         </SettingsRow>
-        <div className="flex flex-col gap-3 py-3">
+        <SettingsForm>
           <Field
             label="Preferred name"
             value={displayName}
@@ -54,11 +54,11 @@ export function AccountSettings() {
               {update.isPending ? 'Saving…' : 'Save changes'}
             </Button>
           </div>
-        </div>
+        </SettingsForm>
       </SettingsGroup>
 
       <SettingsGroup title="Password">
-        <div className="flex flex-col gap-3 py-3">
+        <SettingsForm>
           <Field
             label="Current password"
             type="password"
@@ -98,7 +98,7 @@ export function AccountSettings() {
               Change password
             </Button>
           </div>
-        </div>
+        </SettingsForm>
       </SettingsGroup>
     </div>
   );

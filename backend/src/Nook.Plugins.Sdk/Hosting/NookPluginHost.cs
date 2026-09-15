@@ -8,12 +8,12 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Nook.Plugins.Sdk.Hosting;
 
-/// <summary>Host-side helpers that discover and wire <see cref="IPlugin"/> implementations.</summary>
+/// <summary>Host-side helpers for a custom host distribution that compiles in optional SDK extensions.</summary>
 public static class NookPluginHost
 {
     /// <summary>
-    /// Discovers every public, non-abstract <see cref="IPlugin"/> in <paramref name="assemblies"/>, registers it as a singleton
-    /// and calls <see cref="IPlugin.ConfigureServices"/>.
+    /// Discovers every public, non-abstract <see cref="IPlugin"/> in the compile-time supplied <paramref name="assemblies"/>,
+    /// registers it as a singleton and calls <see cref="IPlugin.ConfigureServices"/>.
     /// </summary>
     public static IServiceCollection AddNookPlugins(this IServiceCollection services, IConfiguration configuration, params Assembly[] assemblies)
     {
@@ -52,6 +52,8 @@ public static class NookPluginHost
         }
 
         services.TryAddSingleton<PluginRegistry>(sp => new PluginRegistry(sp.GetServices<IPlugin>().ToArray()));
+        services.TryAddSingleton<IAutomationActionRegistry>(sp =>
+            new AutomationActionRegistry(sp.GetServices<IAutomationAction>()));
         return services;
     }
 

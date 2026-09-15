@@ -37,6 +37,8 @@ afterEach(() => {
   // Zustand stores are module singletons: without this, tabs and UI flags leak between tests.
   useTabsStore.setState({ tabs: [], activeId: null });
   useUiStore.setState({
+    sidebarOpen: true,
+    pageMode: 'edit',
     paletteOpen: false,
     searchOpen: false,
     shortcutsOpen: false,

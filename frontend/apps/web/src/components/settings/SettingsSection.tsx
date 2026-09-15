@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { cn } from '@nook/ui';
 
 export function SettingsPageHeader({ title, description }: { title: string; description?: string }) {
@@ -31,6 +31,25 @@ export function SettingsRow({
       <div className="flex shrink-0 items-center gap-2">{children}</div>
     </div>
   );
+}
+
+/** Shared layout for compact settings forms that end with an action button. */
+export function SettingsActionRow({ className, ...props }: ComponentProps<'div'>) {
+  return <div className={cn('flex flex-wrap items-end gap-2 py-3', className)} {...props} />;
+}
+
+/** Shared vertical form spacing for settings sections with several fields. */
+export function SettingsForm({ className, ...props }: ComponentProps<'div'>) {
+  return <div className={cn('flex flex-col gap-3 py-3', className)} {...props} />;
+}
+
+/** Shared list treatment for members, invitations and other settings collections. */
+export function SettingsList({ className, ...props }: ComponentProps<'ul'>) {
+  return <ul className={cn('flex flex-col', className)} {...props} />;
+}
+
+export function SettingsListItem({ className, ...props }: ComponentProps<'li'>) {
+  return <li className={cn('flex items-center gap-3 border-b border-border py-2.5 last:border-0', className)} {...props} />;
 }
 
 export function SettingsGroup({ title, children }: { title?: string; children: ReactNode }) {

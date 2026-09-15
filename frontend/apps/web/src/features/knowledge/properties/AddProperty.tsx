@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { PlusIcon } from 'lucide-react';
 import type { PagePropertyType } from '@nook/api-client';
-import { Popover, PopoverContent, PopoverTrigger, cn } from '@nook/ui';
+import { Input, Popover, PopoverContent, PopoverTrigger, cn } from '@nook/ui';
 import { PROPERTY_TYPES } from '../lib/property-types';
 
 export function AddProperty({ existingNames, onAdd }: { existingNames: string[]; onAdd: (name: string, type: PagePropertyType) => void }) {
@@ -39,7 +39,7 @@ export function AddProperty({ existingNames, onAdd }: { existingNames: string[];
       </PopoverTrigger>
       <PopoverContent className="w-64 p-0" aria-label="New property" initialFocus={inputRef}>
         <div className="border-b border-border p-2">
-          <input
+          <Input
             ref={inputRef}
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -59,7 +59,7 @@ export function AddProperty({ existingNames, onAdd }: { existingNames: string[];
                 if (t && !duplicate) submit(t.type);
               } else if (e.key === 'Escape') setOpen(false);
             }}
-            className="h-7 w-full rounded-sm border border-input bg-background px-2 text-sm outline-none focus-visible:border-primary"
+            className="h-7 rounded-sm px-2 text-sm"
           />
           {duplicate ? <p className="mt-1 text-[11px] text-destructive">A property with this name already exists.</p> : null}
         </div>

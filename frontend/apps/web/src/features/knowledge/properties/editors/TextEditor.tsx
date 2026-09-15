@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ExternalLinkIcon } from 'lucide-react';
-import { cn } from '@nook/ui';
+import { Input, cn } from '@nook/ui';
 import { hrefForUrl, validateValue } from '../../lib/property-types';
 import { emptyClass, valueCellClass, type EditorProps } from './types';
 
@@ -72,7 +72,7 @@ export function TextEditor({ prop, onChange, readOnly, name }: EditorProps) {
   return (
     <div className="flex w-full min-w-0 flex-col">
       <div className={cn(valueCellClass, 'gap-1', error && 'ring-1 ring-destructive/50')}>
-        <input
+        <Input
           aria-label={name}
           aria-invalid={error ? true : undefined}
           value={draft}
@@ -95,7 +95,7 @@ export function TextEditor({ prop, onChange, readOnly, name }: EditorProps) {
               (e.target as HTMLInputElement).blur();
             }
           }}
-          className={cn('w-full min-w-0 bg-transparent outline-none placeholder:text-muted-foreground/70', type === 'number' && 'tabular-nums')}
+          className={cn('h-6 w-full min-w-0 rounded-none border-0 bg-transparent px-0 shadow-none focus-visible:border-0 focus-visible:ring-0 placeholder:text-muted-foreground/70', type === 'number' && 'tabular-nums')}
         />
         {link ? (
           <a

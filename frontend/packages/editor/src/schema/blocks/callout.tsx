@@ -1,8 +1,26 @@
 import { defaultProps } from '@blocknote/core';
 import { createReactBlockSpec, type ReactCustomBlockRenderProps } from '@blocknote/react';
 import { useEffect, useRef, useState } from 'react';
+import { Button, IconButton, Input } from '@nook/ui';
 
-const PRESET_EMOJI = ['💡', '📌', '⚠️', '✅', '❌', '🔥', '📝', '💬', '🚀', '⭐', '❓', '🎯', '📚', '🧠', '⏰', '🔒'];
+const PRESET_EMOJI = [
+  '💡',
+  '📌',
+  '⚠️',
+  '✅',
+  '❌',
+  '🔥',
+  '📝',
+  '💬',
+  '🚀',
+  '⭐',
+  '❓',
+  '🎯',
+  '📚',
+  '🧠',
+  '⏰',
+  '🔒',
+];
 
 export const calloutConfig = {
   type: 'callout',
@@ -15,7 +33,11 @@ export const calloutConfig = {
   content: 'inline',
 } as const;
 
-function CalloutView({ block, editor, contentRef }: ReactCustomBlockRenderProps<typeof calloutConfig>) {
+function CalloutView({
+  block,
+  editor,
+  contentRef,
+}: ReactCustomBlockRenderProps<typeof calloutConfig>) {
   const [open, setOpen] = useState(false);
   const [custom, setCustom] = useState('');
   const root = useRef<HTMLDivElement>(null);
@@ -37,37 +59,53 @@ function CalloutView({ block, editor, contentRef }: ReactCustomBlockRenderProps<
   return (
     <div className="nook-callout" data-testid="callout-block">
       <div className="nook-callout__icon" contentEditable={false} ref={root}>
-        <button
-          type="button"
+        <IconButton
+          label="Change callout icon"
+          tooltip={false}
+          variant="ghost"
+          size="icon"
           className="nook-callout__icon-btn"
-          aria-label="Change callout icon"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => editor.isEditable && setOpen((o) => !o)}
         >
           {block.props.icon || '💡'}
-        </button>
+        </IconButton>
         {open ? (
           <div className="nook-callout__picker" role="dialog" aria-label="Callout icon">
             <div className="nook-callout__grid">
               {PRESET_EMOJI.map((e) => (
-                <button key={e} type="button" onClick={() => setIcon(e)} aria-label={e}>
+                <Button
+                  key={e}
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setIcon(e)}
+                  aria-label={e}
+                >
                   {e}
-                </button>
+                </Button>
               ))}
             </div>
-            <input
+            <Input
               className="nook-callout__input"
               placeholder="Type any emoji…"
               value={custom}
               onChange={(e) => setCustom(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && custom.trim()) setIcon(Array.from(custom.trim())[0] ?? '💡');
+                if (e.key === 'Enter' && custom.trim())
+                  setIcon(Array.from(custom.trim())[0] ?? '💡');
                 if (e.key === 'Escape') setOpen(false);
               }}
             />
-            <button type="button" className="nook-callout__remove" onClick={() => setIcon('')}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="nook-callout__remove"
+              onClick={() => setIcon('')}
+            >
               No icon
-            </button>
+            </Button>
           </div>
         ) : null}
       </div>

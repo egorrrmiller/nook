@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { DownloadIcon, FileCodeIcon, FileTextIcon, Loader2Icon } from 'lucide-react';
 import type { ExportFormat } from '@nook/api-client';
-import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle, cn } from '@nook/ui';
+import { Button, Checkbox, Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle, cn } from '@nook/ui';
 import { api } from '../../../lib/api';
 import { useNode } from '../../../lib/queries';
 import { nodeTitle } from '../../../lib/utils';
@@ -76,34 +76,33 @@ export function ExportDialog({ workspaceId, nodeIds, open, onOpenChange }: { wor
                 ['html', 'HTML', FileCodeIcon, 'Standalone pages with a minimal stylesheet'],
               ] as const
             ).map(([value, label, Icon, hint]) => (
-              <button
+              <Button
                 key={value}
                 type="button"
+                variant={format === value ? 'secondary' : 'outline'}
+                size="lg"
                 role="radio"
                 aria-checked={format === value}
                 data-testid={`export-format-${value}`}
                 onClick={() => setFormat(value)}
-                className={cn(
-                  'flex flex-col items-start gap-1 rounded-md border border-border p-3 text-left transition-colors hover:bg-accent',
-                  format === value && 'border-primary bg-[color-mix(in_srgb,var(--primary)_8%,transparent)]',
-                )}
+                className={cn('h-auto flex-col items-start justify-start gap-1 p-3 text-left', format === value && 'border-primary bg-[color-mix(in_srgb,var(--primary)_8%,transparent)]')}
               >
                 <span className="flex items-center gap-1.5 text-sm font-medium">
                   <Icon className="size-4 text-muted-foreground" /> {label}
                 </span>
                 <span className="text-[11px] text-muted-foreground">{hint}</span>
-              </button>
+              </Button>
             ))}
           </div>
         </fieldset>
 
         <fieldset className="flex flex-col gap-1.5 text-sm" disabled={working}>
           <label className="flex cursor-pointer items-center gap-2">
-            <input type="checkbox" checked={includeChildren} onChange={(e) => setIncludeChildren(e.target.checked)} className="accent-[var(--primary)]" />
+            <Checkbox checked={includeChildren} onChange={(e) => setIncludeChildren(e.target.checked)} />
             Include sub-pages
           </label>
           <label className="flex cursor-pointer items-center gap-2">
-            <input type="checkbox" checked={includeFiles} onChange={(e) => setIncludeFiles(e.target.checked)} className="accent-[var(--primary)]" />
+            <Checkbox checked={includeFiles} onChange={(e) => setIncludeFiles(e.target.checked)} />
             Include files and images
           </label>
         </fieldset>

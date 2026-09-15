@@ -12,7 +12,16 @@ public interface IAppDbContext
     DbSet<WorkspaceMember> WorkspaceMembers { get; }
     DbSet<Invite> Invites { get; }
     DbSet<ApiToken> ApiTokens { get; }
+    DbSet<Integration> Integrations { get; }
+    DbSet<IntegrationInstallation> IntegrationInstallations { get; }
+    DbSet<IntegrationCapabilities> IntegrationCapabilities { get; }
+    DbSet<IntegrationGrant> IntegrationGrants { get; }
+    DbSet<OAuthAuthorizationCode> OAuthAuthorizationCodes { get; }
+    DbSet<OAuthRefreshToken> OAuthRefreshTokens { get; }
     DbSet<Node> Nodes { get; }
+    DbSet<Collection> Collections { get; }
+    DbSet<Database> Databases { get; }
+    DbSet<CollectionView> CollectionViews { get; }
     DbSet<NodeShare> NodeShares { get; }
     DbSet<Document> Documents { get; }
     DbSet<DocumentUpdate> DocumentUpdates { get; }

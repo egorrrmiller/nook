@@ -1,6 +1,7 @@
 import { createReactBlockSpec, type ReactCustomBlockRenderProps } from '@blocknote/react';
 import { useEffect, useState } from 'react';
 import { GlobeIcon, LinkIcon, RefreshCwIcon } from 'lucide-react';
+import { Button, IconButton, Input } from '@nook/ui';
 import { useEditorHost } from '../../host-context';
 import { parseHttpUrl } from '../providers';
 
@@ -19,6 +20,13 @@ export const bookmarkConfig = {
   content: 'none',
 } as const;
 
+/** Normalise the URL at the control boundary while keeping the stored prop absolute. */
+export function normalizeBookmarkUrl(value: string): string | null {
+  const url = value.trim();
+  if (!url) return null;
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}
+
 export function UrlInput({
   placeholder,
   buttonLabel,
@@ -32,14 +40,13 @@ export function UrlInput({
 }) {
   const [value, setValue] = useState('');
   const submit = () => {
-    const url = value.trim();
-    if (!url) return;
-    onSubmit(/^https?:\/\//i.test(url) ? url : `https://${url}`);
+    const url = normalizeBookmarkUrl(value);
+    if (url) onSubmit(url);
   };
   return (
     <div className="nook-url-input" contentEditable={false} data-testid={testId}>
       <LinkIcon size={16} className="nook-url-input__icon" />
-      <input
+      <Input
         autoFocus
         value={value}
         placeholder={placeholder}
@@ -52,9 +59,9 @@ export function UrlInput({
         }}
         aria-label={placeholder}
       />
-      <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={submit}>
+      <Button type="button" size="sm" onMouseDown={(e) => e.preventDefault()} onClick={submit}>
         {buttonLabel}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -132,7 +139,11 @@ function BookmarkView({ block, editor }: ReactCustomBlockRenderProps<typeof book
           <span>{siteName || hostOf(url)}</span>
           <span className="nook-bookmark__url">{url}</span>
           {fetched === 2 ? (
-            <button
+            <IconButton
+              label="Retry preview"
+              tooltip={false}
+              size="icon-sm"
+              variant="subtle"
               type="button"
               className="nook-bookmark__retry"
               title="Retry preview"
@@ -142,7 +153,7 @@ function BookmarkView({ block, editor }: ReactCustomBlockRenderProps<typeof book
               }}
             >
               <RefreshCwIcon size={12} />
-            </button>
+            </IconButton>
           ) : null}
         </div>
       </div>
@@ -165,7 +176,11 @@ export const BookmarkBlock = createReactBlockSpec(bookmarkConfig, {
   ),
   parse: (el) => {
     if (el.tagName === 'A' && el.classList.contains('nook-bookmark')) {
-      return { url: el.getAttribute('href') ?? '', title: el.getAttribute('data-title') ?? '', fetched: 0 };
+      return {
+        url: el.getAttribute('href') ?? '',
+        title: el.getAttribute('data-title') ?? '',
+        fetched: 0,
+      };
     }
     return undefined;
   },

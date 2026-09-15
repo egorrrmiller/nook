@@ -11,6 +11,7 @@ import userEvent from '@testing-library/user-event';
 import { renderApp, signInMock, firstWorkspaceId } from './render';
 import { mockApi } from '../mocks/handlers';
 import { definePlugin } from '@nook/plugin-sdk';
+import { useUiStore } from '../stores/ui';
 
 describe('sidebar tree', () => {
   it('renders root pages and lazily loads children on expand', async () => {
@@ -41,6 +42,40 @@ describe('sidebar tree', () => {
       expect(router.state.location.pathname).toBe(`/w/${firstWorkspaceId()}/p/${created.id}`),
     );
     expect(await screen.findByTestId('page-view')).toBeInTheDocument();
+  });
+
+  it('creates a folder from the Private section', async () => {
+    signInMock();
+    const user = userEvent.setup();
+    const { router } = await renderApp({ path: `/w/${firstWorkspaceId()}` });
+    await screen.findByTestId('sidebar');
+    const before = mockApi.state.nodes.length;
+
+    await user.click(screen.getByTestId('new-folder'));
+
+    await waitFor(() => expect(mockApi.state.nodes.length).toBe(before + 1));
+    const created = mockApi.state.nodes[mockApi.state.nodes.length - 1]!;
+    expect(created.kind).toBe('folder');
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe(`/w/${firstWorkspaceId()}/p/${created.id}`),
+    );
+  });
+
+  it('can reopen the sidebar after it is hidden', async () => {
+    signInMock();
+    const user = userEvent.setup();
+    await renderApp({ path: `/w/${firstWorkspaceId()}` });
+    await screen.findByTestId('sidebar');
+
+    useUiStore.getState().setSidebarOpen(false);
+    expect(screen.getByTestId('sidebar')).toHaveAttribute('aria-hidden', 'true');
+    const openButton = await screen.findByTestId('open-sidebar');
+    expect(openButton).toBeVisible();
+
+    await user.click(openButton);
+    await waitFor(() => expect(useUiStore.getState().sidebarOpen).toBe(true));
+    expect(screen.getByTestId('sidebar')).toHaveAttribute('aria-hidden', 'false');
+    expect(screen.queryByTestId('open-sidebar')).not.toBeInTheDocument();
   });
 
   it('renames a page inline', async () => {

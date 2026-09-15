@@ -1,8 +1,10 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
+  ArrowRightIcon,
   ClockIcon,
   FileTextIcon,
+  Loader2Icon,
   PanelLeftIcon,
   PlusIcon,
   PuzzleIcon,
@@ -30,6 +32,8 @@ import { toast } from '../../stores/toast';
 import { useUiStore } from '../../stores/ui';
 import { NodeIcon } from '../tree/NodeIcon';
 import { BreadcrumbText } from '../tree/BreadcrumbText';
+import { highlightTerms } from '../../features/knowledge/lib/snippet';
+import { Marked } from '../../features/knowledge/ui/Marked';
 
 /** ⌘K / ⌘P: quick find (§7.4) over titles and aliases, recents, actions and plugin commands. */
 export function CommandPalette({ workspaceId }: { workspaceId: string }) {
@@ -45,7 +49,7 @@ export function CommandPalette({ workspaceId }: { workspaceId: string }) {
   const pluginCommands = usePluginCommands();
   const [query, setQuery] = useState('');
   const q = useDebouncedValue(query, 150);
-  const { data: hits, isFetching } = useQuickFind(workspaceId, q, open);
+  const { data: hits, isFetching, isError } = useQuickFind(workspaceId, q, open);
   const { data: recents } = useRecents(workspaceId, open && !q);
 
   useEffect(() => {
@@ -170,6 +174,8 @@ export function CommandPalette({ workspaceId }: { workspaceId: string }) {
     },
   ];
   const actions = allActions.filter((a) => a.always || matches(a.label, a.keywords ?? []));
+  const terms = needle.split(/\s+/).filter(Boolean);
+  const resultLabel = q ? `${hits?.length ?? 0} ${hits?.length === 1 ? 'page' : 'pages'}` : 'Recently opened';
 
   return (
     <CommandPaletteShell open={open} onOpenChange={setOpen} label="Search and commands" shouldFilter={false}>
@@ -180,15 +186,28 @@ export function CommandPalette({ workspaceId }: { workspaceId: string }) {
         data-testid="palette-input"
       />
       <CommandList>
-        <CommandEmpty>{isFetching ? 'Searching…' : 'No results.'}</CommandEmpty>
+        <div className="nook-command-palette__context" aria-live="polite" data-testid="palette-status">
+          <span>{isError ? 'Pages unavailable' : isFetching ? 'Searching workspace…' : q ? resultLabel : 'Jump back in'}</span>
+          <span className="nook-command-palette__context-hint">{q ? '↑↓ navigate · ↵ open' : `${modKey()}⇧F full-text search`}</span>
+        </div>
+        <CommandEmpty>
+          <span className="flex flex-col items-center gap-1">
+            {isFetching ? <Loader2Icon className="size-4 animate-spin" /> : <SearchIcon className="size-4" />}
+            <span>{isError ? 'Could not load pages. Try again.' : isFetching ? 'Looking through your workspace…' : q ? `Nothing matched “${q}”` : 'Start typing to find a page'}</span>
+          </span>
+        </CommandEmpty>
 
         {!q && recents?.length ? (
-          <CommandGroup heading="Recent">
+          <CommandGroup heading="Recent" data-testid="palette-recent">
             {recents.slice(0, 5).map((r) => (
               <CommandItem key={r.node.id} value={`recent-${r.node.id}`} onSelect={() => openPage(r.node.id)}>
                 <NodeIcon icon={r.node.icon} kind={r.node.kind} size={18} />
-                <span className="truncate">{nodeTitle(r.node.title)}</span>
-                <ClockIcon className="ml-auto size-3.5 opacity-60" />
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate font-medium">{nodeTitle(r.node.title)}</span>
+                  <span className="truncate text-xs text-fg-muted">Opened {new Date(r.visitedAt).toLocaleDateString()}</span>
+                </span>
+                <ClockIcon className="size-3.5 shrink-0 text-fg-muted" />
+                <ArrowRightIcon className="nook-command-palette__row-arrow" />
               </CommandItem>
             ))}
           </CommandGroup>
@@ -205,7 +224,10 @@ export function CommandPalette({ workspaceId }: { workspaceId: string }) {
               >
                 <NodeIcon icon={hit.node.icon} kind={hit.node.kind} size={18} />
                 <span className="flex min-w-0 flex-col">
-                  <span className="truncate">{nodeTitle(hit.node.title)}</span>
+                  <Marked
+                    parts={highlightTerms(nodeTitle(hit.node.title), terms)}
+                    className="truncate font-medium"
+                  />
                   <BreadcrumbText crumbs={hit.breadcrumb} />
                 </span>
                 <TagChips workspaceId={workspaceId} nodeId={hit.node.id} compact />
@@ -217,6 +239,7 @@ export function CommandPalette({ workspaceId }: { workspaceId: string }) {
                 {hit.node.archivedAt ? (
                   <span className="ml-auto shrink-0 text-[11px] text-fg-muted">archived</span>
                 ) : null}
+                <ArrowRightIcon className="nook-command-palette__row-arrow" />
               </CommandItem>
             ))}
           </CommandGroup>
@@ -228,8 +251,12 @@ export function CommandPalette({ workspaceId }: { workspaceId: string }) {
             <CommandGroup heading="Actions">
               {actions.map((a) => (
                 <CommandItem key={a.id} value={a.id} onSelect={a.run} data-testid={a.testId}>
-                  <a.icon /> {a.label}
+                  <span className="nook-command-palette__action-icon">
+                    <a.icon />
+                  </span>
+                  <span className="truncate">{a.label}</span>
                   {a.shortcut ? <CommandShortcut>{a.shortcut}</CommandShortcut> : null}
+                  <ArrowRightIcon className="nook-command-palette__row-arrow" />
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -255,6 +282,7 @@ export function CommandPalette({ workspaceId }: { workspaceId: string }) {
                     <Icon className="size-4 text-fg-muted" />
                     <span className="truncate">{c.title}</span>
                     {c.shortcut ? <CommandShortcut>{c.shortcut}</CommandShortcut> : null}
+                    <ArrowRightIcon className="nook-command-palette__row-arrow" />
                   </CommandItem>
                 );
               })}
@@ -262,6 +290,11 @@ export function CommandPalette({ workspaceId }: { workspaceId: string }) {
           </>
         ) : null}
       </CommandList>
+      <div className="nook-command-palette__footer">
+        <span className="flex items-center gap-1"><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+        <span className="flex items-center gap-1"><kbd>↵</kbd> select</span>
+        <span className="ml-auto">esc to close</span>
+      </div>
     </CommandPaletteShell>
   );
 }

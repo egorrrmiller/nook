@@ -71,6 +71,15 @@ export function useGlobalShortcuts(workspaceId: string) {
         return;
       }
 
+      // `event.key` is `|` on some keyboard layouts even when the physical
+      // Backslash key is used. Keep the physical-key fallback so a hidden
+      // sidebar can always be restored with the documented shortcut.
+      if (e.code === 'Backslash' && !e.shiftKey) {
+        e.preventDefault();
+        ui.toggleSidebar();
+        return;
+      }
+
       switch (key) {
         case 'k':
         case 'p':
@@ -79,6 +88,7 @@ export function useGlobalShortcuts(workspaceId: string) {
           ui.setPaletteOpen(!ui.paletteOpen);
           break;
         case '\\':
+        case '|':
           e.preventDefault();
           ui.toggleSidebar();
           break;

@@ -17,6 +17,7 @@ import { useUiStore, type ThemeSetting } from '../../stores/ui';
 import { toast } from '../../stores/toast';
 import { api } from '../../lib/api';
 import { queryKeys } from '../../lib/queries';
+import { NodeIcon } from '../tree/NodeIcon';
 
 const THEMES: { value: ThemeSetting; label: string }[] = [
   { value: 'system', label: 'System' },
@@ -45,13 +46,13 @@ export function WorkspaceSwitcher({ workspaceId }: { workspaceId: string }) {
     <Menu>
       <MenuTrigger
         data-testid="workspace-switcher"
-        className="flex h-8 w-full items-center gap-2 rounded-[var(--radius-sm)] px-2 text-left text-sm font-medium text-fg hover:bg-bg-hover"
+        className="group flex h-9 min-w-0 flex-1 items-center gap-2 rounded-[var(--radius-md)] px-2 text-left text-[13px] font-medium text-fg transition-colors duration-[var(--duration)] hover:bg-bg-hover"
       >
-        <span className="flex size-5 items-center justify-center rounded-[var(--radius-sm)] bg-bg-active text-xs">
-          {current?.icon ?? current?.name.slice(0, 1).toUpperCase() ?? '?'}
+        <span className="flex size-6 items-center justify-center rounded-[var(--radius-sm)] bg-fg text-[11px] font-semibold text-bg shadow-sm">
+          {current?.icon ? <NodeIcon icon={current.icon} size={18} /> : current?.name.slice(0, 1).toUpperCase() ?? '?'}
         </span>
         <span className="min-w-0 flex-1 truncate">{current?.name ?? 'Workspace'}</span>
-        <ChevronsUpDownIcon className="size-3.5 text-fg-muted" />
+        <ChevronsUpDownIcon className="size-3.5 text-fg-muted transition-transform group-hover:translate-y-px" />
       </MenuTrigger>
       <MenuContent className="w-64">
         <MenuGroup>
@@ -62,7 +63,7 @@ export function WorkspaceSwitcher({ workspaceId }: { workspaceId: string }) {
               onClick={() => navigate({ to: '/w/$workspaceId', params: { workspaceId: w.id } })}
             >
               <span className="flex size-5 items-center justify-center rounded-[var(--radius-sm)] bg-bg-active text-xs">
-                {w.icon ?? w.name.slice(0, 1).toUpperCase()}
+                {w.icon ? <NodeIcon icon={w.icon} size={16} /> : w.name.slice(0, 1).toUpperCase()}
               </span>
               <span className="min-w-0 flex-1 truncate">{w.name}</span>
               <span className="text-xs text-fg-muted">{w.role}</span>

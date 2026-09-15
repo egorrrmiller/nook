@@ -29,12 +29,15 @@ public class NodeTests(NookApiFactory factory) : IClassFixture<NookApiFactory>
 
         var child = await client.CreateNodeAsync("Child", root.Id);
         Assert.Equal(root.Id, child.ParentId);
+        var folder = await client.CreateNodeAsync("Folder", root.Id, "folder");
+        Assert.Equal("folder", folder.Kind);
+        Assert.Equal(root.Id, folder.ParentId);
 
         var roots = await client.GetJsonAsync<List<NodeDto>>("/api/nodes");
         Assert.Equal([root.Id, second.Id], roots.Select(n => n.Id));
         var children = await client.GetJsonAsync<List<NodeDto>>($"/api/nodes?parentId={root.Id}");
-        Assert.Equal([child.Id], children.Select(n => n.Id));
-        Assert.Empty(await client.GetJsonAsync<List<NodeDto>>("/api/nodes?kind=folder"));
+        Assert.Equal([child.Id, folder.Id], children.Select(n => n.Id));
+        Assert.Equal([folder.Id], (await client.GetJsonAsync<List<NodeDto>>("/api/nodes?kind=folder")).Select(n => n.Id));
 
         var fetched = await client.GetJsonAsync<NodeDto>($"/api/nodes/{child.Id}");
         Assert.Equal("Child", fetched.Title);

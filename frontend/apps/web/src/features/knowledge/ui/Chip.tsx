@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react';
 import { XIcon } from 'lucide-react';
-import { cn } from '@nook/ui';
+import { IconButton, cn } from '@nook/ui';
 import { chipStyle } from '../lib/tag-colors';
 
 export interface ChipProps extends Omit<ComponentProps<'span'>, 'color'> {
@@ -28,17 +28,18 @@ export function Chip({ label, color, size = 'md', onRemove, muted, className, ..
     >
       <span className="truncate">{label}</span>
       {onRemove ? (
-        <button
-          type="button"
-          aria-label={`Remove ${label}`}
+        <IconButton
+          label={`Remove ${label}`}
+          size="icon-sm"
+          tooltip={false}
           onClick={(e) => {
             e.stopPropagation();
             onRemove();
           }}
-          className="-mr-0.5 rounded-sm p-px opacity-60 hover:opacity-100"
+          className="-mr-0.5 size-4 rounded-sm p-0 opacity-60 hover:opacity-100 [&_svg]:size-3"
         >
-          <XIcon className="size-3" />
-        </button>
+          <XIcon />
+        </IconButton>
       ) : null}
     </span>
   );

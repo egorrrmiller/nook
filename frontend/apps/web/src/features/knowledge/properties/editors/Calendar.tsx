@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
-import { cn } from '@nook/ui';
+import { Button, IconButton, cn } from '@nook/ui';
 import { toIsoDay } from '../../lib/property-types';
 
 export interface CalendarProps {
@@ -38,23 +38,25 @@ export function Calendar({ start, end, range, onSelect }: CalendarProps) {
   return (
     <div className="w-[252px] select-none" data-testid="calendar">
       <div className="mb-1 flex items-center justify-between px-1">
-        <button
-          type="button"
-          aria-label="Previous month"
+        <IconButton
+          label="Previous month"
+          size="icon-sm"
+          tooltip={false}
           onClick={() => setView((v) => (v.m === 0 ? { y: v.y - 1, m: 11 } : { y: v.y, m: v.m - 1 }))}
-          className="rounded-sm p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+          className="text-muted-foreground hover:bg-accent hover:text-foreground"
         >
           <ChevronLeftIcon className="size-4" />
-        </button>
+        </IconButton>
         <span className="text-sm font-medium">{monthFmt.format(first)}</span>
-        <button
-          type="button"
-          aria-label="Next month"
+        <IconButton
+          label="Next month"
+          size="icon-sm"
+          tooltip={false}
           onClick={() => setView((v) => (v.m === 11 ? { y: v.y + 1, m: 0 } : { y: v.y, m: v.m + 1 }))}
-          className="rounded-sm p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+          className="text-muted-foreground hover:bg-accent hover:text-foreground"
         >
           <ChevronRightIcon className="size-4" />
-        </button>
+        </IconButton>
       </div>
       <div className="grid grid-cols-7 text-center text-[11px] text-muted-foreground">
         {WEEKDAYS.map((w) => (
@@ -70,21 +72,23 @@ export function Calendar({ start, end, range, onSelect }: CalendarProps) {
           const isEnd = day === e;
           const inRange = range && s && e && day > s && day < e;
           return (
-            <button
+            <Button
               key={day}
               type="button"
+              variant="ghost"
+              size="icon"
               aria-label={day}
               aria-pressed={isStart || isEnd || undefined}
               onClick={() => onSelect(day)}
               className={cn(
-                'mx-auto my-px flex size-7 items-center justify-center rounded-sm text-[13px] tabular-nums hover:bg-accent',
+                'mx-auto my-px size-7 rounded-sm text-[13px] font-normal tabular-nums',
                 inRange && 'bg-[color-mix(in_srgb,var(--primary)_14%,transparent)]',
                 (isStart || isEnd) && 'bg-primary text-primary-foreground hover:bg-primary',
                 day === today && !isStart && !isEnd && 'font-semibold text-primary',
               )}
             >
               {Number(day.slice(8, 10))}
-            </button>
+            </Button>
           );
         })}
       </div>

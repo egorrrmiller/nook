@@ -49,6 +49,11 @@ export function Tabs({ workspaceId }: { workspaceId: string }) {
     }
   }, [activeId, navigate]);
 
+  useEffect(() => {
+    if (!activeId) return;
+    document.querySelector<HTMLElement>(`[data-tab-id="${activeId}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [activeId]);
+
   if (tabs.length < 2) return null;
 
   const onAuxClick = (e: MouseEvent, id: string) => {
@@ -63,7 +68,7 @@ export function Tabs({ workspaceId }: { workspaceId: string }) {
       role="tablist"
       aria-label="Open tabs"
       data-testid="tab-strip"
-      className="flex h-[var(--tabbar-height)] shrink-0 items-end gap-px overflow-x-auto border-b border-border px-2"
+      className="nook-tabs flex h-[var(--tabbar-height)] shrink-0 items-end gap-1 overflow-x-auto border-b border-border px-2"
     >
       {tabs.map((tab) => {
         const active = tab.id === activeId;
@@ -74,14 +79,33 @@ export function Tabs({ workspaceId }: { workspaceId: string }) {
             aria-selected={active}
             tabIndex={active ? 0 : -1}
             data-testid="tab"
+            data-tab-id={tab.id}
             onClick={() => useTabsStore.getState().activate(tab.id)}
             onAuxClick={(e) => onAuxClick(e, tab.id)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') useTabsStore.getState().activate(tab.id);
+              const index = tabs.findIndex((item) => item.id === tab.id);
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                useTabsStore.getState().activate(tab.id);
+              } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                e.preventDefault();
+                const next = e.key === 'ArrowRight' ? (index + 1) % tabs.length : (index - 1 + tabs.length) % tabs.length;
+                useTabsStore.getState().activate(tabs[next]!.id);
+              } else if (e.key === 'Home') {
+                e.preventDefault();
+                useTabsStore.getState().activate(tabs[0]!.id);
+              } else if (e.key === 'End') {
+                e.preventDefault();
+                useTabsStore.getState().activate(tabs[tabs.length - 1]!.id);
+              } else if (e.key === 'Delete' || e.key === 'Backspace') {
+                e.preventDefault();
+                useTabsStore.getState().close(tab.id);
+              }
             }}
+            title={tab.title || 'Untitled'}
             className={cn(
-              'group flex h-7 min-w-[120px] max-w-[200px] cursor-default items-center gap-1.5 rounded-t-[var(--radius-sm)] px-2 text-[13px] transition-colors duration-[var(--duration)]',
-              active ? 'bg-bg font-medium text-fg' : 'text-fg-secondary hover:bg-bg-hover',
+              'nook-tabs__tab group flex h-8 min-w-[136px] max-w-[240px] cursor-default items-center gap-2 rounded-t-[var(--radius-sm)] border border-transparent px-2.5 text-[13px] transition-colors duration-[var(--duration)]',
+              active ? 'nook-tabs__tab--active bg-bg font-medium text-fg' : 'text-fg-secondary hover:bg-bg-hover',
             )}
           >
             {tab.icon ? (
@@ -90,18 +114,20 @@ export function Tabs({ workspaceId }: { workspaceId: string }) {
               <NodeIcon size={16} className="shrink-0" />
             )}
             <span className="min-w-0 flex-1 truncate">{tab.title || 'Untitled'}</span>
-            <button
-              type="button"
-              aria-label={`Close ${tab.title || 'tab'}`}
+            <IconButton
+              label={`Close ${tab.title || 'tab'}`}
+              tooltip={false}
+              size="icon-sm"
               data-testid="tab-close"
+              title={`Close ${tab.title || 'tab'}`}
               onClick={(e) => {
                 e.stopPropagation();
                 useTabsStore.getState().close(tab.id);
               }}
-              className="flex size-4 shrink-0 items-center justify-center rounded-[3px] text-fg-muted opacity-0 hover:bg-bg-active hover:text-fg group-hover:opacity-100 aria-hidden:opacity-0"
+              className="size-4 shrink-0 rounded-[3px] text-fg-muted opacity-0 hover:bg-bg-active hover:text-fg group-hover:opacity-100 aria-hidden:opacity-0"
             >
               <XIcon className="size-3" />
-            </button>
+            </IconButton>
           </div>
         );
       })}

@@ -1,2 +1,4 @@
+# pnpm 12 requires native dependency build scripts to be explicitly allowed.
+# esbuild is needed by the TypeScript build and is safe to run in the image build.
 allowBuilds:
   esbuild: true

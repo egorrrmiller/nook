@@ -3,10 +3,11 @@ import { useNavigate } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { AlertTriangleIcon, CheckCircle2Icon, FileUpIcon, Loader2Icon, UploadIcon, XIcon } from 'lucide-react';
 import { isImportJobAccepted, type ImportResult } from '@nook/api-client';
-import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle, cn } from '@nook/ui';
+import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle, IconButton, Radio, cn } from '@nook/ui';
 import { api } from '../../../lib/api';
 import { invalidateNodeLists, useNode } from '../../../lib/queries';
 import { nodeTitle } from '../../../lib/utils';
+import { HiddenFileInput } from '../../../components/shared/HiddenFileInput';
 
 const ACCEPT = '.md,.markdown,.txt,.html,.csv,.zip';
 const EXT_RE = /\.(md|markdown|txt|html|csv|zip)$/i;
@@ -151,31 +152,31 @@ export function ImportDialog({
                 busy && 'pointer-events-none opacity-60',
               )}
             >
-              <input
-                ref={inputRef}
-                type="file"
+              <HiddenFileInput
+                inputRef={inputRef}
                 accept={ACCEPT}
                 data-testid="import-file-input"
                 className="sr-only"
                 onClick={(e) => e.stopPropagation()}
-                onChange={(e) => pick(e.target.files?.[0])}
+                onFile={pick}
               />
               {file ? (
                 <>
                   <FileUpIcon className="size-6 text-muted-foreground" />
                   <span className="flex items-center gap-1 text-sm font-medium">
                     {file.name}
-                    <button
-                      type="button"
-                      aria-label="Remove file"
+                    <IconButton
+                      label="Remove file"
+                      size="icon-sm"
+                      tooltip={false}
                       onClick={(e) => {
                         e.stopPropagation();
                         setFile(null);
                       }}
-                      className="rounded-sm p-0.5 text-muted-foreground hover:bg-accent-strong hover:text-foreground"
+                      className="text-muted-foreground hover:bg-accent-strong hover:text-foreground"
                     >
                       <XIcon className="size-3.5" />
-                    </button>
+                    </IconButton>
                   </span>
                   <span className="text-[11px] text-muted-foreground">{formatBytes(file.size)}</span>
                 </>
@@ -194,14 +195,14 @@ export function ImportDialog({
               <legend className="mb-1 text-xs font-medium text-muted-foreground">Import into</legend>
               {parentId ? (
                 <label className="flex cursor-pointer items-center gap-2">
-                  <input type="radio" name="import-target" checked={target === 'current'} onChange={() => setTarget('current')} className="accent-[var(--primary)]" />
+                  <Radio name="import-target" checked={target === 'current'} onChange={() => setTarget('current')} />
                   <span>
                     Inside <span className="font-medium">{nodeTitle(parent?.title)}</span>
                   </span>
                 </label>
               ) : null}
               <label className="flex cursor-pointer items-center gap-2">
-                <input type="radio" name="import-target" checked={target === 'root'} onChange={() => setTarget('root')} className="accent-[var(--primary)]" />
+                <Radio name="import-target" checked={target === 'root'} onChange={() => setTarget('root')} />
                 Workspace root
               </label>
             </fieldset>

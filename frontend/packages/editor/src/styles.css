@@ -8,12 +8,14 @@
 .nook-editor {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  min-width: 0;
 }
 
 .nook-editor__title,
 .nook-editor-title {
   width: 100%;
+  min-height: 0;
   resize: none;
   overflow: hidden;
   border: 0;
@@ -23,14 +25,24 @@
   font-family: inherit;
   font-size: 40px;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   line-height: 1.2;
   padding: 0;
-  margin: 0 0 6px;
+  margin: 0 0 8px;
+  border-radius: var(--radius-sm);
+  transition: background var(--duration) var(--ease);
 }
 .nook-editor__title::placeholder,
 .nook-editor-title::placeholder {
   color: var(--foreground-tertiary);
+}
+.nook-editor__title:hover:not(:focus),
+.nook-editor-title:hover:not(:focus) {
+  background: var(--accent);
+}
+.nook-editor__title:focus,
+.nook-editor-title:focus {
+  background: transparent;
 }
 
 .nook-editor-banner {
@@ -54,6 +66,390 @@
   gap: 12px;
   padding-top: 8px;
 }
+
+/* -------------------------------------------------------------- editor chrome */
+.nook-editor .bn-root {
+  position: relative;
+  isolation: isolate;
+}
+
+.nook-editor .bn-container {
+  min-width: 0;
+}
+
+/* BlockNote renders the text placeholder on the inline content node. Keeping
+   this here instead of inventing a second editor overlay means it follows the
+   active block and remains correct for nested blocks. */
+.nook-editor .bn-inline-content::before {
+  color: color-mix(in srgb, var(--foreground-tertiary) 72%, transparent);
+  font-size: 0.96em;
+  font-weight: 400;
+  letter-spacing: 0;
+  transition: color var(--duration) var(--ease), opacity var(--duration) var(--ease);
+}
+
+.nook-editor .bn-inline-content:focus::before {
+  color: var(--foreground-tertiary);
+}
+
+/* ------------------------------------------------------------- slash menu */
+.nook-slash-menu {
+  width: min(380px, calc(100vw - 28px));
+  max-height: min(480px, calc(100vh - 32px));
+  overflow: hidden;
+  padding: 7px;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--popover) 96%, transparent);
+  color: var(--popover-foreground);
+  box-shadow: var(--shadow-popover), 0 10px 32px color-mix(in srgb, #000 10%, transparent);
+  backdrop-filter: blur(14px);
+  animation: nook-menu-in 130ms var(--ease) both;
+}
+
+.nook-slash-menu__header,
+.nook-slash-menu__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--foreground-tertiary);
+  font-size: 11px;
+}
+
+.nook-slash-menu__header {
+  min-height: 30px;
+  padding: 1px 6px 6px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.nook-slash-menu__search-hint,
+.nook-slash-menu__footer span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nook-slash-menu__search-hint kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 2px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--muted);
+  font-size: 10px;
+  line-height: 1;
+}
+
+.nook-slash-menu__count {
+  min-width: 44px;
+  text-align: right;
+}
+
+.nook-slash-menu__list {
+  max-height: min(390px, calc(100vh - 120px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 0;
+  scrollbar-width: thin;
+}
+
+.nook-slash-menu__group {
+  padding: 9px 8px 4px;
+  color: var(--foreground-tertiary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.075em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.nook-slash-menu__group:first-child {
+  padding-top: 5px;
+}
+
+.nook-slash-menu__item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-height: 49px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--duration) var(--ease), border-color var(--duration) var(--ease), transform var(--duration) var(--ease);
+}
+
+.nook-slash-menu__item:hover,
+.nook-slash-menu__item[data-selected='true'] {
+  border-color: color-mix(in srgb, var(--border) 72%, transparent);
+  background: var(--accent);
+}
+
+.nook-slash-menu__item[data-selected='true'] {
+  transform: translateX(1px);
+}
+
+.nook-slash-menu__item:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary) 62%, transparent);
+  outline-offset: -2px;
+}
+
+.nook-slash-menu__icon {
+  display: grid;
+  flex: 0 0 31px;
+  place-items: center;
+  width: 31px;
+  height: 31px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--background) 66%, transparent);
+  color: var(--foreground-secondary);
+  transition: background var(--duration) var(--ease), color var(--duration) var(--ease), transform var(--duration) var(--ease);
+}
+
+.nook-slash-menu__item:hover .nook-slash-menu__icon,
+.nook-slash-menu__item[data-selected='true'] .nook-slash-menu__icon {
+  background: var(--background);
+  color: var(--foreground);
+  transform: scale(1.04);
+}
+
+.nook-slash-menu__copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nook-slash-menu__title {
+  overflow: hidden;
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nook-slash-menu__subtext {
+  overflow: hidden;
+  color: var(--foreground-tertiary);
+  font-size: 11px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nook-slash-menu__badge,
+.nook-slash-menu__footer kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 19px;
+  padding: 0 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--muted);
+  color: var(--foreground-tertiary);
+  font-size: 10px;
+  line-height: 1;
+}
+
+.nook-slash-menu__footer {
+  justify-content: flex-start;
+  gap: 14px;
+  padding: 6px 6px 1px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.nook-slash-menu__footer kbd + kbd {
+  margin-left: 1px;
+}
+
+.nook-slash-menu__state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 118px;
+  padding: 18px;
+  color: var(--foreground-tertiary);
+  font-size: 12px;
+}
+
+.nook-slash-menu__state--empty {
+  align-items: flex-start;
+  justify-content: flex-start;
+  min-height: 84px;
+}
+
+.nook-slash-menu__state--empty > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nook-slash-menu__state strong {
+  color: var(--foreground-secondary);
+  font-size: 13px;
+  font-weight: 550;
+}
+
+.nook-slash-menu__spinner {
+  animation: nook-spin 850ms linear infinite;
+}
+
+@keyframes nook-menu-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes nook-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --------------------------------------------------------- floating toolbar */
+:where(.nook-editor, body) .bn-formatting-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: min(720px, calc(100vw - 24px));
+  padding: 5px;
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--popover) 96%, transparent);
+  box-shadow: var(--shadow-popover), 0 8px 24px color-mix(in srgb, #000 10%, transparent);
+  backdrop-filter: blur(14px);
+  animation: nook-toolbar-in 120ms var(--ease) both;
+}
+
+:where(.nook-editor, body) .bn-formatting-toolbar button,
+:where(.nook-editor, body) .bn-formatting-toolbar [role='button'] {
+  min-width: 30px;
+  min-height: 30px;
+  border-radius: var(--radius-md);
+  color: var(--foreground-secondary);
+}
+
+:where(.nook-editor, body) .bn-formatting-toolbar button:hover,
+:where(.nook-editor, body) .bn-formatting-toolbar [role='button']:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+:where(.nook-editor, body) .bn-formatting-toolbar button:focus-visible,
+:where(.nook-editor, body) .bn-formatting-toolbar [role='button']:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary) 58%, transparent);
+  outline-offset: -2px;
+}
+
+@keyframes nook-toolbar-in {
+  from { opacity: 0; transform: translateY(3px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ------------------------------------------------------------ block affordances */
+.nook-editor .bn-block-outer {
+  position: relative;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background var(--duration) var(--ease), border-color var(--duration) var(--ease), box-shadow var(--duration) var(--ease);
+}
+
+.nook-editor .bn-block-outer:hover {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--accent) 34%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border) 42%, transparent);
+}
+
+.nook-editor .bn-block-outer:focus-within,
+.nook-editor .bn-block-outer[data-selected='true'] {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
+.nook-editor .bn-side-menu {
+  padding: 2px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--popover) 94%, transparent);
+  box-shadow: var(--shadow-popover);
+  opacity: 0;
+  transition: opacity var(--duration) var(--ease), transform var(--duration) var(--ease);
+  transform: translateX(-3px);
+}
+
+.nook-editor .bn-block-outer:hover .bn-side-menu,
+.nook-editor .bn-block-outer:focus-within .bn-side-menu,
+.nook-editor .bn-side-menu:focus-within {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.nook-editor .bn-side-menu button {
+  min-width: 27px;
+  min-height: 27px;
+  color: var(--foreground-tertiary);
+}
+
+.nook-editor .bn-side-menu button:hover,
+.nook-editor .bn-side-menu button:focus-visible {
+  color: var(--foreground);
+}
+
+.nook-editor .bn-menu-dropdown,
+.nook-editor .bn-drag-handle-menu {
+  padding: 5px;
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--popover) 97%, transparent);
+  box-shadow: var(--shadow-popover), 0 8px 24px color-mix(in srgb, #000 10%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.nook-editor .bn-drag-handle-menu .bn-menu-item,
+.nook-editor .bn-drag-handle-menu button {
+  min-height: 31px;
+  border-radius: var(--radius-md);
+  color: var(--foreground-secondary);
+  font-size: 13px;
+}
+
+.nook-editor .bn-drag-handle-menu .bn-menu-item:hover,
+.nook-editor .bn-drag-handle-menu button:hover,
+.nook-editor .bn-drag-handle-menu .bn-menu-item:focus-visible,
+.nook-editor .bn-drag-handle-menu button:focus-visible {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nook-slash-menu,
+  :where(.nook-editor, body) .bn-formatting-toolbar,
+  .nook-editor .bn-side-menu,
+  .nook-editor .bn-block-outer,
+  .nook-editor .bn-inline-content::before,
+  .nook-slash-menu__item,
+  .nook-slash-menu__icon {
+    animation: none;
+    transition: none;
+  }
+
+  .nook-slash-menu__spinner {
+    animation: none;
+  }
+}
 .nook-skeleton-line {
   height: 14px;
   border-radius: 4px;
@@ -68,11 +464,13 @@
 
 /* ------------------------------------------------------- Notion typography */
 .nook-editor .bn-editor {
-  padding-inline: 0;
+  /* Keep the selection ring inside AppShell's vertical scroll container. */
+  box-sizing: border-box;
+  padding-inline: 2px;
   background: transparent;
   font-family: inherit;
   font-size: 16px;
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--foreground);
 }
 .nook-editor .bn-container {
@@ -98,6 +496,34 @@
   --level: 1.05em;
   padding-top: 12px;
 }
+.nook-editor .bn-block-content {
+  min-width: 0;
+}
+.nook-editor .bn-block-outer {
+  border-radius: var(--radius-sm);
+  transition: background var(--duration) var(--ease);
+}
+.nook-editor .bn-block-outer:hover {
+  background: color-mix(in srgb, var(--accent) 42%, transparent);
+}
+.nook-editor .bn-block-outer:focus-within {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+.nook-editor .bn-block-outer:has([data-content-type='heading']) {
+  margin-top: 4px;
+}
+.nook-editor .bn-side-menu {
+  border-radius: var(--radius-sm);
+}
+.nook-editor .bn-side-menu button,
+.nook-editor .bn-formatting-toolbar button {
+  border-radius: var(--radius-sm);
+  transition: background var(--duration) var(--ease), color var(--duration) var(--ease);
+}
+.nook-editor .bn-side-menu button:hover,
+.nook-editor .bn-formatting-toolbar button:hover {
+  background: var(--accent);
+}
 .nook-editor [data-content-type='quote'] blockquote {
   border-left: 3px solid var(--foreground);
   color: var(--foreground);
@@ -108,6 +534,43 @@
   font-size: 14px;
   background: var(--muted);
   border-radius: var(--radius-md);
+}
+
+/* Simple tables: keep the BlockNote editing model, but give it a calmer Nook surface and
+   horizontal overflow on narrow screens instead of shrinking cells into unreadable slivers. */
+.nook-editor [data-content-type='table'] {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--background);
+}
+.nook-editor [data-content-type='table'] .tableWrapper {
+  min-width: 420px;
+  margin: 0;
+}
+.nook-editor [data-content-type='table'] table {
+  border-collapse: collapse;
+  background: transparent;
+}
+.nook-editor [data-content-type='table'] th,
+.nook-editor [data-content-type='table'] td {
+  min-width: 96px;
+  border-color: var(--border);
+  padding: 8px 10px;
+  vertical-align: top;
+}
+.nook-editor [data-content-type='table'] th {
+  background: var(--muted);
+  color: var(--foreground-secondary);
+  font-size: 0.9em;
+  font-weight: 600;
+}
+.nook-editor [data-content-type='table'] tr:hover td {
+  background: color-mix(in srgb, var(--accent) 34%, transparent);
+}
+.nook-editor [data-content-type='table'] p {
+  margin: 0;
 }
 .nook-editor code,
 .nook-editor .bn-inline-content code {
@@ -222,6 +685,7 @@
 .nook-callout__remove {
   margin-top: 6px;
   width: 100%;
+  justify-content: flex-start;
   border: 0;
   background: transparent;
   color: var(--foreground-secondary);
@@ -644,6 +1108,8 @@
   gap: 8px;
 }
 .nook-date__popover input {
+  height: 24px;
+  min-height: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: transparent;
@@ -754,6 +1220,7 @@
 .nook-overlay__item {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 8px;
   padding: 6px 8px;
   border: 0;
@@ -779,6 +1246,7 @@
 .nook-overlay__swatch {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 8px;
   border: 0;
   border-radius: var(--radius-sm);
@@ -817,6 +1285,7 @@
 .nook-paste-popover button {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 8px;
   border: 0;
   background: transparent;
@@ -837,10 +1306,30 @@
 
 /* ------------------------------------------------------------- blocks view */
 .nook-blocks-view .bn-editor {
-  padding-inline: 0;
+  box-sizing: border-box;
+  padding-inline: 2px;
   background: transparent;
 }
 .nook-blocks-view--compact .bn-editor {
   font-size: 14px;
   padding-block: 0;
+}
+
+@media (max-width: 720px) {
+  .nook-editor__title,
+  .nook-editor-title {
+    font-size: 32px;
+  }
+
+  .nook-editor .bn-editor {
+    font-size: 15px;
+  }
+
+  .nook-editor .bn-block-outer:hover {
+    background: transparent;
+  }
+
+  .nook-editor [data-content-type='table'] .tableWrapper {
+    min-width: 360px;
+  }
 }

@@ -51,6 +51,26 @@ describe('computeDrop', () => {
     expect(intoC).toMatchObject({ kind: 'inside', parentId: 'C', position: undefined });
   });
 
+  it('uses the same drop rules for folder and file nodes', () => {
+    const kindLevels = new Map<string, Level>([
+      [
+        'root',
+        {
+          nodes: [
+            mk('Folder', null, 'a0', { kind: 'folder', hasChildren: true }),
+            mk('File', null, 'a1', { kind: 'file' }),
+          ],
+          isPending: false,
+        },
+      ],
+    ]);
+    const kindItems = flattenTree(kindLevels, {}, false);
+    expect(computeDrop({ items: kindItems, activeId: 'File', overId: 'Folder', ratio: 0.5, offsetX: 0 })).toMatchObject({
+      kind: 'inside',
+      parentId: 'Folder',
+    });
+  });
+
   it('top quarter = before, with a position between the neighbours', () => {
     const d = computeDrop({ items, activeId: 'C', overId: 'B', ratio: 0.1, offsetX: 0 })!;
     expect(d).toMatchObject({ kind: 'before', parentId: null, depth: 0 });

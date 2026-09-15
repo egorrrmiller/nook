@@ -86,6 +86,13 @@
   * {
     border-color: var(--border);
   }
+  :where(button, a, input, textarea, select, [contenteditable='true'], [tabindex]:not([tabindex='-1'])):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  :where(button, a, input, textarea, select, [contenteditable='true']):focus:not(:focus-visible) {
+    outline: 0;
+  }
   button {
     cursor: pointer;
   }
@@ -104,6 +111,17 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Sidebar tree: indent guides + drop indicator (see components/tree). */
 .nook-tree-guide {
   position: absolute;
@@ -113,12 +131,50 @@
   background: var(--border);
   pointer-events: none;
 }
+
+/* Entity icons are deliberately quieter than custom page emojis, but still give the tree a
+   visual rhythm. The same classes are used by editor embeds and breadcrumbs. */
+.nook-node-icon {
+  border-radius: 5px;
+  transition: color var(--duration) var(--ease), background-color var(--duration) var(--ease);
+}
+.nook-node-icon--page {
+  color: var(--foreground-tertiary);
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+}
+.nook-node-icon--folder {
+  color: #a56a1f;
+  background: color-mix(in srgb, #d89a43 15%, transparent);
+}
+.nook-node-icon--database {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+:root[data-theme='dark'] .nook-node-icon--folder {
+  color: #e0a65a;
+}
+.nook-sidebar-section {
+  scroll-margin-top: 8px;
+}
+.nook-tree-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 4px 12px;
+  color: var(--foreground-disabled);
+  font-size: 12px;
+}
+.nook-tree-empty svg {
+  color: var(--foreground-tertiary);
+}
 .nook-drop-line {
   position: absolute;
   right: 4px;
   height: 2px;
   border-radius: 1px;
   background: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
   pointer-events: none;
 }
 .nook-drop-line::before {
@@ -131,4 +187,243 @@
   border-radius: 50%;
   border: 2px solid var(--primary);
   background: var(--background);
+}
+
+/* Graph controls stay visually subordinate to their compact chips. Explicit dimensions here
+   also protect the graph toolbar from icon defaults supplied by third-party stylesheets. */
+.nook-graph-view [role='toolbar'] > button > svg {
+  width: 12px;
+  height: 12px;
+  max-width: 12px;
+  max-height: 12px;
+}
+
+/* Navigation surfaces: quiet chrome, generous hit areas, and clear keyboard focus. */
+.nook-command-palette__context {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px 5px;
+  color: var(--foreground-tertiary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.nook-command-palette__context-hint {
+  margin-left: auto;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.nook-command-palette__row-arrow {
+  width: 14px !important;
+  height: 14px !important;
+  margin-left: auto;
+  color: var(--foreground-disabled) !important;
+  opacity: 0;
+  transform: translateX(-3px);
+  transition: opacity var(--duration) var(--ease), transform var(--duration) var(--ease);
+}
+[cmdk-item][data-selected='true'] .nook-command-palette__row-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+.nook-command-palette__action-icon {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--primary) 9%, transparent);
+}
+.nook-command-palette__footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 34px;
+  padding: 6px 12px;
+  border-top: 1px solid var(--border);
+  color: var(--foreground-tertiary);
+  font-size: 11px;
+}
+.nook-command-palette__footer kbd {
+  display: inline-flex;
+  min-width: 17px;
+  height: 17px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--muted);
+  padding: 0 3px;
+  font-size: 10px;
+  line-height: 1;
+}
+.nook-search__group-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 8px 5px;
+  color: var(--foreground-tertiary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.nook-search__group-label span:last-child {
+  min-width: 18px;
+  border-radius: 999px;
+  background: var(--muted);
+  padding: 1px 5px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.nook-search-dialog {
+  box-shadow: var(--shadow-dialog), 0 18px 60px color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+.nook-search__header {
+  min-height: 58px;
+  background: color-mix(in srgb, var(--popover) 92%, var(--muted));
+}
+.nook-search__filters {
+  background: color-mix(in srgb, var(--popover) 96%, var(--muted));
+}
+.nook-search__results {
+  overscroll-behavior: contain;
+}
+.nook-search__footer {
+  min-height: 34px;
+  background: color-mix(in srgb, var(--popover) 96%, var(--muted));
+}
+.nook-search__result {
+  display: flex;
+  cursor: pointer;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 9px 10px;
+  outline: none;
+  transition: background-color var(--duration) var(--ease), border-color var(--duration) var(--ease);
+}
+.nook-search__result:hover,
+.nook-search__result--active {
+  border-color: color-mix(in srgb, var(--primary) 16%, var(--border));
+  background: var(--accent);
+}
+.nook-search__result--active {
+  box-shadow: inset 2px 0 0 var(--primary);
+}
+.nook-search__breadcrumb {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 1px;
+  color: var(--foreground-tertiary);
+  font-size: 11px;
+}
+.nook-search__breadcrumb svg {
+  color: var(--foreground-disabled);
+}
+.nook-search__attachment {
+  overflow: hidden;
+  margin-top: 5px;
+  color: var(--foreground-tertiary);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nook-search__attachment::before {
+  content: '↳ ';
+  color: var(--foreground-disabled);
+}
+.nook-breadcrumbs {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.nook-breadcrumbs::-webkit-scrollbar {
+  display: none;
+}
+.nook-breadcrumbs__crumb {
+  max-width: clamp(120px, 18vw, 220px);
+}
+.nook-breadcrumbs__crumb[aria-current='page'] {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+.nook-breadcrumbs__ellipsis {
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+.nook-tabs {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-strong) transparent;
+}
+.nook-tabs__tab {
+  position: relative;
+  flex: 0 1 auto;
+}
+.nook-tabs__tab--active::after {
+  position: absolute;
+  right: 10px;
+  bottom: -1px;
+  left: 10px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--primary);
+  content: '';
+}
+.nook-tabs__tab:focus-visible {
+  z-index: 1;
+}
+.nook-shortcuts__group {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  background: color-mix(in srgb, var(--background) 70%, var(--muted));
+}
+.nook-shortcuts__row {
+  min-height: 30px;
+  border-radius: var(--radius-sm);
+  padding: 4px 6px;
+}
+.nook-shortcuts__row:hover {
+  background: var(--accent);
+}
+.nook-toasts {
+  width: max-content;
+  max-width: calc(100vw - 32px);
+}
+.nook-toast {
+  animation: nook-toast-in 180ms var(--ease) both;
+}
+.nook-toast--info {
+  border-color: color-mix(in srgb, var(--primary) 25%, var(--border));
+  background: var(--popover);
+  color: var(--foreground);
+}
+.nook-toast--info > svg {
+  color: var(--primary);
+}
+.nook-toast--error {
+  border-color: color-mix(in srgb, var(--destructive) 38%, var(--border));
+  background: color-mix(in srgb, var(--destructive) 8%, var(--popover));
+  color: var(--foreground);
+}
+.nook-toast--error > svg {
+  color: var(--destructive);
+}
+.nook-toast__dismiss {
+  color: var(--foreground-tertiary);
+}
+.nook-toast__dismiss:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+@keyframes nook-toast-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }

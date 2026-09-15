@@ -3,7 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { cn } from '@nook/ui';
 import { NookEditor } from '@nook/editor';
 import type { AnyEditor } from '@nook/editor';
-import type { NodeCover, NodeIcon } from '@nook/api-client';
+import type { NodeCover, NodeIcon, PageSettings } from '@nook/api-client';
 import { IS_MOCK } from '../../lib/api';
 import { useCreateNode, useMe, useNode, useUpdateNode } from '../../lib/queries';
 import { useEnterNode } from '../../app/realtime';
@@ -15,8 +15,8 @@ import './page.css';
 import { PageCover } from './PageCover';
 import { PageHeader } from './PageHeader';
 import { PageInspector } from './PageInspector';
-import { PanelRightIcon } from 'lucide-react';
 import { useMockDocSync } from './useMockDocSync';
+import { PageToolbar } from './PageToolbar';
 
 /**
  * The page: cover, header (icon + title), properties, the collaborative editor and the
@@ -32,9 +32,19 @@ export function PageView({ workspaceId, nodeId }: { workspaceId: string; nodeId:
   const theme = resolveTheme(useUiStore((s) => s.theme));
   const inspector = useUiStore((s) => s.inspector);
   const toggleInspector = useUiStore((s) => s.toggleInspector);
+  const pageMode = useUiStore((s) => s.pageMode);
+  const setPageMode = useUiStore((s) => s.setPageMode);
+  const toggleFocusMode = useUiStore((s) => s.toggleFocusMode);
+  const toggleReadMode = useUiStore((s) => s.toggleReadMode);
   const toast = useToastStore((s) => s.push);
   const navigate = useNavigate();
   useEnterNode(nodeId);
+
+  // Presentation modes are deliberately local to the current page. A route change should never
+  // leave the shell hidden or make the next page unexpectedly read-only.
+  useEffect(() => {
+    setPageMode('edit');
+  }, [nodeId, setPageMode]);
 
   const uploads = useUploads(workspaceId, nodeId);
   const [editor, setEditor] = useState<AnyEditor | null>(null);
@@ -67,8 +77,17 @@ export function PageView({ workspaceId, nodeId }: { workspaceId: string; nodeId:
 
   if (!node) return null;
 
-  const settings = node.pageSettings ?? null;
-  const readOnly = node.effectiveRole === 'viewer' || settings?.locked === true;
+  const settings: PageSettings = {
+    font: 'default',
+    smallText: false,
+    fullWidth: false,
+    locked: false,
+    ...node.pageSettings,
+  };
+  const readMode = pageMode === 'read';
+  const focusMode = pageMode === 'focus';
+  const editorSettings = readMode ? { ...settings, locked: true } : settings;
+  const readOnly = node.effectiveRole === 'viewer' || settings.locked === true || readMode;
 
   return (
     <div className="nook-page-layout">
@@ -76,26 +95,23 @@ export function PageView({ workspaceId, nodeId }: { workspaceId: string; nodeId:
         data-testid="page-view"
         className={cn(
           'nook-page',
-          settings?.fullWidth && 'nook-page--full',
-          settings?.font === 'serif' && 'nook-page--serif',
-          settings?.font === 'mono' && 'nook-page--mono',
-          settings?.smallText && 'nook-page--small',
+          settings.fullWidth && 'nook-page--full',
+          settings.font === 'serif' && 'nook-page--serif',
+          settings.font === 'mono' && 'nook-page--mono',
+          settings.smallText && 'nook-page--small',
+          readMode && 'nook-page--read',
+          focusMode && 'nook-page--focus',
         )}
-        data-full-width={settings?.fullWidth ? 'true' : undefined}
+        data-full-width={settings.fullWidth ? 'true' : undefined}
+        data-page-mode={pageMode}
       >
-        {/* Temporary affordance: frontend-shell moves this into the page ⋯ menu / top bar
-            (stores/ui.ts already exposes `toggleInspector`). */}
-        <div className="nook-page__toolbar">
-          <button
-            type="button"
-            data-testid="toggle-inspector"
-            title="Page details"
-            aria-pressed={inspector !== null}
-            onClick={() => toggleInspector('info')}
-          >
-            <PanelRightIcon size={16} />
-          </button>
-        </div>
+        <PageToolbar
+          mode={pageMode}
+          inspectorOpen={inspector !== null}
+          onToggleReadMode={toggleReadMode}
+          onToggleFocusMode={toggleFocusMode}
+          onToggleInspector={() => toggleInspector('info')}
+        />
 
         {node.cover ? (
           <PageCover
@@ -116,7 +132,7 @@ export function PageView({ workspaceId, nodeId }: { workspaceId: string; nodeId:
             user={me ? { name: me.user.displayName, color: '#2383e2' } : undefined}
             theme={theme}
             role={node.effectiveRole}
-            pageSettings={settings}
+            pageSettings={editorSettings}
             onEditorReady={onEditorReady}
             navigate={goTo}
             toast={toast}

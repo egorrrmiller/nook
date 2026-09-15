@@ -63,6 +63,21 @@ describe('SearchDialog', () => {
     });
   });
 
+  it('keeps the shared filter and input controls keyboard accessible', async () => {
+    const { workspaceId } = signIn();
+    const user = userEvent.setup();
+    renderWidget(<SearchDialog workspaceId={workspaceId} open onOpenChange={() => {}} />);
+
+    const input = await screen.findByRole('textbox', { name: 'Search query' });
+    await user.type(input, 'nook');
+    expect(screen.getByTestId('search-filter-title-only')).toHaveAttribute('aria-pressed', 'false');
+    await user.click(screen.getByTestId('search-filter-title-only'));
+    expect(screen.getByTestId('search-filter-title-only')).toHaveAttribute('aria-pressed', 'true');
+
+    await user.click(screen.getByRole('button', { name: 'Clear query' }));
+    expect(input).toHaveValue('');
+  });
+
   it('title-only search drops content matches', async () => {
     const { workspaceId } = signIn();
     const user = userEvent.setup();

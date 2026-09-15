@@ -5,8 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Nook.Plugins.Sdk;
 
 /// <summary>
-/// A backend plugin. Discovered statically at startup (see <c>NookPluginHost.AddNookPlugins</c>);
-/// implementations must have a public parameterless constructor.
+/// Optional backend extension for a custom Nook distribution. The base self-hosted application does not discover or
+/// load implementations at runtime; external integrations communicate through the public HTTP/MCP contracts instead.
 /// </summary>
 public interface IPlugin
 {

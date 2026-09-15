@@ -14,7 +14,7 @@ import {
   type DragMoveEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { ChevronRightIcon, MoreHorizontalIcon, PlusIcon } from 'lucide-react';
+import { ChevronRightIcon, FileTextIcon, MoreHorizontalIcon, PlusIcon } from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -29,6 +29,7 @@ import {
   ContextMenuContent,
   ContextMenuTrigger,
   IconButton,
+  Input,
   Menu,
   MenuContent,
   MenuTrigger,
@@ -36,8 +37,9 @@ import {
   cn,
 } from '@nook/ui';
 import { TagChips } from '../../features/knowledge';
-import { nodesQuery, useMoveNode, useUpdateNode } from '../../lib/queries';
+import { nodesQuery, useFavorites, useMoveNode, useUpdateNode } from '../../lib/queries';
 import { nodeTitle } from '../../lib/utils';
+import { toast } from '../../stores/toast';
 import { useUiStore } from '../../stores/ui';
 import { computeDrop, flattenTree, INDENT, ROOT_KEY, type DropTarget, type FlatItem, type Level } from './model';
 import { NodeIcon } from './NodeIcon';
@@ -50,7 +52,7 @@ export interface TreeProps {
   emptyText?: string;
 }
 
-const ROW_LEFT = 4;
+const ROW_LEFT = 8;
 
 /**
  * Lazily-loaded tree: root + every expanded (and visible) parent is a `nodesQuery`; rows are
@@ -58,9 +60,13 @@ const ROW_LEFT = 4;
  */
 function useFlatTree(workspaceId: string, scope: 'private' | 'shared', showArchived: boolean) {
   const expanded = useUiStore((s) => s.expanded);
+  const { data: favorites } = useFavorites(workspaceId);
+  const favoriteIds = useMemo(() => new Set((favorites ?? []).map((favorite) => favorite.nodeId)), [favorites]);
   const [parents, setParents] = useState<string[]>([]);
   const queries = useQueries({
-    queries: [null, ...parents].map((p) => nodesQuery(workspaceId, p, showArchived)),
+    // The archived toggle belongs to the Private section. Shared roots stay live-only even when
+    // the user asks to inspect archived private pages.
+    queries: [null, ...parents].map((p) => nodesQuery(workspaceId, p, scope === 'private' && showArchived)),
   });
   const levels = useMemo(() => {
     const m = new Map<string, Level>();
@@ -70,11 +76,14 @@ function useFlatTree(workspaceId: string, scope: 'private' | 'shared', showArchi
       if (p === null && nodes) {
         nodes = nodes.filter((n) => (scope === 'shared' ? n.effectiveRole !== 'owner' : n.effectiveRole === 'owner'));
       }
+      if (scope === 'private' && nodes && favoriteIds.size > 0) {
+        nodes = nodes.filter((node) => !favoriteIds.has(node.id));
+      }
       m.set(p ?? ROOT_KEY, { nodes, isPending: q.isPending });
     });
     return m;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [parents, scope, ...queries.map((q) => q.data), ...queries.map((q) => q.isPending)]);
+  }, [parents, scope, favoriteIds, ...queries.map((q) => q.data), ...queries.map((q) => q.isPending)]);
   const items = useMemo(() => flattenTree(levels, expanded, showArchived), [levels, expanded, showArchived]);
   // Fixed point: fetch children for every visible expanded node.
   useEffect(() => {
@@ -99,6 +108,10 @@ export function Tree({ workspaceId, scope = 'private', emptyText }: TreeProps) {
   // --- drag & drop -----------------------------------------------------------------------------
   const [activeId, setActiveId] = useState<string | null>(null);
   const [drop, setDrop] = useState<DropTarget | null>(null);
+  // Keep the latest projection outside React state as well. A pointer can be released between
+  // the last drag event and React's next render; relying only on `drop` then silently loses the
+  // move on dragend.
+  const dropRef = useRef<DropTarget | null>(null);
   const pointer = useRef<{ x: number; y: number } | null>(null);
   const expandTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sensors = useSensors(
@@ -115,26 +128,39 @@ export function Tree({ workspaceId, scope = 'private', emptyText }: TreeProps) {
 
   const onDragStart = (e: DragStartEvent) => {
     setActiveId(String(e.active.id));
+    dropRef.current = null;
     setDrop(null);
     pointer.current = null;
   };
 
-  const onDragMove = (e: DragMoveEvent) => {
+  const projectDrop = (e: Pick<DragMoveEvent, 'active' | 'over' | 'delta'>): DropTarget | null => {
     const { active, over, delta } = e;
-    if (!over) {
-      setDrop(null);
-      return;
-    }
+    if (!over) return null;
     const rect = over.rect;
     const translated = active.rect.current.translated;
     const y = pointer.current?.y ?? (translated ? translated.top + translated.height / 2 : rect.top + rect.height / 2);
     const ratio = Math.max(0, Math.min(1, (y - rect.top) / rect.height));
-    const next = computeDrop({ items, activeId: String(active.id), overId: String(over.id), ratio, offsetX: delta.x });
+    return computeDrop({ items, activeId: String(active.id), overId: String(over.id), ratio, offsetX: delta.x });
+  };
+
+  const setDropTarget = (next: DropTarget | null) => {
+    dropRef.current = next;
     setDrop((prev) =>
       prev && next && prev.kind === next.kind && prev.parentId === next.parentId && prev.overId === next.overId && prev.depth === next.depth
         ? prev
         : next,
     );
+  };
+
+  const onDragMove = (e: DragMoveEvent) => {
+    const { over } = e;
+    if (!over) {
+      if (expandTimer.current) clearTimeout(expandTimer.current);
+      setDropTarget(null);
+      return;
+    }
+    const next = projectDrop(e);
+    setDropTarget(next);
     // Hovering "inside" a collapsed parent for a moment expands it (Notion behaviour).
     if (expandTimer.current) clearTimeout(expandTimer.current);
     if (next?.kind === 'inside') {
@@ -147,16 +173,22 @@ export function Tree({ workspaceId, scope = 'private', emptyText }: TreeProps) {
 
   const finish = () => {
     if (expandTimer.current) clearTimeout(expandTimer.current);
+    dropRef.current = null;
     setActiveId(null);
     setDrop(null);
   };
 
   const onDragEnd = (e: DragEndEvent) => {
-    const target = drop;
+    // Project once more from the final event. This avoids losing a valid drop when the final
+    // pointer event and React's state commit happen in the same frame.
+    const target = e.over ? projectDrop(e) : dropRef.current;
     const id = String(e.active.id);
     finish();
     if (!target) return;
-    move.mutate({ id, parentId: target.parentId, position: target.position });
+    move.mutate(
+      { id, parentId: target.parentId, position: target.position },
+      { onError: () => toast('Could not move item. Please try again.') },
+    );
     if (target.parentId) toggleExpanded(target.parentId, true);
   };
 
@@ -210,15 +242,20 @@ export function Tree({ workspaceId, scope = 'private', emptyText }: TreeProps) {
 
   if (rootPending) {
     return (
-      <div className="flex flex-col gap-1.5 px-2 py-1">
-        <Skeleton className="h-5 w-3/4" />
-        <Skeleton className="h-5 w-1/2" />
+      <div className="flex flex-col gap-2 px-3 py-1.5">
+        <Skeleton className="h-6 w-3/4" />
+        <Skeleton className="h-6 w-1/2" />
       </div>
     );
   }
   if (rootError) return <p className="px-2 py-1 text-xs text-danger">Failed to load</p>;
   if (!items.length) {
-    return <p className="px-3 py-1 text-xs text-fg-disabled">{emptyText ?? 'No pages yet'}</p>;
+    return (
+      <div className="nook-tree-empty" data-testid={`tree-empty-${scope}`}>
+        <FileTextIcon className="size-4" strokeWidth={1.7} />
+        <span>{emptyText ?? 'No pages yet'}</span>
+      </div>
+    );
   }
 
   const activeItem = activeId ? items.find((i) => i.id === activeId) : null;
@@ -257,7 +294,7 @@ export function Tree({ workspaceId, scope = 'private', emptyText }: TreeProps) {
       </ul>
       <DragOverlay dropAnimation={null}>
         {activeItem ? (
-          <div className="flex h-7 w-[220px] items-center gap-1.5 rounded-[var(--radius-sm)] bg-bg px-2 text-sm text-fg shadow-[var(--shadow-popover)]">
+          <div className="flex h-8 w-[260px] items-center gap-2 rounded-[var(--radius-sm)] bg-bg px-3 text-sm text-fg shadow-[var(--shadow-popover)]">
             <NodeIcon icon={activeItem.node.icon} kind={activeItem.node.kind} size={18} />
             <span className="truncate">{nodeTitle(activeItem.node.title)}</span>
           </div>
@@ -312,8 +349,8 @@ function TreeRow({ item, actions, active, focusable, dragging, drop, dropInside,
           aria-describedby={attributes['aria-describedby']}
           {...listeners}
           className={cn(
-            'group relative flex h-7 w-full items-center gap-1 rounded-[var(--radius-sm)] pr-1 text-sm text-sidebar-foreground outline-none transition-colors duration-[var(--duration)] hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-ring',
-            active && 'bg-bg-active font-medium text-fg',
+            'group relative flex h-9 w-full items-center gap-2 rounded-[var(--radius-md)] pr-1.5 text-[13px] text-sidebar-foreground outline-none transition-[background,color,transform] duration-[var(--duration)] hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.995]',
+            active && 'bg-bg-active font-medium text-fg shadow-[inset_2px_0_0_var(--primary)]',
             dragging && 'opacity-40',
             dropInside && 'bg-brand/10 ring-2 ring-brand/60 ring-inset',
             item.archived && 'opacity-50',
@@ -323,14 +360,15 @@ function TreeRow({ item, actions, active, focusable, dragging, drop, dropInside,
         >
           {guides}
           {/* Icon slot: shows the page icon; on hover it turns into the expand toggle (when it has children). */}
-          <span className="relative flex size-5 shrink-0 items-center justify-center">
+          <span className="relative flex size-7 shrink-0 items-center justify-center">
             <span className={cn('absolute inset-0 flex items-center justify-center', item.hasChildren && 'group-hover:opacity-0')}>
-              <NodeIcon icon={node.icon} kind={node.kind} size={18} />
+              <NodeIcon icon={node.icon} kind={node.kind} size={19} />
             </span>
             {item.hasChildren ? (
-              <button
-                type="button"
-                aria-label={item.expanded ? 'Collapse' : 'Expand'}
+              <IconButton
+                label={item.expanded ? 'Collapse' : 'Expand'}
+                tooltip={false}
+                size="icon"
                 tabIndex={-1}
                 onClick={(e) => {
                   e.preventDefault();
@@ -338,12 +376,12 @@ function TreeRow({ item, actions, active, focusable, dragging, drop, dropInside,
                   onToggle();
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
-                className="absolute inset-0 flex items-center justify-center rounded-[var(--radius-sm)] text-fg-muted opacity-0 hover:bg-bg-active hover:text-fg group-hover:opacity-100"
+                className="absolute inset-0 rounded-[var(--radius-sm)] text-fg-muted opacity-0 hover:bg-bg-active hover:text-fg group-hover:opacity-100"
               >
                 <ChevronRightIcon
-                  className={cn('size-4 transition-transform duration-[var(--duration)]', item.expanded && 'rotate-90')}
+                  className={cn('size-[17px] transition-transform duration-[var(--duration)]', item.expanded && 'rotate-90')}
                 />
-              </button>
+              </IconButton>
             ) : null}
           </span>
           {renaming ? (
@@ -361,7 +399,7 @@ function TreeRow({ item, actions, active, focusable, dragging, drop, dropInside,
               params={{ workspaceId: node.workspaceId, nodeId: node.id }}
               tabIndex={-1}
               draggable={false}
-              className="min-w-0 flex-1 truncate py-1 outline-none"
+              className="min-w-0 flex-1 truncate py-2 outline-none"
               onDoubleClick={(e) => {
                 e.preventDefault();
                 if (node.effectiveRole !== 'viewer') setRenaming(true);
@@ -384,7 +422,7 @@ function TreeRow({ item, actions, active, focusable, dragging, drop, dropInside,
               <MenuTrigger
                 aria-label="Page options"
                 data-testid="tree-item-menu"
-                className="flex size-5 items-center justify-center rounded-[var(--radius-sm)] text-fg-muted hover:bg-bg-active hover:text-fg"
+                className="flex size-6 items-center justify-center rounded-[var(--radius-sm)] text-fg-muted hover:bg-bg-active hover:text-fg"
               >
                 <MoreHorizontalIcon className="size-4" />
               </MenuTrigger>
@@ -396,7 +434,7 @@ function TreeRow({ item, actions, active, focusable, dragging, drop, dropInside,
               <IconButton
                 label="Add a page inside"
                 size="icon-sm"
-                className="size-5 text-fg-muted hover:bg-bg-active"
+                className="size-6 text-fg-muted hover:bg-bg-active"
                 onClick={() => void actions.addInside(node)}
               >
                 <PlusIcon className="size-4" />
@@ -445,7 +483,7 @@ function RenameInput({
     if (e.key === 'Escape') onCancel();
   };
   return (
-    <input
+    <Input
       ref={ref}
       aria-label="Rename page"
       value={v}

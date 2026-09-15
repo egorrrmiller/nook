@@ -16,7 +16,7 @@ export interface FlatItem {
   archived: boolean;
 }
 
-export const INDENT = 12;
+export const INDENT = 16;
 export const ROOT_KEY = 'root';
 
 export interface Level {

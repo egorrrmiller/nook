@@ -16,15 +16,17 @@ import {
 import { api } from '../../lib/api';
 import { toast } from '../../stores/toast';
 import { EMOJI_GROUPS, randomEmoji, recentEmoji, rememberEmoji, searchEmoji } from './emoji';
+import { HiddenFileInput } from '../shared/HiddenFileInput';
 
 export interface IconPickerProps {
   value: NodeIcon | null | undefined;
-  nodeId: string;
+  /** Required only when the Upload tab is available (page/node icons). */
+  nodeId?: string;
   onChange: (icon: NodeIcon | null) => void;
   children: ReactNode;
 }
 
-/** Popover with Emoji | Upload | Link tabs and a Remove action (contracts §10). */
+/** Popover with Emoji | Link tabs; node icons additionally get Upload (contracts §10). */
 export function IconPicker({ value, nodeId, onChange, children }: IconPickerProps) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<string>('emoji');
@@ -47,6 +49,7 @@ export function IconPicker({ value, nodeId, onChange, children }: IconPickerProp
   };
 
   async function upload(file: File) {
+    if (!nodeId) return;
     setBusy(true);
     try {
       const att = await api.files.upload(file, { nodeId, purpose: 'icon' });
@@ -67,7 +70,7 @@ export function IconPicker({ value, nodeId, onChange, children }: IconPickerProp
           <div className="flex items-center gap-1 border-b border-border px-1">
             <TabsList className="flex-1 border-0">
               <TabsTab value="emoji">Emoji</TabsTab>
-              <TabsTab value="upload">Upload</TabsTab>
+              {nodeId ? <TabsTab value="upload">Upload</TabsTab> : null}
               <TabsTab value="link">Link</TabsTab>
             </TabsList>
             {tab === 'emoji' ? (
@@ -104,23 +107,19 @@ export function IconPicker({ value, nodeId, onChange, children }: IconPickerProp
             </div>
           </TabsPanel>
 
-          <TabsPanel value="upload" className="flex flex-col items-center gap-2 p-4">
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) void upload(f);
-                e.target.value = '';
-              }}
-            />
-            <Button variant="secondary" disabled={busy} onClick={() => fileRef.current?.click()}>
-              <UploadIcon /> {busy ? 'Uploading…' : 'Choose an image'}
-            </Button>
-            <p className="text-xs text-fg-muted">Square images of at least 280×280 px look best.</p>
-          </TabsPanel>
+          {nodeId ? (
+            <TabsPanel value="upload" className="flex flex-col items-center gap-2 p-4">
+              <HiddenFileInput
+                inputRef={fileRef}
+                accept="image/*"
+                onFile={(file) => void upload(file)}
+              />
+              <Button variant="secondary" disabled={busy} onClick={() => fileRef.current?.click()}>
+                <UploadIcon /> {busy ? 'Uploading…' : 'Choose an image'}
+              </Button>
+              <p className="text-xs text-fg-muted">Square images of at least 280×280 px look best.</p>
+            </TabsPanel>
+          ) : null}
 
           <TabsPanel value="link" className="flex flex-col gap-2 p-4">
             <Input
@@ -162,17 +161,19 @@ function EmojiGrid({
       <p className="px-1 py-1 text-xs font-medium text-fg-muted">{label}</p>
       <div className="grid grid-cols-10 gap-px">
         {emoji.map((glyph, i) => (
-          <button
+          <Button
             key={`${glyph}-${i}`}
             type="button"
+            variant="ghost"
+            size="icon"
             title={glyph}
             onClick={() => onPick(glyph)}
             className={cn(
-              'flex size-8 items-center justify-center rounded-[var(--radius-sm)] text-[19px] leading-none transition-colors hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+              'size-8 p-0 text-[19px] leading-none transition-colors hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
             )}
           >
             {glyph}
-          </button>
+          </Button>
         ))}
       </div>
     </div>

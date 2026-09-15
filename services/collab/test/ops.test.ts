@@ -33,6 +33,44 @@ describe("BlockNoteBridge", () => {
     expect(blocks[1]!.props).toMatchObject({ textAlignment: "left", textColor: "default", backgroundColor: "default" });
   });
 
+  it("keeps unknown block types and does not mutate the Y.Doc while serializing", () => {
+    const doc = freshDoc();
+    const group = doc.getXmlFragment(FRAGMENT_NAME).get(0) as Y.XmlElement;
+    const container = new Y.XmlElement("blockContainer");
+    const custom = new Y.XmlElement("futureWidget");
+    const text = new Y.XmlText();
+    container.setAttribute("id", randomUUID());
+    custom.setAttribute("widgetId", "w-1");
+    text.insert(0, "opaque content");
+    custom.push([text]);
+    container.push([custom]);
+    doc.transact(() => group.push([container]));
+
+    const before = doc.getXmlFragment(FRAGMENT_NAME).toString();
+    const blocks = bridge.docToBlocks(doc);
+
+    expect(blocks.at(-1)).toMatchObject({ type: "futureWidget", props: { widgetId: "w-1" } });
+    expect(blockText(blocks.at(-1)!)).toBe("opaque content");
+    expect(doc.getXmlFragment(FRAGMENT_NAME).toString()).toBe(before);
+  });
+
+  it("refuses server-side ops on an unknown block without deleting it", () => {
+    const doc = freshDoc();
+    const group = doc.getXmlFragment(FRAGMENT_NAME).get(0) as Y.XmlElement;
+    const container = new Y.XmlElement("blockContainer");
+    const custom = new Y.XmlElement("futureWidget");
+    container.setAttribute("id", randomUUID());
+    custom.setAttribute("widgetId", "w-2");
+    container.push([custom]);
+    doc.transact(() => group.push([container]));
+
+    const before = doc.getXmlFragment(FRAGMENT_NAME).toString();
+    expect(() => doc.transact(() => bridge.applyOps(doc, [{ op: "insert", blocks: [{ type: "paragraph", content: "no-op" }] }]))).toThrow(
+      /unsupported by server-side operations/,
+    );
+    expect(doc.getXmlFragment(FRAGMENT_NAME).toString()).toBe(before);
+  });
+
   it("insert replaces the lone empty paragraph, then appends; before/after honour the reference", () => {
     const doc = freshDoc();
     doc.transact(() => bridge.applyOps(doc, [{ op: "insert", blocks: [{ type: "paragraph", content: "one" }], placement: "end" }]));

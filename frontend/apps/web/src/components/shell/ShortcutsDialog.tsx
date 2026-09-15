@@ -55,13 +55,13 @@ export function ShortcutsDialog() {
       <DialogContent className="max-w-2xl" data-testid="shortcuts-dialog">
         <DialogTitle>Keyboard shortcuts</DialogTitle>
         <DialogDescription>Everything the shell listens for. Editor shortcuts live in the editor’s own help.</DialogDescription>
-        <div className="mt-2 grid max-h-[60vh] grid-cols-1 gap-6 overflow-y-auto sm:grid-cols-2">
+        <div className="nook-shortcuts mt-2 grid max-h-[60vh] grid-cols-1 gap-6 overflow-y-auto sm:grid-cols-2">
           {groups.map((g) => (
-            <section key={g.title}>
+            <section key={g.title} className="nook-shortcuts__group">
               <h3 className="mb-2 text-xs font-medium tracking-wide text-fg-muted uppercase">{g.title}</h3>
-              <ul className="flex flex-col gap-1.5">
+              <ul className="flex flex-col gap-1">
                 {g.items.map((s) => (
-                  <li key={s.label} className="flex items-center gap-3 text-sm">
+                  <li key={s.label} className="nook-shortcuts__row flex items-center gap-3 text-sm">
                     <span className="min-w-0 flex-1 text-fg-secondary">{s.label}</span>
                     <span className="flex shrink-0 gap-1">
                       {s.keys.map((k) => (

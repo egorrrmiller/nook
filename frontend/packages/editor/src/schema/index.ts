@@ -79,12 +79,16 @@ export function createNookSchema(extra: { blocks?: BlockSpecs; inlineContent?: I
 }
 
 /** Schema built from the plugin registry; memoised per registry identity. */
-export function useNookSchema(): NookSchema {
+export function useNookSchema(extra: { blocks?: BlockSpecs; inlineContent?: InlineContentSpecs } = {}): NookSchema {
   const blocks = usePluginBlocks();
   const inline = usePluginInlineContent();
   return useMemo(
-    () => createNookSchema({ blocks: blocks as BlockSpecs, inlineContent: inline as unknown as InlineContentSpecs }),
-    [blocks, inline],
+    () =>
+      createNookSchema({
+        blocks: { ...(blocks as BlockSpecs), ...(extra.blocks ?? {}) },
+        inlineContent: { ...(inline as unknown as InlineContentSpecs), ...(extra.inlineContent ?? {}) },
+      }),
+    [blocks, inline, extra.blocks, extra.inlineContent],
   );
 }
 

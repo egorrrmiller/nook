@@ -2,6 +2,7 @@
 // their handlers in ./tree.ts, ./files.ts, ./knowledge.ts instead of editing this file.
 import { HttpResponse, http, type HttpHandler } from 'msw';
 import type {
+  CreateWorkspaceRequest,
   CreateNodeRequest,
   LoginRequest,
   RegisterRequest,
@@ -92,7 +93,7 @@ export function createCoreHandlers(ctx: MockContext): HttpHandler[] {
     }),
     http.post('/api/workspaces', async ({ request }) => {
       if (!requireUser()) return problem(401, 'Not signed in');
-      const body = (await request.json()) as { name: string; icon?: string };
+      const body = (await request.json()) as CreateWorkspaceRequest;
       const ws = {
         id: uuid(),
         name: body.name,

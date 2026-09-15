@@ -53,7 +53,7 @@ export function Breadcrumbs({ workspaceId, nodeId }: { workspaceId: string; node
   const elided = crumbs.length > 4 ? crumbs.slice(1, -3) : [];
 
   return (
-    <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-0.5" data-testid="breadcrumbs">
+    <nav aria-label="Breadcrumb" className="nook-breadcrumbs flex min-w-0 items-center gap-0.5" data-testid="breadcrumbs">
       {visible.map((crumb, i) => (
         <Fragment key={crumb.id}>
           {i > 0 ? <Separator /> : null}
@@ -99,8 +99,10 @@ function Crumb({
     <Menu open={open} onOpenChange={setOpen}>
       <MenuTrigger
         data-testid={last ? 'breadcrumb-current' : 'breadcrumb-crumb'}
+        aria-current={last ? 'page' : undefined}
+        title={nodeTitle(crumb.title)}
         className={cn(
-          'flex h-6 max-w-[220px] shrink items-center gap-1 rounded-[var(--radius-sm)] px-1.5 text-sm transition-colors duration-[var(--duration)] hover:bg-bg-hover',
+          'nook-breadcrumbs__crumb flex h-7 max-w-[220px] shrink items-center gap-1 rounded-[var(--radius-sm)] px-1.5 text-sm transition-colors duration-[var(--duration)] hover:bg-bg-hover',
           last ? 'font-medium text-fg' : 'text-fg-secondary',
         )}
       >
@@ -144,7 +146,7 @@ function ElidedCrumbs({ workspaceId, crumbs }: { workspaceId: string; crumbs: No
     <Menu>
       <MenuTrigger
         aria-label="Show hidden breadcrumbs"
-        className="flex h-6 items-center rounded-[var(--radius-sm)] px-1.5 text-sm text-fg-secondary hover:bg-bg-hover"
+        className="nook-breadcrumbs__ellipsis flex h-7 items-center rounded-[var(--radius-sm)] px-1.5 text-sm text-fg-secondary hover:bg-bg-hover"
       >
         …
       </MenuTrigger>

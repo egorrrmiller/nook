@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CopyIcon, TrashIcon } from 'lucide-react';
 import { ApiError, type Invite } from '@nook/api-client';
-import { Avatar, Button, ConfirmDialog, Input, Select, Skeleton } from '@nook/ui';
+import { Avatar, Button, ConfirmDialog, Field, Input, Select, Skeleton } from '@nook/ui';
 import {
   useAddMember,
   useCreateInvite,
@@ -13,7 +13,7 @@ import {
 } from '../../lib/queries';
 import { copyText, formatDate } from '../../lib/utils';
 import { toast } from '../../stores/toast';
-import { SettingsGroup, SettingsPageHeader } from './SettingsSection';
+import { SettingsActionRow, SettingsGroup, SettingsList, SettingsListItem, SettingsPageHeader } from './SettingsSection';
 
 export function MembersSettings({ workspaceId }: { workspaceId: string }) {
   const { data: me } = useMe();
@@ -35,20 +35,17 @@ export function MembersSettings({ workspaceId }: { workspaceId: string }) {
       <SettingsPageHeader title="People" description="Members of this workspace and pending invitations." />
 
       <SettingsGroup title="Add a member">
-        <div className="flex items-end gap-2 py-3">
-          <div className="flex flex-1 flex-col gap-1">
-            <label htmlFor="member-email" className="text-xs font-medium text-fg-muted">
-              Email
-            </label>
-            <Input
-              id="member-email"
-              value={email}
-              placeholder="person@example.com"
-              disabled={!isOwner}
-              onChange={(e) => setEmail(e.target.value)}
-              aria-invalid={error ? true : undefined}
-            />
-          </div>
+        <SettingsActionRow>
+          <Field
+            label="Email"
+            id="member-email"
+            className="min-w-0 flex-1"
+            value={email}
+            placeholder="person@example.com"
+            disabled={!isOwner}
+            onChange={(e) => setEmail(e.target.value)}
+            error={error}
+          />
           <Select
             aria-label="Role"
             value={role}
@@ -80,21 +77,16 @@ export function MembersSettings({ workspaceId }: { workspaceId: string }) {
           >
             Add
           </Button>
-        </div>
-        {error ? (
-          <p role="alert" className="pb-2 text-xs text-danger">
-            {error}
-          </p>
-        ) : null}
+        </SettingsActionRow>
       </SettingsGroup>
 
       <SettingsGroup title="Members">
         {isPending ? (
           <Skeleton className="h-10" />
         ) : (
-          <ul className="flex flex-col">
+          <SettingsList>
             {(members ?? []).map((m) => (
-              <li key={m.userId} className="flex items-center gap-3 border-b border-border py-2.5 last:border-0" data-testid="member-row">
+              <SettingsListItem key={m.userId} data-testid="member-row">
                 <Avatar name={m.displayName} size="md" />
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-sm font-medium">{m.displayName}</span>
@@ -110,14 +102,14 @@ export function MembersSettings({ workspaceId }: { workspaceId: string }) {
                 >
                   <TrashIcon className="size-4" />
                 </Button>
-              </li>
+              </SettingsListItem>
             ))}
-          </ul>
+          </SettingsList>
         )}
       </SettingsGroup>
 
       <SettingsGroup title="Invitations">
-        <div className="flex items-center gap-2 py-3">
+        <SettingsActionRow className="items-center">
           <Button
             size="sm"
             variant="secondary"
@@ -145,10 +137,10 @@ export function MembersSettings({ workspaceId }: { workspaceId: string }) {
               </Button>
             </>
           ) : null}
-        </div>
-        <ul className="flex flex-col">
+        </SettingsActionRow>
+        <SettingsList>
           {(invites ?? []).map((inv) => (
-            <li key={inv.code} className="flex items-center gap-3 border-b border-border py-2.5 last:border-0" data-testid="invite-row">
+            <SettingsListItem key={inv.code} data-testid="invite-row">
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate font-mono text-sm">{inv.code}</span>
                 <span className="text-xs text-fg-muted">
@@ -172,10 +164,10 @@ export function MembersSettings({ workspaceId }: { workspaceId: string }) {
               >
                 <TrashIcon className="size-4" />
               </Button>
-            </li>
+            </SettingsListItem>
           ))}
-          {!invites?.length ? <li className="py-3 text-sm text-fg-muted">No pending invitations.</li> : null}
-        </ul>
+          {!invites?.length ? <SettingsListItem className="py-3 text-sm text-fg-muted">No pending invitations.</SettingsListItem> : null}
+        </SettingsList>
       </SettingsGroup>
 
       <ConfirmDialog

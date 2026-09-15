@@ -4,6 +4,7 @@ import {
   ArchiveRestoreIcon,
   CopyIcon,
   CornerUpRightIcon,
+  FolderPlusIcon,
   LinkIcon,
   PencilIcon,
   PlusIcon,
@@ -48,8 +49,8 @@ export function useNodeActions(workspaceId: string) {
   return {
     isFavorite: (id: string) => favoriteIds.has(id),
     open,
-    addInside: async (node: Node) => {
-      const child = await create.mutateAsync({ parentId: node.id, kind: 'page', title: '' });
+    addInside: async (node: Node, kind: 'page' | 'folder' = 'page') => {
+      const child = await create.mutateAsync({ parentId: node.id, kind, title: '' });
       toggleExpanded(node.id, true);
       await open(child.id);
     },
@@ -118,6 +119,11 @@ export function NodeMenuItems({ node, actions, onRename, hide = {} }: NodeMenuIt
       {!hide.addInside && !readOnly ? (
         <MenuItem onClick={() => void actions.addInside(node)}>
           <PlusIcon /> Add page inside
+        </MenuItem>
+      ) : null}
+      {!hide.addInside && !readOnly ? (
+        <MenuItem onClick={() => void actions.addInside(node, 'folder')}>
+          <FolderPlusIcon /> Add folder inside
         </MenuItem>
       ) : null}
       {!hide.moveTo && !readOnly ? (

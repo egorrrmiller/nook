@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nook.Application.Common;
+using Nook.Application.Plugins;
 using Nook.Domain.Entities;
 using Nook.Infrastructure.Persistence;
 using Nook.Plugins.Sdk.Events;
@@ -16,7 +17,11 @@ namespace Nook.Infrastructure.Jobs;
 /// <see cref="IEventHandler{TEvent}"/>. Runs from a polling hosted service every few seconds and can also be
 /// triggered by Hangfire.
 /// </summary>
-public sealed class OutboxDispatcher(IServiceScopeFactory scopeFactory, EventTypeRegistry registry, ILogger<OutboxDispatcher> logger)
+public sealed class OutboxDispatcher(
+    IServiceScopeFactory scopeFactory,
+    EventTypeRegistry registry,
+    IAutomationEventDispatcher automations,
+    ILogger<OutboxDispatcher> logger)
 {
     public const int BatchSize = 100;
     public const int MaxAttempts = 5;
@@ -66,6 +71,7 @@ public sealed class OutboxDispatcher(IServiceScopeFactory scopeFactory, EventTyp
         if (eventType is null)
         {
             logger.LogDebug("No CLR type for outbox event {Type}; skipping", row.Type);
+            await automations.DispatchAsync(row.Id, row.Type, row.Payload, ct);
             return;
         }
 
@@ -79,6 +85,7 @@ public sealed class OutboxDispatcher(IServiceScopeFactory scopeFactory, EventTyp
             if (handler is null) continue;
             await (Task)method.Invoke(handler, [@event, ct])!;
         }
+        await automations.DispatchAsync(row.Id, row.Type, row.Payload, ct);
     }
 }
 

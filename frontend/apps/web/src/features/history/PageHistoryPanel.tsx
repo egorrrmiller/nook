@@ -135,13 +135,15 @@ export function PageHistoryPanel({ workspaceId, nodeId }: { workspaceId: string;
           ) : (
             items.map((v) => (
               <li key={v.id}>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   data-testid="version-item"
                   data-active={v.id === activeId || undefined}
                   onClick={() => setSelected(v.id)}
                   className={cn(
-                    'flex w-full flex-col gap-0.5 rounded-[var(--radius-sm)] px-2 py-1.5 text-left hover:bg-bg-hover',
+                    'h-auto w-full flex-col items-start gap-0.5 rounded-[var(--radius-sm)] px-2 py-1.5 text-left hover:bg-bg-hover',
                     v.id === activeId && 'bg-bg-hover',
                   )}
                 >
@@ -154,7 +156,7 @@ export function PageHistoryPanel({ workspaceId, nodeId }: { workspaceId: string;
                   <span className="text-xs text-fg-muted">
                     v{v.version} · {v.blockCount} blocks{v.user ? ` · ${v.user.displayName}` : ''}
                   </span>
-                </button>
+                </Button>
               </li>
             ))
           )}
@@ -164,22 +166,26 @@ export function PageHistoryPanel({ workspaceId, nodeId }: { workspaceId: string;
           <div className="p-3">
             <div className="mb-2 flex items-center gap-2">
               <div className="flex rounded-[var(--radius-sm)] bg-accent p-0.5 text-xs">
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="xs"
                   data-testid="diff-tab"
                   onClick={() => setMode('diff')}
                   className={cn('rounded-[var(--radius-sm)] px-2 py-0.5', mode === 'diff' && 'bg-bg shadow-[var(--shadow-sm)]')}
                 >
                   Diff
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="xs"
                   data-testid="preview-tab"
                   onClick={() => setMode('preview')}
                   className={cn('rounded-[var(--radius-sm)] px-2 py-0.5', mode === 'preview' && 'bg-bg shadow-[var(--shadow-sm)]')}
                 >
                   Preview
-                </button>
+                </Button>
               </div>
               <Button
                 size="sm"

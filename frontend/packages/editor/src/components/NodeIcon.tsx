@@ -25,5 +25,6 @@ export function NodeIcon({
     return <img className={className} src={src} alt="" width={size} height={size} style={{ borderRadius: 3, objectFit: 'cover' }} />;
   }
   const Glyph = kind === 'database' ? DatabaseIcon : kind === 'folder' ? FolderIcon : FileTextIcon;
-  return <Glyph className={className} size={size} aria-hidden style={{ opacity: 0.6 }} />;
+  const kindClass = kind === 'folder' ? 'nook-node-icon--folder' : kind === 'database' ? 'nook-node-icon--database' : 'nook-node-icon--page';
+  return <Glyph className={`nook-node-icon ${kindClass}${className ? ` ${className}` : ''}`} size={size} aria-hidden strokeWidth={1.7} />;
 }

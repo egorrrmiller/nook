@@ -16,7 +16,16 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
     public DbSet<Invite> Invites => Set<Invite>();
     public DbSet<ApiToken> ApiTokens => Set<ApiToken>();
+    public DbSet<Integration> Integrations => Set<Integration>();
+    public DbSet<IntegrationInstallation> IntegrationInstallations => Set<IntegrationInstallation>();
+    public DbSet<IntegrationCapabilities> IntegrationCapabilities => Set<IntegrationCapabilities>();
+    public DbSet<IntegrationGrant> IntegrationGrants => Set<IntegrationGrant>();
+    public DbSet<OAuthAuthorizationCode> OAuthAuthorizationCodes => Set<OAuthAuthorizationCode>();
+    public DbSet<OAuthRefreshToken> OAuthRefreshTokens => Set<OAuthRefreshToken>();
     public DbSet<Node> Nodes => Set<Node>();
+    public DbSet<Collection> Collections => Set<Collection>();
+    public DbSet<Database> Databases => Set<Database>();
+    public DbSet<CollectionView> CollectionViews => Set<CollectionView>();
     public DbSet<NodeShare> NodeShares => Set<NodeShare>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<DocumentUpdate> DocumentUpdates => Set<DocumentUpdate>();
@@ -85,6 +94,84 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             b.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
         });
 
+        // --- Notion compatibility foundation ---------------------------------------------------------------------
+        // These tables are deliberately separate from ApiToken. Native /api tokens retain their existing semantics;
+        // compatibility installations resolve workspace-scoped principals and grants without X-Workspace-Id.
+        modelBuilder.Entity<Integration>(b =>
+        {
+            b.ToTable("integrations");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.ClientId).HasMaxLength(200).IsRequired();
+            b.Property(x => x.ClientSecretHash).HasMaxLength(256);
+            b.Property(x => x.Name).HasMaxLength(200).IsRequired();
+            b.Property(x => x.Kind).HasConversion<string>().HasMaxLength(32).IsRequired();
+            b.Property(x => x.RedirectUris).HasColumnType("text[]").IsRequired();
+            b.HasIndex(x => x.ClientId).IsUnique();
+            b.HasOne(x => x.CreatedByUser).WithMany().HasForeignKey(x => x.CreatedByUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<IntegrationInstallation>(b =>
+        {
+            b.ToTable("integration_installations");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.TokenHash).HasMaxLength(256).IsRequired();
+            b.Property(x => x.TokenKind).HasConversion<string>().HasMaxLength(32).IsRequired();
+            b.HasIndex(x => x.TokenHash).IsUnique();
+            b.HasIndex(x => new { x.WorkspaceId, x.RevokedAt });
+            b.HasIndex(x => new { x.IntegrationId, x.WorkspaceId });
+            b.HasOne(x => x.Integration).WithMany(x => x.Installations).HasForeignKey(x => x.IntegrationId).OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(x => x.Workspace).WithMany().HasForeignKey(x => x.WorkspaceId).OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(x => x.BotUser).WithMany().HasForeignKey(x => x.BotUserId).OnDelete(DeleteBehavior.SetNull);
+            b.HasOne(x => x.OwnerUser).WithMany().HasForeignKey(x => x.OwnerUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<IntegrationCapabilities>(b =>
+        {
+            b.ToTable("integration_capabilities");
+            b.HasKey(x => x.InstallationId);
+            b.Property(x => x.UserInfoLevel).HasConversion<string>().HasMaxLength(32).IsRequired();
+            b.HasOne(x => x.Installation).WithOne(x => x.Capabilities).HasForeignKey<IntegrationCapabilities>(x => x.InstallationId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<IntegrationGrant>(b =>
+        {
+            b.ToTable("integration_grants");
+            b.HasKey(x => x.Id);
+            b.HasIndex(x => new { x.InstallationId, x.NodeId }).IsUnique();
+            b.HasIndex(x => new { x.InstallationId, x.RevokedAt });
+            b.HasIndex(x => x.NodeId);
+            b.HasOne(x => x.Installation).WithMany(x => x.Grants).HasForeignKey(x => x.InstallationId).OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(x => x.Node).WithMany().HasForeignKey(x => x.NodeId).OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(x => x.GrantedByUser).WithMany().HasForeignKey(x => x.GrantedByUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<OAuthAuthorizationCode>(b =>
+        {
+            b.ToTable("oauth_authorization_codes");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.CodeHash).HasMaxLength(256).IsRequired();
+            b.Property(x => x.RedirectUri).HasMaxLength(2048).IsRequired();
+            b.Property(x => x.Scopes).HasColumnType("text[]").IsRequired();
+            b.Property(x => x.CodeChallenge).HasMaxLength(256);
+            b.Property(x => x.CodeChallengeMethod).HasMaxLength(32);
+            b.HasIndex(x => x.CodeHash).IsUnique();
+            b.HasIndex(x => new { x.IntegrationId, x.ExpiresAt });
+            b.HasOne(x => x.Integration).WithMany(x => x.AuthorizationCodes).HasForeignKey(x => x.IntegrationId).OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(x => x.Workspace).WithMany().HasForeignKey(x => x.WorkspaceId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<OAuthRefreshToken>(b =>
+        {
+            b.ToTable("oauth_refresh_tokens");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.TokenHash).HasMaxLength(256).IsRequired();
+            b.HasIndex(x => x.TokenHash).IsUnique();
+            b.HasIndex(x => new { x.InstallationId, x.RevokedAt });
+            b.HasOne(x => x.Installation).WithMany(x => x.RefreshTokens).HasForeignKey(x => x.InstallationId).OnDelete(DeleteBehavior.Cascade);
+        });
+        // --- end Notion compatibility foundation -----------------------------------------------------------------
+
         modelBuilder.Entity<Node>(b =>
         {
             b.HasKey(x => x.Id);
@@ -102,6 +189,45 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             b.HasIndex(x => x.Title).HasMethod("gin").HasOperators("gin_trgm_ops").HasDatabaseName("ix_nodes_title_trgm");
             b.HasIndex(x => x.Properties).HasMethod("gin");
         });
+
+        // --- wave2: collections/databases -------------------------------------------------------------------------
+        // Collection schema, templates and row layout intentionally remain JSON contracts. Rows continue to be Nodes;
+        // this keeps page identity, links, shares and attachments stable when a page becomes a database row.
+        modelBuilder.Entity<Collection>(b =>
+        {
+            b.ToTable("collections");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Name).HasMaxLength(200).IsRequired();
+            b.Property(x => x.PropertySchema).HasColumnType("jsonb").IsRequired();
+            b.Property(x => x.Templates).HasColumnType("jsonb").IsRequired();
+            b.Property(x => x.RowLayout).HasColumnType("jsonb").IsRequired();
+            b.HasOne(x => x.Workspace).WithMany().HasForeignKey(x => x.WorkspaceId).OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(x => new { x.WorkspaceId, x.Name });
+        });
+
+        modelBuilder.Entity<Database>(b =>
+        {
+            b.ToTable("databases");
+            b.HasKey(x => x.NodeId);
+            b.HasOne(x => x.Node).WithOne().HasForeignKey<Database>(x => x.NodeId).OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(x => x.Collection).WithMany(x => x.Databases).HasForeignKey(x => x.CollectionId).OnDelete(DeleteBehavior.Restrict);
+            b.HasIndex(x => x.CollectionId);
+        });
+
+        modelBuilder.Entity<CollectionView>(b =>
+        {
+            b.ToTable("collection_views");
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Name).HasMaxLength(200).IsRequired();
+            b.Property(x => x.Kind).HasMaxLength(32).IsRequired();
+            b.Property(x => x.Config).HasColumnType("jsonb").IsRequired();
+            b.Property(x => x.Position).HasMaxLength(128).IsRequired();
+            b.HasOne(x => x.Database).WithMany(x => x.Views).HasForeignKey(x => x.DatabaseId).OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(x => x.Collection).WithMany().HasForeignKey(x => x.CollectionId).OnDelete(DeleteBehavior.Restrict);
+            b.HasIndex(x => new { x.DatabaseId, x.Position });
+            b.HasIndex(x => new { x.CollectionId, x.Kind });
+        });
+        // --- end wave2: collections/databases ---------------------------------------------------------------------
 
         modelBuilder.Entity<NodeShare>(b =>
         {

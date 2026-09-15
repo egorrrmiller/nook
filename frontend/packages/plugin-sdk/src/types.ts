@@ -83,6 +83,43 @@ export interface NookPlugin {
   propertyRenderers?: PluginPropertyRenderer[];
 }
 
+/** JSON-Schema subset returned by the backend plugin settings endpoint. */
+export interface PluginSettingsSchema {
+  type?: 'object' | string;
+  properties?: Record<string, Record<string, unknown>>;
+  required?: string[];
+  additionalProperties?: boolean;
+  [key: string]: unknown;
+}
+
+export interface PluginManifest {
+  id: string;
+  name: string;
+  settings?: { schema: PluginSettingsSchema } | null;
+}
+
+export type AutomationActionCapabilities = 'none' | 'read' | 'write' | 'network';
+
+export interface AutomationActionDescriptor {
+  id: string;
+  displayName: string;
+  parametersSchema: string;
+  capabilities: number;
+}
+
+/** Wire contract shared by Button blocks and persisted automations. */
+export interface ButtonAction {
+  actionId: string;
+  parameters: Record<string, unknown>;
+  requiresConfirmation?: boolean;
+}
+
+export interface ButtonBlockContract {
+  label: string;
+  actions: ButtonAction[];
+  requiresConfirmation?: boolean;
+}
+
 /** Namespaced ids as exposed by the registry (`<pluginId>:<localId>`). */
 export interface RegisteredCommand extends PluginCommand {
   pluginId: string;

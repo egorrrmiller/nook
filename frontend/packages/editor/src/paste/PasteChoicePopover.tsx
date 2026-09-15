@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { AtSignIcon, BookmarkIcon, FrameIcon, LinkIcon } from 'lucide-react';
+import { Button } from '@nook/ui';
 
 export type PasteChoice = 'bookmark' | 'embed' | 'mention' | 'link';
 
@@ -32,11 +33,41 @@ export function PasteChoicePopover({ state }: { state: PasteChoiceState }) {
     };
   }, [state]);
 
-  const options: { id: PasteChoice; label: string; hint: string; icon: React.ReactNode; show: boolean }[] = [
-    { id: 'link', label: 'Plain link', hint: 'Keep the URL as a link', icon: <LinkIcon size={14} />, show: true },
-    { id: 'bookmark', label: 'Create bookmark', hint: 'Visual link preview', icon: <BookmarkIcon size={14} />, show: true },
-    { id: 'embed', label: 'Create embed', hint: 'Interactive iframe', icon: <FrameIcon size={14} />, show: state.allowEmbed },
-    { id: 'mention', label: 'Mention this page', hint: 'Inline page link', icon: <AtSignIcon size={14} />, show: state.allowMention },
+  const options: {
+    id: PasteChoice;
+    label: string;
+    hint: string;
+    icon: React.ReactNode;
+    show: boolean;
+  }[] = [
+    {
+      id: 'link',
+      label: 'Plain link',
+      hint: 'Keep the URL as a link',
+      icon: <LinkIcon size={14} />,
+      show: true,
+    },
+    {
+      id: 'bookmark',
+      label: 'Create bookmark',
+      hint: 'Visual link preview',
+      icon: <BookmarkIcon size={14} />,
+      show: true,
+    },
+    {
+      id: 'embed',
+      label: 'Create embed',
+      hint: 'Interactive iframe',
+      icon: <FrameIcon size={14} />,
+      show: state.allowEmbed,
+    },
+    {
+      id: 'mention',
+      label: 'Mention this page',
+      hint: 'Inline page link',
+      icon: <AtSignIcon size={14} />,
+      show: state.allowMention,
+    },
   ];
 
   return (
@@ -51,11 +82,19 @@ export function PasteChoicePopover({ state }: { state: PasteChoiceState }) {
       {options
         .filter((o) => o.show)
         .map((o) => (
-          <button key={o.id} type="button" role="menuitem" onMouseDown={(e) => e.preventDefault()} onClick={() => state.onChoose(o.id)}>
+          <Button
+            key={o.id}
+            type="button"
+            variant="ghost"
+            size="sm"
+            role="menuitem"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => state.onChoose(o.id)}
+          >
             {o.icon}
             <span className="nook-paste-popover__label">{o.label}</span>
             <span className="nook-paste-popover__hint">{o.hint}</span>
-          </button>
+          </Button>
         ))}
     </div>
   );

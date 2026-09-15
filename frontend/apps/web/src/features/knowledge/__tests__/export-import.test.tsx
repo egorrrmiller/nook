@@ -24,6 +24,8 @@ describe('ExportDialog', () => {
 
     try {
       renderWidget(<ExportDialog workspaceId={workspaceId} nodeIds={[plan.id]} open onOpenChange={() => {}} />);
+      expect(screen.getByRole('checkbox', { name: 'Include sub-pages' })).toBeChecked();
+      expect(screen.getByRole('checkbox', { name: 'Include files and images' })).toBeChecked();
       await user.click(await screen.findByTestId('export-format-html'));
       await user.click(screen.getByTestId('export-run'));
       await waitFor(() => expect(screen.getByTestId('export-done')).toBeInTheDocument());

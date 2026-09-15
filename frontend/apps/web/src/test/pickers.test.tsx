@@ -31,6 +31,22 @@ function nodeId() {
 }
 
 describe('IconPicker (contracts §10)', () => {
+  it('opens for workspace icons without exposing node-only upload', async () => {
+    signInWithWorkspace();
+    const user = userEvent.setup();
+    const onChange = vi.fn<(icon: NodeIcon | null) => void>();
+    mount(
+      <IconPicker value={{ type: 'emoji', value: '🏠' }} onChange={onChange}>
+        <Button aria-label="Choose workspace icon">🏠</Button>
+      </IconPicker>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Choose workspace icon' }));
+    const popover = await screen.findByTestId('icon-picker');
+    expect(within(popover).getByRole('tab', { name: 'Emoji' })).toBeInTheDocument();
+    expect(within(popover).queryByRole('tab', { name: 'Upload' })).not.toBeInTheDocument();
+  });
+
   it('picks an emoji, searches, and remembers recents', async () => {
     signInWithWorkspace();
     const user = userEvent.setup();

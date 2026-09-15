@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { SignpostIcon } from 'lucide-react';
-import { cn } from '@nook/ui';
+import { Input, cn } from '@nook/ui';
 import { nodeTitle } from '../../../lib/utils';
 import { parseAliasConflict, useAliases, useSetAliases, type AliasConflict } from '../api/queries';
 import { Chip } from '../ui/Chip';
@@ -53,7 +53,7 @@ export function AliasesRow({ workspaceId, nodeId, readOnly }: { workspaceId: str
           {readOnly ? (
             !list.length ? <span className={emptyClass}>Empty</span> : null
           ) : (
-            <input
+            <Input
               value={draft}
               aria-label="Add alias"
               placeholder={list.length ? 'Add…' : 'Add an alias…'}
@@ -65,7 +65,7 @@ export function AliasesRow({ workspaceId, nodeId, readOnly }: { workspaceId: str
                   add();
                 } else if (e.key === 'Backspace' && !draft && list.length) save(list.slice(0, -1));
               }}
-              className="h-5 min-w-20 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/70"
+              className="h-5 min-w-20 flex-1 rounded-none border-0 bg-transparent px-0 text-sm shadow-none focus-visible:border-0 focus-visible:ring-0 placeholder:text-muted-foreground/70"
             />
           )}
         </div>

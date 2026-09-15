@@ -10,8 +10,10 @@ using Nook.Infrastructure.Files;
 using Nook.Infrastructure.Files.Extractors;
 using Nook.Infrastructure.Http;
 using Nook.Infrastructure.Jobs;
+using Nook.Infrastructure.Plugins;
 using Nook.Infrastructure.Persistence;
 using Nook.Infrastructure.Realtime;
+using Nook.Application.Plugins;
 using Nook.Plugins.Sdk;
 
 namespace Nook.Infrastructure;
@@ -27,7 +29,10 @@ public static class DependencyInjection
     {
         services.AddDbContext<AppDbContext>(o => DbContextConfiguration.Configure(o, connectionString));
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+        services.AddScoped<IPluginStateStore, EfPluginStateStore>();
         services.AddSingleton<IPasswordHasher, PasswordHasherAdapter>();
+        services.AddSingleton<IAutomationAction, SendWebhookAutomationAction>();
+        services.AddScoped<IAutomationEventDispatcher, AutomationEventDispatcher>();
 
         services.AddSingleton<PresenceTracker>();
         services.AddSingleton<IRealtimeNotifier, SignalRRealtimeNotifier>();

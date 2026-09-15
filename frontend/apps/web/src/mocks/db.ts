@@ -17,6 +17,7 @@ import type {
   Version,
   WorkspaceSummary,
 } from '@nook/api-client';
+import type { CollectionDocument, CollectionRow, CollectionView } from '../features/collections/model';
 
 export interface MockUser extends User {
   password: string;
@@ -113,6 +114,7 @@ export interface MockState {
   aliases: MockAlias[];
   /** Keyed by URL. */
   linkPreviews: Record<string, LinkPreview>;
+  collections: CollectionDocument[];
 }
 
 let counter = 0;
@@ -152,14 +154,14 @@ export function createMockState(): MockState {
   const personal: WorkspaceSummary = {
     id: 'ws-personal-0000-0000-000000000001',
     name: "Owner's Nook",
-    icon: '🏠',
+    icon: { type: 'emoji', value: '🏠' },
     role: 'owner',
     isPersonal: true,
   };
   const team: WorkspaceSummary = {
     id: 'ws-team-0000-0000-0000-000000000002',
     name: 'Shared notes',
-    icon: '📚',
+    icon: { type: 'emoji', value: '📚' },
     role: 'editor',
     isPersonal: false,
   };
@@ -193,7 +195,19 @@ export function createMockState(): MockState {
   const reading = mk(personal.id, 'Reading list', 'a2', null, '📖');
   const nookPlan = mk(personal.id, 'Nook plan', 'a0', projects.id, '🧭');
   const ideas = mk(personal.id, 'Ideas', 'a1', projects.id);
+  const projectsDatabase = mk(personal.id, 'Projects database', 'a3', null, '🗃️', 'database');
+  const projectRows: CollectionRow[] = [
+    { id: uuid(), title: 'Website refresh', icon: { type: 'emoji', value: '🎨' }, properties: { status: 'In progress', priority: 2, due: { start: '2026-09-20' }, done: false, labels: ['Design', 'Frontend'], formula: { expression: 'priority * 2', result: 4 } } },
+    { id: uuid(), title: 'Import Obsidian vault', icon: { type: 'emoji', value: '🗂️' }, properties: { status: 'Backlog', priority: 1, due: { start: '2026-09-27' }, done: false, labels: ['Import'], formula: { expression: 'priority * 2', result: 2 } } },
+    { id: uuid(), title: 'Ship first table view', icon: { type: 'emoji', value: '🚀' }, properties: { status: 'Done', priority: 3, due: { start: '2026-09-10' }, done: true, labels: ['Frontend'], formula: { expression: 'priority * 2', result: 6 } } },
+  ];
+  const rowNodes = projectRows.map((row, index) => ({
+    ...mk(personal.id, row.title, `a${index}`, projectsDatabase.id, row.icon?.type === 'emoji' ? row.icon.value : null, 'collection_row'),
+    id: row.id,
+    properties: row.properties as Node['properties'],
+  }));
   projects.hasChildren = true;
+  projectsDatabase.hasChildren = true;
   const teamHome = {
     ...mk(team.id, 'Team home', 'a0', null, '🏡'),
     effectiveRole: 'editor' as Role,
@@ -232,7 +246,7 @@ export function createMockState(): MockState {
   return {
     users: [owner],
     workspaces: [personal, team],
-    nodes: [gettingStarted, projects, reading, nookPlan, ideas, teamHome, readOnly],
+    nodes: [gettingStarted, projects, reading, nookPlan, ideas, projectsDatabase, ...rowNodes, teamHome, readOnly],
     invites: [{ code: MOCK_INVITE_CODE, expiresAt: new Date(Date.now() + 864e5).toISOString(), createdAt: now() }],
     sessionUserId: null,
     favorites: [
@@ -250,7 +264,22 @@ export function createMockState(): MockState {
     settings: [],
     aliases: [],
     linkPreviews: {},
+    collections: [createProjectsCollection(projectsDatabase.id, projectRows)],
   };
+}
+
+function createProjectsCollection(nodeId: string, rows: CollectionRow[]): CollectionDocument {
+  const properties = [
+    { id: 'status', name: 'Status', type: 'select', config: { options: ['Backlog', 'In progress', 'Done'] } },
+    { id: 'priority', name: 'Priority', type: 'number' },
+    { id: 'due', name: 'Due', type: 'date' },
+    { id: 'done', name: 'Done', type: 'checkbox' },
+    { id: 'labels', name: 'Labels', type: 'multi_select', config: { options: ['Design', 'Frontend', 'Import'] } },
+    { id: 'formula', name: 'Formula', type: 'formula', config: { expression: 'priority * 2' } },
+  ] as CollectionDocument['properties'];
+  const base = { visiblePropertyIds: ['status', 'priority', 'due', 'done', 'labels', 'formula'], filters: { kind: 'group' as const, operator: 'and' as const, children: [] }, sorts: [], groupBy: 'status' };
+  const views: CollectionView[] = (['table', 'board', 'list', 'gallery', 'calendar'] as const).map((kind, index) => ({ id: `projects-${kind}`, name: kind[0]!.toUpperCase() + kind.slice(1), kind, position: `a${index}`, config: { ...base, groupBy: kind === 'board' ? 'status' : kind === 'calendar' ? null : base.groupBy } }));
+  return { id: nodeId, nodeId, name: 'Projects database', properties, rows, views, defaultViewId: views[0]!.id };
 }
 
 export function toUser(u: MockUser): User {

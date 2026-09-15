@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { NodeCover } from '@nook/api-client';
+import { Button } from '@nook/ui';
 import { CoverPicker } from '../pickers';
 
 /** `NodeCover` → image URL (contracts §8: upload → `/api/files/{id}`, gallery → `/api/covers`). */
@@ -65,14 +66,14 @@ export function PageCover({
       {!readOnly ? (
         <div className="nook-page__cover-actions">
           <CoverPicker value={cover} nodeId={nodeId} onChange={onChange}>
-            <button type="button" data-testid="change-cover">
+            <Button type="button" variant="secondary" size="sm" data-testid="change-cover">
               Change cover
-            </button>
+            </Button>
           </CoverPicker>
           <span className="nook-page__cover-hint">Drag to reposition</span>
-          <button type="button" data-testid="remove-cover" onClick={() => onChange(null)}>
+          <Button type="button" variant="secondary" size="sm" data-testid="remove-cover" onClick={() => onChange(null)}>
             Remove
-          </button>
+          </Button>
         </div>
       ) : null}
     </div>

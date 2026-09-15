@@ -1,8 +1,8 @@
-import { Link, useNavigate } from '@tanstack/react-router';
-import { FileTextIcon, PlusIcon } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
+import { PlusIcon } from 'lucide-react';
 import { Button, Skeleton } from '@nook/ui';
 import { useCreateNode, useMe, useNodes } from '../../lib/queries';
-import { nodeTitle } from '../../lib/utils';
+import { PageCard } from './PageCard';
 
 export function HomeScreen({ workspaceId }: { workspaceId: string }) {
   const { data: me } = useMe();
@@ -43,21 +43,7 @@ export function HomeScreen({ workspaceId }: { workspaceId: string }) {
         ) : roots?.length ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {roots.map((n) => (
-              <Link
-                key={n.id}
-                to="/w/$workspaceId/p/$nodeId"
-                params={{ workspaceId, nodeId: n.id }}
-                className="flex h-24 flex-col justify-end rounded-[var(--radius)] border border-border bg-bg p-3 shadow-[var(--shadow-sm)] transition-colors hover:bg-bg-hover"
-              >
-                <span className="text-xl">
-                  {n.icon?.type === 'emoji' ? (
-                    n.icon.value
-                  ) : (
-                    <FileTextIcon className="size-5 text-fg-muted" />
-                  )}
-                </span>
-                <span className="mt-1 truncate text-sm font-medium">{nodeTitle(n.title)}</span>
-              </Link>
+              <PageCard key={n.id} node={n} workspaceId={workspaceId} />
             ))}
           </div>
         ) : (

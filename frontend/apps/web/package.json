@@ -21,7 +21,6 @@
     "@microsoft/signalr": "^9.0.0",
     "@nook/api-client": "workspace:*",
     "@nook/editor": "workspace:*",
-    "@nook/plugin-sample": "workspace:*",
     "@nook/plugin-sdk": "workspace:*",
     "@nook/ui": "workspace:*",
     "@tanstack/react-query": "^5.90.0",

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { DownloadIcon, Loader2Icon, NetworkIcon, SearchIcon, UploadIcon } from 'lucide-react';
-import { Skeleton, cn } from '@nook/ui';
+import { Button, Input, Skeleton, Toolbar } from '@nook/ui';
 import { useNode, useNodes } from '../../../lib/queries';
 import { nodeTitle } from '../../../lib/utils';
 import { useUiStore } from '../../../stores/ui';
@@ -10,6 +10,7 @@ import { ImportDialog } from '../import/ImportDialog';
 import { useGraph, useTags } from '../api/queries';
 import { matchNodes, toSimGraph, type SimNode } from '../lib/graph-transform';
 import { EmptyState } from '../ui/EmptyState';
+import { FilterChip, filterChipClass } from '../ui/FilterChip';
 import { BrokenLinksList } from './BrokenLinksList';
 import { GraphCanvas } from './GraphCanvas';
 
@@ -40,63 +41,62 @@ export function GraphView({ workspaceId, focusNodeId }: { workspaceId: string; f
 
   const open = (n: SimNode) => void navigate({ to: '/w/$workspaceId/p/$nodeId', params: { workspaceId, nodeId: n.id } });
 
-  const chipClass = 'inline-flex h-6 items-center gap-1 rounded-full border border-border px-2 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground';
-  const chipOn = 'border-primary/40 bg-[color-mix(in_srgb,var(--primary)_12%,transparent)] text-foreground';
-
   return (
-    <div data-testid="graph-view" className="flex h-full min-h-0 w-full">
+    <div data-testid="graph-view" className="nook-graph-view flex h-full min-h-0 w-full">
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex flex-wrap items-center gap-1.5 border-b border-border px-3 py-2">
           <h1 className="mr-1 flex items-center gap-1.5 text-sm font-semibold">
             <NetworkIcon className="size-4 text-muted-foreground" /> Graph
           </h1>
-          <button type="button" aria-pressed={scope === 'workspace'} onClick={() => setScope('workspace')} className={cn(chipClass, scope === 'workspace' && chipOn)}>
+          <Toolbar aria-label="Graph controls" className="min-w-0 flex-1 flex-wrap gap-1.5">
+          <FilterChip active={scope === 'workspace'} onClick={() => setScope('workspace')}>
             Whole workspace
-          </button>
+          </FilterChip>
           {focusNodeId ? (
-            <button type="button" aria-pressed={scope === 'page'} onClick={() => setScope('page')} className={cn(chipClass, scope === 'page' && chipOn)} data-testid="graph-scope-page">
+            <FilterChip active={scope === 'page'} onClick={() => setScope('page')} testId="graph-scope-page">
               Around {focusTitle ?? 'current page'}
-            </button>
+            </FilterChip>
           ) : null}
           {scope === 'page' ? (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               Depth
               {DEPTHS.map((d) => (
-                <button key={d} type="button" aria-pressed={depth === d} onClick={() => setDepth(d)} className={cn('size-6 rounded-full border border-border tabular-nums hover:bg-accent', depth === d && chipOn)}>
+                <FilterChip key={d} active={depth === d} onClick={() => setDepth(d)} className="size-6 px-0 tabular-nums">
                   {d}
-                </button>
+                </FilterChip>
               ))}
             </span>
           ) : null}
-          <button type="button" aria-pressed={showParentEdges} onClick={() => setShowParentEdges((v) => !v)} className={cn(chipClass, showParentEdges && chipOn)} data-testid="graph-toggle-parents">
+          <FilterChip active={showParentEdges} onClick={() => setShowParentEdges((v) => !v)} testId="graph-toggle-parents">
             Parent edges
-          </button>
-          <button type="button" aria-pressed={showTags} onClick={() => setShowTags((v) => !v)} className={cn(chipClass, showTags && chipOn)} data-testid="graph-toggle-tags">
+          </FilterChip>
+          <FilterChip active={showTags} onClick={() => setShowTags((v) => !v)} testId="graph-toggle-tags">
             Tags
-          </button>
+          </FilterChip>
           <label className="ml-auto flex h-7 items-center gap-1.5 rounded-md border border-border px-2 focus-within:border-primary">
             <SearchIcon className="size-3.5 text-muted-foreground" />
-            <input
+            <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Highlight…"
               aria-label="Highlight nodes"
               data-testid="graph-search"
-              className="h-full w-32 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+              className="h-6 w-32 rounded-none border-0 bg-transparent px-0 text-xs shadow-none focus-visible:border-0 focus-visible:ring-0"
             />
             {highlighted.size ? <span className="text-[11px] text-muted-foreground tabular-nums">{highlighted.size}</span> : null}
           </label>
           {isFetching ? <Loader2Icon className="size-3.5 animate-spin text-muted-foreground" /> : null}
           <span className="mx-1 h-4 w-px bg-border" />
-          <button type="button" onClick={() => setSearchOpen(true)} className={chipClass} data-testid="open-search">
-            <SearchIcon /> Search
-          </button>
-          <button type="button" onClick={() => setExportOpen(true)} className={chipClass} data-testid="open-export">
-            <DownloadIcon /> Export
-          </button>
-          <button type="button" onClick={() => setImportOpen(true)} className={chipClass} data-testid="open-import">
-            <UploadIcon /> Import
-          </button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setSearchOpen(true)} data-testid="open-search" className={filterChipClass}>
+            <SearchIcon className="size-3" /> Search
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setExportOpen(true)} data-testid="open-export" className={filterChipClass}>
+            <DownloadIcon className="size-3" /> Export
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setImportOpen(true)} data-testid="open-import" className={filterChipClass}>
+            <UploadIcon className="size-3" /> Import
+          </Button>
+          </Toolbar>
         </header>
         <div className="relative min-h-0 flex-1">
           {isPending ? (

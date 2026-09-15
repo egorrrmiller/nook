@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CalendarIcon } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger, cn } from '@nook/ui';
+import { Button, Checkbox, Input, Popover, PopoverContent, PopoverTrigger, cn } from '@nook/ui';
 import { formatValue, isDateRange, toIsoDay } from '../../lib/property-types';
 import { Calendar } from './Calendar';
 import { emptyClass, valueCellClass, type EditorProps } from './types';
@@ -40,23 +40,23 @@ export function DateEditor({ prop, onChange, readOnly, name }: EditorProps) {
       </PopoverTrigger>
       <PopoverContent className="w-auto p-2" aria-label={`${name} date picker`}>
         <div className="mb-2 flex items-center gap-1 px-1">
-          <input
+          <Input
             type="date"
             aria-label="Start date"
             value={value?.start.slice(0, 10) ?? ''}
             onChange={(e) => e.target.value && onChange({ start: e.target.value, ...(value?.end && value.end >= e.target.value ? { end: value.end } : {}) })}
-            className="h-7 min-w-0 flex-1 rounded-sm border border-input bg-background px-1.5 text-xs outline-none focus-visible:border-primary"
+            className="h-7 min-w-0 flex-1 rounded-sm px-1.5 text-xs"
           />
           {range ? (
             <>
               <span className="text-xs text-muted-foreground">→</span>
-              <input
+              <Input
                 type="date"
                 aria-label="End date"
                 value={value?.end?.slice(0, 10) ?? ''}
                 min={value?.start.slice(0, 10)}
                 onChange={(e) => value && onChange(e.target.value ? { start: value.start, end: e.target.value } : { start: value.start })}
-                className="h-7 min-w-0 flex-1 rounded-sm border border-input bg-background px-1.5 text-xs outline-none focus-visible:border-primary"
+                className="h-7 min-w-0 flex-1 rounded-sm px-1.5 text-xs"
               />
             </>
           ) : null}
@@ -64,30 +64,30 @@ export function DateEditor({ prop, onChange, readOnly, name }: EditorProps) {
         <Calendar start={value?.start} end={value?.end} range={range} onSelect={pick} />
         <div className="mt-2 flex items-center gap-2 border-t border-border px-1 pt-2 text-xs">
           <label className="flex cursor-pointer items-center gap-1.5">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={range}
               onChange={(e) => {
                 setRange(e.target.checked);
                 if (!e.target.checked && value?.end) onChange({ start: value.start });
               }}
-              className="accent-[var(--primary)]"
             />
             End date
           </label>
-          <button type="button" onClick={() => onChange({ start: toIsoDay(new Date()) })} className="ml-auto rounded-sm px-1.5 py-0.5 hover:bg-accent">
+          <Button type="button" variant="subtle" size="xs" onClick={() => onChange({ start: toIsoDay(new Date()) })} className="ml-auto font-normal">
             Today
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="subtle"
+            size="xs"
             onClick={() => {
               onChange(null);
               setOpen(false);
             }}
-            className="rounded-sm px-1.5 py-0.5 text-muted-foreground hover:bg-accent hover:text-destructive"
+            className="font-normal text-muted-foreground hover:text-destructive"
           >
             Clear
-          </button>
+          </Button>
         </div>
       </PopoverContent>
     </Popover>

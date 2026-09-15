@@ -21,8 +21,8 @@
 
   --radius: var(--radius-md);
 
-  --sidebar-width: 240px;
-  --sidebar-min: 200px;
+  --sidebar-width: 280px;
+  --sidebar-min: 220px;
   --content-width: 708px;
   --content-max: 708px;
   --topbar-height: 44px;

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ChevronRightIcon } from 'lucide-react';
 import type { PageProperties as PagePropertiesMap, PagePropertyType } from '@nook/api-client';
-import { Skeleton, cn } from '@nook/ui';
+import { Button, Skeleton, cn } from '@nook/ui';
 import { usePatchProperties, useProperties, useSetProperties } from '../api/queries';
 import { coerceValue, defaultValue } from '../lib/property-types';
 import { readJson, writeJson } from '../lib/storage';
@@ -41,16 +41,18 @@ export function PageProperties({ workspaceId, nodeId, readOnly }: { workspaceId:
 
   return (
     <section data-testid="page-properties" data-collapsed={collapsed || undefined} className="mb-4 -ml-1.5 text-sm">
-      <button
+      <Button
         type="button"
+        variant="subtle"
+        size="xs"
         aria-expanded={!collapsed}
         onClick={() => setCollapsed(!collapsed)}
-        className="mb-0.5 flex h-6 items-center gap-1 rounded-sm px-1.5 text-[11px] font-medium tracking-wide text-muted-foreground/70 uppercase transition-colors hover:bg-accent hover:text-foreground"
+        className="mb-0.5 h-6 rounded-sm px-1.5 text-[11px] font-medium tracking-wide text-muted-foreground/70 uppercase hover:text-foreground"
       >
         <ChevronRightIcon className={cn('size-3.5 transition-transform', !collapsed && 'rotate-90')} />
         Properties
         {collapsed ? <span className="ml-1 font-normal normal-case">· {count} {count === 1 ? 'property' : 'properties'}, tags, aliases</span> : null}
-      </button>
+      </Button>
       {!collapsed ? (
         <div className="flex flex-col gap-px">
           {names.map((name) => {

@@ -9,6 +9,7 @@ import type {
   AddMemberRequest,
   ApiToken,
   AuthResponse,
+  Attachment,
   Breadcrumb,
   ChangePasswordRequest,
   CreateApiTokenRequest,
@@ -46,6 +47,7 @@ export const queryKeys = {
   members: (workspaceId: string) => ['members', workspaceId] as const,
   invites: ['invites'] as const,
   apiTokens: ['api-tokens'] as const,
+  nodeFiles: (workspaceId: string, nodeId: string) => ['node-files', workspaceId, nodeId] as const,
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -150,6 +152,14 @@ export function useNodes(workspaceId: string, parentId?: string | null, enabled 
 export function useNode(workspaceId: string, id: string, enabled = true) {
   return useQuery({ ...nodeQuery(workspaceId, id), enabled });
 }
+export function useNodeFiles(workspaceId: string, nodeId: string, enabled = true) {
+  return useQuery<Attachment[]>({
+    queryKey: queryKeys.nodeFiles(workspaceId, nodeId),
+    queryFn: ({ signal }) => api.nodes.files(nodeId, signal),
+    enabled,
+    staleTime: 30_000,
+  });
+}
 export function useAncestors(workspaceId: string, id: string | null) {
   return useQuery({ ...ancestorsQuery(workspaceId, id ?? ''), enabled: !!id });
 }
@@ -179,6 +189,18 @@ export function useInvites() {
 }
 export function useApiTokens() {
   return useQuery(apiTokensQuery());
+}
+
+export function useRemoveFile(workspaceId: string, nodeId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (attachmentId: string) => api.files.remove(attachmentId),
+    onSuccess: (_void, attachmentId) => {
+      qc.setQueryData<Attachment[]>(queryKeys.nodeFiles(workspaceId, nodeId), (files) =>
+        files?.filter((file) => file.id !== attachmentId),
+      );
+    },
+  });
 }
 
 // ---------------------------------------------------------------------------------------------

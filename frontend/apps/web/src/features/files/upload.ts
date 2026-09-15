@@ -24,8 +24,9 @@ export class UploadError extends Error {
 
 function describe(status: number, raw: string): string {
   try {
-    const body = JSON.parse(raw) as { title?: string; detail?: string };
-    return body.title ?? body.detail ?? `Upload failed (${status})`;
+    const body = JSON.parse(raw) as { title?: string; detail?: string; errors?: Record<string, string[]> };
+    const validation = Object.values(body.errors ?? {}).flat().filter(Boolean);
+    return validation[0] ?? body.detail ?? body.title ?? `Upload failed (${status})`;
   } catch {
     if (status === 413) return 'File is too large';
     return raw || `Upload failed (${status})`;
@@ -43,6 +44,10 @@ export function uploadFileWithProgress(file: File | Blob, opts: UploadOptions): 
     if (opts.purpose) form.append('purpose', opts.purpose);
 
     const xhr = new XMLHttpRequest();
+    if (opts.signal?.aborted) {
+      reject(new UploadError(0, 'Upload cancelled'));
+      return;
+    }
     xhr.open('POST', '/api/files');
     xhr.withCredentials = true;
     xhr.setRequestHeader('Accept', 'application/json');

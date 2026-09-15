@@ -47,16 +47,19 @@ export function AppearanceSettings() {
       <SettingsGroup title="Theme">
         <div className="flex gap-3 py-3">
           {THEMES.map((t) => (
-            <button
+            <Button
               key={t}
               type="button"
+              variant="ghost"
+              size="md"
+              aria-pressed={theme === t}
               data-testid={`theme-${t}`}
               onClick={() => {
                 setTheme(t);
                 save.mutate({ key: 'theme', value: t });
               }}
               className={cn(
-                'flex w-32 flex-col gap-2 rounded-[var(--radius)] border border-border p-2 text-left text-xs transition-colors hover:bg-bg-hover',
+                'h-auto w-32 flex-col gap-2 rounded-[var(--radius)] border border-border px-2 py-2 text-left text-xs transition-colors hover:bg-bg-hover',
                 theme === t && 'border-brand ring-1 ring-brand',
               )}
             >
@@ -71,7 +74,7 @@ export function AppearanceSettings() {
                 <span className={cn('h-2 flex-1 rounded-full', t === 'dark' ? 'bg-[#3d3d3d]' : 'bg-[#e3e2e0]')} />
               </span>
               <span className="font-medium">{THEME_LABELS[t]}</span>
-            </button>
+            </Button>
           ))}
         </div>
       </SettingsGroup>

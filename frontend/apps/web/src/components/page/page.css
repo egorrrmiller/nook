@@ -6,28 +6,31 @@
   min-height: 100%;
   width: 100%;
   align-items: stretch;
+  background: var(--background);
 }
 
 .nook-page {
   flex: 1 1 auto;
   min-width: 0;
   padding-bottom: 30vh;
+  overflow-wrap: anywhere;
+  transition: background-color var(--duration) var(--ease);
 }
 
 .nook-page__column {
   width: 100%;
-  max-width: calc(var(--content-width, 708px) + 96px);
+  max-width: calc(var(--content-width, 708px) + 104px);
   margin-inline: auto;
-  padding: 0 48px;
+  padding: 0 52px;
 }
 .nook-page--full .nook-page__column {
   max-width: none;
-  padding-inline: 72px;
+  padding-inline: clamp(24px, 6vw, 96px);
 }
 @media (max-width: 900px) {
   .nook-page__column,
   .nook-page--full .nook-page__column {
-    padding-inline: 20px;
+    padding-inline: 24px;
   }
 }
 .nook-page--serif {
@@ -48,21 +51,86 @@
   top: 0;
   z-index: 5;
   display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  align-items: flex-start;
   justify-content: flex-end;
-  padding: 6px 10px 0;
+  padding: 8px 14px 0;
   height: 0;
+  pointer-events: none;
+}
+.nook-page__toolbar-group {
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  pointer-events: auto;
+  opacity: 0.3;
+  transition: opacity var(--duration) var(--ease), background var(--duration) var(--ease), border-color var(--duration) var(--ease), box-shadow var(--duration) var(--ease);
+}
+.nook-page__toolbar:hover .nook-page__toolbar-group,
+.nook-page__toolbar:focus-within .nook-page__toolbar-group,
+.nook-page--read .nook-page__toolbar-group,
+.nook-page--focus .nook-page__toolbar-group {
+  opacity: 1;
+}
+.nook-page__toolbar:hover .nook-page__toolbar-group,
+.nook-page__toolbar:focus-within .nook-page__toolbar-group {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--background) 88%, transparent);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(12px);
+}
+.nook-page__mode-label {
+  padding: 0 7px;
+  color: var(--foreground-tertiary);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 .nook-page__toolbar button {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
   border: 0;
   background: transparent;
   color: var(--foreground-tertiary);
   border-radius: var(--radius-sm);
-  padding: 4px;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  transition: background var(--duration) var(--ease), color var(--duration) var(--ease);
+}
+.nook-page__toolbar button > svg {
+  width: 16px;
+  height: 16px;
+  max-width: 16px;
+  max-height: 16px;
 }
 .nook-page__toolbar button:hover,
 .nook-page__toolbar button[aria-pressed='true'] {
   background: var(--accent);
   color: var(--foreground-secondary);
+}
+.nook-page__toolbar button[aria-pressed='true'] {
+  color: var(--primary);
+}
+.nook-page--focus .nook-page__toolbar {
+  height: 44px;
+  padding: 10px 18px 0;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--background) 96%, transparent), transparent);
+}
+.nook-page--focus .nook-page__toolbar-group {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--background) 88%, transparent);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(12px);
 }
 
 /* ------------------------------------------------------------------- cover */
@@ -74,6 +142,19 @@
   max-height: 280px;
   overflow: hidden;
   background: var(--muted);
+}
+.nook-page__cover::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.08), transparent 38%, rgba(0, 0, 0, 0.18));
+  opacity: 0.65;
+  transition: opacity var(--duration) var(--ease);
+}
+.nook-page__cover:hover::after,
+.nook-page__cover:focus-within::after {
+  opacity: 0.9;
 }
 .nook-page__cover img {
   width: 100%;
@@ -93,9 +174,13 @@
   align-items: center;
   gap: 6px;
   opacity: 0;
-  transition: opacity 120ms ease;
+  z-index: 1;
+  transition: opacity var(--duration) var(--ease);
 }
 .nook-page__cover:hover .nook-page__cover-actions {
+  opacity: 1;
+}
+.nook-page__cover:focus-within .nook-page__cover-actions {
   opacity: 1;
 }
 .nook-page__cover-actions button {
@@ -105,7 +190,12 @@
   color: var(--popover-foreground);
   box-shadow: var(--shadow-popover);
   font-size: 12px;
-  padding: 4px 8px;
+  min-height: 28px;
+  padding: 5px 9px;
+  transition: background var(--duration) var(--ease), color var(--duration) var(--ease);
+}
+.nook-page__cover-actions button:hover {
+  background: var(--accent-strong);
 }
 .nook-page__cover-hint {
   font-size: 11px;
@@ -119,7 +209,9 @@
 /* ------------------------------------------------------------------ header */
 .nook-page__header {
   position: relative;
-  padding-top: 40px;
+  padding-top: 48px;
+  margin-bottom: 28px;
+  animation: nook-page-header-in 240ms var(--ease) both;
 }
 .nook-page__cover + .nook-page__column .nook-page__header {
   padding-top: 20px;
@@ -132,6 +224,15 @@
   margin-bottom: 4px;
   line-height: 1;
   font-size: 72px;
+  border-radius: var(--radius-md);
+  transition: background var(--duration) var(--ease), transform var(--duration) var(--ease);
+}
+.nook-page__icon:hover {
+  background: var(--accent);
+  transform: translateY(-1px);
+}
+.nook-page__icon:disabled {
+  cursor: default;
 }
 .nook-page__actions {
   display: flex;
@@ -139,7 +240,7 @@
   height: 26px;
   margin-bottom: 4px;
   opacity: 0;
-  transition: opacity 120ms ease;
+  transition: opacity var(--duration) var(--ease);
 }
 .nook-page__header:hover .nook-page__actions,
 .nook-page__actions:focus-within {
@@ -155,11 +256,115 @@
   font-size: 13px;
   padding: 3px 6px;
   border-radius: var(--radius-sm);
+  transition: background var(--duration) var(--ease), color var(--duration) var(--ease);
 }
 .nook-page__actions button:hover {
   background: var(--accent);
   color: var(--foreground-secondary);
 }
+.nook-page__title-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+.nook-page__title-row .nook-editor__title,
+.nook-page__title-row .nook-editor-title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.nook-page__sync-status {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 13px;
+  color: var(--foreground-tertiary);
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity var(--duration) var(--ease), color var(--duration) var(--ease);
+}
+.nook-page__header:hover .nook-page__sync-status,
+.nook-page__header:focus-within .nook-page__sync-status,
+.nook-page__sync-status[data-synced='false'] {
+  opacity: 1;
+}
+.nook-page__sync-status[data-synced='false'] {
+  color: var(--primary);
+}
+.nook-page__sync-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--foreground-tertiary);
+}
+.nook-page__sync-status[data-synced='true'] .nook-page__sync-dot {
+  background: var(--success, #4caf7d);
+}
+.nook-page__sync-status[data-synced='false'] .nook-page__sync-dot {
+  background: var(--primary);
+  animation: nook-sync-pulse 1.2s ease-in-out infinite;
+}
+.nook-page__read-only-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: -3px;
+  color: var(--foreground-tertiary);
+  font-size: 12px;
+}
+.nook-page__read-only-note::before {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--foreground-tertiary);
+  content: '';
+}
+.nook-page--read .nook-editor-banner:not(.nook-editor-banner--error) {
+  display: none;
+}
+.nook-page--read .nook-page__header {
+  margin-bottom: 34px;
+}
+.nook-page--read .nook-editor .bn-editor {
+  caret-color: transparent;
+}
+@keyframes nook-page-header-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes nook-sync-pulse {
+  50% { opacity: 0.35; }
+}
+
+/* Properties are intentionally quiet: they should read as page metadata, not another toolbar. */
+.nook-page [data-testid='page-properties'] {
+  margin-bottom: 28px;
+  padding: 12px 0 4px;
+  border-top: 1px solid var(--border);
+}
+.nook-page [data-testid='page-properties'] > button {
+  color: var(--foreground-tertiary);
+}
+.nook-page [data-testid='page-properties'] [data-testid='property-row'] {
+  min-height: 30px;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  transition: background var(--duration) var(--ease);
+}
+.nook-page [data-testid='page-properties'] [data-testid='property-row']:hover {
+  background: color-mix(in srgb, var(--accent) 70%, transparent);
+}
+.nook-page [data-testid='page-properties'] [data-testid='property-row'] > * {
+  min-height: 28px;
+  align-items: center;
+}
+.nook-page [data-testid='page-properties'] [data-testid='add-property'] {
+  min-height: 30px;
+  border-radius: var(--radius-sm);
+  color: var(--foreground-tertiary);
+}
+
 
 /* --------------------------------------------------------------- inspector */
 .nook-inspector {
@@ -173,6 +378,7 @@
   position: sticky;
   top: 0;
   max-height: 100vh;
+  box-shadow: -8px 0 24px color-mix(in srgb, var(--foreground) 5%, transparent);
 }
 .nook-inspector__tabs {
   display: flex;
@@ -181,6 +387,13 @@
   padding: 6px 8px;
   border-bottom: 1px solid var(--border);
 }
+.nook-inspector__tabs-root {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+  gap: 0;
+}
 .nook-inspector__tab {
   border: 0;
   background: transparent;
@@ -188,6 +401,7 @@
   font-size: 13px;
   padding: 4px 8px;
   border-radius: var(--radius-sm);
+  min-height: 28px;
 }
 .nook-inspector__tab.is-active {
   background: var(--accent);
@@ -227,18 +441,239 @@
 }
 .nook-inspector__copy {
   margin-top: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: inherit;
-  font-size: 13px;
-  padding: 4px 8px;
 }
 .nook-inspector__copy:hover {
   background: var(--accent);
+}
+
+/* --------------------------------------------------------------- file cards */
+.nook-inspector__files {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.nook-files-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.nook-files-panel__heading {
+  display: flex;
+  justify-content: space-between;
+  color: var(--foreground-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.nook-files-panel__heading span:last-child {
+  color: var(--foreground-tertiary);
+  font-weight: 400;
+}
+.nook-files-panel__state {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--foreground-tertiary);
+  font-size: 12px;
+  padding: 6px 0;
+}
+.nook-files-panel__state--error,
+.nook-files-panel__error {
+  color: var(--destructive);
+}
+.nook-files-panel__state button,
+.nook-file-card__fallback button {
+  font-size: inherit;
+}
+.nook-files-panel__state button svg,
+.nook-file-card__fallback button svg {
+  width: 13px;
+  height: 13px;
+}
+.nook-files-panel__removing {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.nook-files-panel__error {
+  margin: 0;
+  font-size: 12px;
+}
+.nook-file-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--background);
+  overflow: hidden;
+}
+.nook-file-card__header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 10px;
+}
+.nook-file-card__icon {
+  display: grid;
+  flex: 0 0 30px;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--foreground-secondary);
+}
+.nook-file-card__icon svg {
+  width: 17px;
+  height: 17px;
+}
+.nook-file-card__identity {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+}
+.nook-file-card__name {
+  overflow: hidden;
+  color: var(--foreground);
+  font-size: 12px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nook-file-card__type,
+.nook-file-card__meta,
+.nook-file-card__external {
+  color: var(--foreground-tertiary);
+  font-size: 11px;
+}
+.nook-file-card__type {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nook-file-card__meta {
+  padding: 0 10px 8px;
+}
+.nook-file-card__icon-button {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--foreground-tertiary);
+  padding: 4px;
+  cursor: pointer;
+}
+.nook-file-card__icon-button:hover {
+  background: var(--accent);
+  color: var(--destructive);
+}
+.nook-file-card__icon-button svg {
+  width: 14px;
+  height: 14px;
+}
+.nook-file-card__fallback {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 10px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--foreground-secondary);
+  font-size: 11px;
+  padding: 7px 8px;
+}
+.nook-file-card__fallback > svg {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+}
+.nook-file-card__fallback button {
+  margin-left: auto;
+}
+.nook-file-card__preview {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 90px;
+  margin: 0 10px 8px;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+}
+.nook-file-card__preview img,
+.nook-file-card__preview video {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+}
+.nook-file-card__preview--audio {
+  min-height: 52px;
+  padding: 7px;
+}
+.nook-file-card__preview audio {
+  width: 100%;
+}
+.nook-file-card__preview--pdf {
+  min-height: 260px;
+}
+.nook-file-card__preview--pdf iframe {
+  display: block;
+  width: 100%;
+  height: 360px;
+  border: 0;
+  background: #fff;
+}
+.nook-file-card__spinner {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  animation: nook-file-spin 900ms linear infinite;
+  color: var(--foreground-tertiary);
+}
+@keyframes nook-file-spin {
+  to { transform: rotate(360deg); }
+}
+.nook-file-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  border-top: 1px solid var(--border);
+  padding: 7px 8px;
+}
+.nook-file-card__actions button,
+.nook-file-card__action-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--foreground-secondary);
+  font-size: 11px;
+  padding: 4px 5px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.nook-file-card__actions button:hover,
+.nook-file-card__action-link:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+.nook-file-card__actions svg,
+.nook-file-card__external svg {
+  width: 13px;
+  height: 13px;
+}
+.nook-file-card__external {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px 8px;
 }
 
 /* ----------------------------------------------------------------- uploads */
@@ -296,6 +731,10 @@
   margin-top: 4px;
   color: var(--destructive);
 }
+.nook-uploads__done {
+  margin-top: 4px;
+  color: var(--success, var(--foreground-tertiary));
+}
 
 /* ------------------------------------------------------------- file panel */
 .nook-file-panel__tab {
@@ -305,4 +744,88 @@
   margin: 6px 2px 0;
   font-size: 12px;
   color: var(--destructive);
+}
+
+@media (max-width: 720px) {
+  .nook-page {
+    padding-bottom: 18vh;
+  }
+
+  .nook-page__column,
+  .nook-page--full .nook-page__column {
+    padding-inline: 16px;
+  }
+
+  .nook-page__header,
+  .nook-page__cover + .nook-page__column .nook-page__header {
+    padding-top: 32px;
+    margin-bottom: 16px;
+  }
+
+  .nook-page__icon {
+    font-size: 56px;
+  }
+
+  .nook-page__title-row {
+    display: block;
+  }
+
+  .nook-page__sync-status {
+    margin: -2px 0 10px;
+    opacity: 1;
+  }
+
+  .nook-page__toolbar {
+    padding-inline: 8px;
+  }
+
+  .nook-page__toolbar-group {
+    opacity: 1;
+  }
+
+  .nook-page__mode-label {
+    display: none;
+  }
+
+  .nook-page__actions {
+    height: auto;
+    min-height: 28px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+    opacity: 1;
+  }
+
+  .nook-page__cover {
+    height: 24vh;
+    min-height: 140px;
+  }
+
+  .nook-page__cover-actions {
+    right: 10px;
+    bottom: 10px;
+    opacity: 1;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .nook-page--focus .nook-page__toolbar {
+    height: 40px;
+    padding: 8px 10px 0;
+  }
+
+  .nook-inspector {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    width: 100%;
+    max-height: none;
+    border-left: 0;
+    box-shadow: var(--shadow-dialog);
+  }
+
+  .nook-uploads {
+    right: 10px;
+    bottom: 10px;
+    width: min(260px, calc(100vw - 20px));
+  }
 }

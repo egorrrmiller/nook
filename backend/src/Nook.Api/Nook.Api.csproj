@@ -18,7 +18,6 @@
     <ProjectReference Include="../Nook.Application/Nook.Application.csproj" />
     <ProjectReference Include="../Nook.Infrastructure/Nook.Infrastructure.csproj" />
     <ProjectReference Include="../Nook.Plugins.Sdk/Nook.Plugins.Sdk.csproj" />
-    <ProjectReference Include="../../plugins/Nook.Plugin.Sample/Nook.Plugin.Sample.csproj" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Nook.IntegrationTests" />

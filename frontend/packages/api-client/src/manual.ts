@@ -68,7 +68,7 @@ import type {
 } from './types';
 
 /**
- * Typed client for docs/contracts.md §1–§9. Every method maps 1:1 onto a contract line;
+ * Hand-written typed client for the backend API. Every method maps 1:1 onto an API route;
  * paths are spelled exactly as in the contract. Namespaces:
  *
  *   auth        §1   login / logout / register / invite

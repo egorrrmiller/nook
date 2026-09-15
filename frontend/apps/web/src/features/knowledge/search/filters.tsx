@@ -1,20 +1,16 @@
 import type { ReactNode } from 'react';
 import { CheckIcon, ChevronDownIcon } from 'lucide-react';
 import type { NodeKind, Tag } from '@nook/api-client';
-import { Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuTrigger, Popover, PopoverContent, PopoverTrigger, cn } from '@nook/ui';
+import { Button, Input, Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuTrigger, Popover, PopoverContent, PopoverTrigger, cn } from '@nook/ui';
 import { Chip } from '../ui/Chip';
+import { FilterChip, filterChipActive, filterChipClass } from '../ui/FilterChip';
 import { datePreset, type DateRangeFilter } from './build-request';
 
-export const chipClass =
-  'inline-flex h-6 shrink-0 items-center gap-1 rounded-full border border-border px-2 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-popup-open:bg-accent [&_svg]:size-3';
-export const chipActive = 'border-primary/40 bg-[color-mix(in_srgb,var(--primary)_12%,transparent)] text-foreground';
+export const chipClass = filterChipClass;
+export const chipActive = filterChipActive;
 
 export function ToggleChip({ active, onClick, children, testId, title }: { active: boolean; onClick: () => void; children: ReactNode; testId?: string; title?: string }) {
-  return (
-    <button type="button" aria-pressed={active} title={title} data-testid={testId} onClick={onClick} className={cn(chipClass, active && chipActive)}>
-      {children}
-    </button>
-  );
+  return <FilterChip active={active} onClick={onClick} title={title} testId={testId}>{children}</FilterChip>;
 }
 
 const KINDS: { kind: NodeKind; label: string }[] = [
@@ -72,27 +68,29 @@ export function TagsFilter({ tags, value, onChange }: { tags: Tag[]; value: stri
             const on = value.includes(t.id);
             return (
               <li key={t.id}>
-                <button
+                <Button
                   type="button"
+                  variant="subtle"
+                  size="sm"
                   role="menuitemcheckbox"
                   aria-checked={on}
                   onClick={() => onChange(on ? value.filter((x) => x !== t.id) : [...value, t.id])}
-                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1 text-sm hover:bg-accent"
+                  className="h-auto w-full justify-start rounded-sm px-2 py-1 text-sm font-normal"
                 >
                   <span className={cn('flex size-3.5 items-center justify-center rounded-sm border border-border-strong', on && 'border-primary bg-primary text-primary-foreground')}>
                     {on ? <CheckIcon className="size-3" /> : null}
                   </span>
                   <Chip label={t.name} color={t.color} />
                   <span className="ml-auto text-[11px] text-muted-foreground">{t.count ?? 0}</span>
-                </button>
+                </Button>
               </li>
             );
           })}
         </ul>
         {value.length ? (
-          <button type="button" onClick={() => onChange([])} className="mt-1 w-full rounded-sm border-t border-border px-2 py-1 text-left text-xs text-muted-foreground hover:bg-accent">
+          <Button type="button" variant="subtle" size="xs" onClick={() => onChange([])} className="mt-1 w-full justify-start rounded-sm border-t border-border px-2 py-1 text-left font-normal">
             Clear
-          </button>
+          </Button>
         ) : null}
       </PopoverContent>
     </Popover>
@@ -123,32 +121,32 @@ export function DateFilter({ label, value, onChange, testId }: { label: string; 
               ['year', 'Last year'],
             ] as const
           ).map(([p, l]) => (
-            <button key={p} type="button" onClick={() => onChange(datePreset(p))} className="rounded-sm border border-border px-2 py-1 text-xs hover:bg-accent">
+            <Button key={p} type="button" variant="outline" size="xs" onClick={() => onChange(datePreset(p))} className="font-normal">
               {l}
-            </button>
+            </Button>
           ))}
         </div>
         <div className="flex items-center gap-1">
-          <input
+          <Input
             type="date"
             aria-label={`${label} from`}
             value={value.from ?? ''}
             onChange={(e) => onChange({ ...value, from: e.target.value || undefined })}
-            className="h-7 min-w-0 flex-1 rounded-sm border border-input bg-background px-1.5 text-xs outline-none focus-visible:border-primary"
+            className="h-7 min-w-0 flex-1 rounded-sm px-1.5 text-xs"
           />
           <span className="text-xs text-muted-foreground">→</span>
-          <input
+          <Input
             type="date"
             aria-label={`${label} to`}
             value={value.to ?? ''}
             onChange={(e) => onChange({ ...value, to: e.target.value || undefined })}
-            className="h-7 min-w-0 flex-1 rounded-sm border border-input bg-background px-1.5 text-xs outline-none focus-visible:border-primary"
+            className="h-7 min-w-0 flex-1 rounded-sm px-1.5 text-xs"
           />
         </div>
         {active ? (
-          <button type="button" onClick={() => onChange({})} className="mt-2 w-full rounded-sm px-2 py-1 text-left text-xs text-muted-foreground hover:bg-accent">
+          <Button type="button" variant="subtle" size="xs" onClick={() => onChange({})} className="mt-2 w-full justify-start px-2 py-1 text-left font-normal">
             Clear
-          </button>
+          </Button>
         ) : null}
       </PopoverContent>
     </Popover>

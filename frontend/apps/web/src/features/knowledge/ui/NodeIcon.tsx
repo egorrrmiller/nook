@@ -22,5 +22,6 @@ export function NodeIcon({ icon, kind = 'page', className }: NodeIconProps) {
   }
   const Icon =
     kind === 'folder' ? FolderIcon : kind === 'database' ? TableIcon : kind === 'file' ? PaperclipIcon : kind === 'collection_row' ? RowsIcon : FileTextIcon;
-  return <Icon className={cn('size-4 shrink-0 text-muted-foreground', className)} aria-hidden />;
+  const kindClass = kind === 'folder' ? 'nook-node-icon--folder' : kind === 'database' ? 'nook-node-icon--database' : 'nook-node-icon--page';
+  return <Icon className={cn('nook-node-icon size-4 shrink-0', kindClass, className)} strokeWidth={1.7} aria-hidden />;
 }

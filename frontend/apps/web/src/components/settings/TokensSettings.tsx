@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { CopyIcon, TrashIcon } from 'lucide-react';
 import type { ApiToken, ApiTokenScope } from '@nook/api-client';
-import { Button, ConfirmDialog, Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle, Input, Skeleton } from '@nook/ui';
+import { Button, Checkbox, ConfirmDialog, Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle, Field, Input, Skeleton } from '@nook/ui';
 import { useApiTokens, useCreateApiToken, useDeleteApiToken } from '../../lib/queries';
 import { copyText, formatDate } from '../../lib/utils';
 import { toast } from '../../stores/toast';
-import { SettingsGroup, SettingsPageHeader } from './SettingsSection';
+import { SettingsActionRow, SettingsGroup, SettingsList, SettingsListItem, SettingsPageHeader } from './SettingsSection';
 
 const SCOPES: ApiTokenScope[] = ['read', 'write', 'admin'];
 
@@ -26,18 +26,19 @@ export function TokensSettings() {
       />
 
       <SettingsGroup title="Create a token">
-        <div className="flex items-end gap-2 py-3">
-          <div className="flex flex-1 flex-col gap-1">
-            <label htmlFor="token-name" className="text-xs font-medium text-fg-muted">
-              Name
-            </label>
-            <Input id="token-name" value={name} placeholder="Obsidian sync" onChange={(e) => setName(e.target.value)} />
-          </div>
+        <SettingsActionRow>
+          <Field
+            label="Name"
+            id="token-name"
+            className="min-w-0 flex-1"
+            value={name}
+            placeholder="Obsidian sync"
+            onChange={(e) => setName(e.target.value)}
+          />
           <div className="flex items-center gap-2 pb-1.5">
             {SCOPES.map((s) => (
               <label key={s} className="flex items-center gap-1 text-xs text-fg-secondary">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={scopes.includes(s)}
                   onChange={(e) => setScopes((prev) => (e.target.checked ? [...prev, s] : prev.filter((x) => x !== s)))}
                 />
@@ -63,16 +64,16 @@ export function TokensSettings() {
           >
             Create token
           </Button>
-        </div>
+        </SettingsActionRow>
       </SettingsGroup>
 
       <SettingsGroup title="Tokens">
         {isPending ? (
           <Skeleton className="h-10" />
         ) : tokens?.length ? (
-          <ul className="flex flex-col">
+          <SettingsList>
             {tokens.map((t) => (
-              <li key={t.id} className="flex items-center gap-3 border-b border-border py-2.5 last:border-0" data-testid="token-row">
+              <SettingsListItem key={t.id} data-testid="token-row">
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-sm font-medium">{t.name}</span>
                   <span className="text-xs text-fg-muted">
@@ -82,11 +83,13 @@ export function TokensSettings() {
                 <Button variant="ghost" size="icon-sm" aria-label={`Delete ${t.name}`} onClick={() => setConfirmDelete(t)}>
                   <TrashIcon className="size-4" />
                 </Button>
-              </li>
+              </SettingsListItem>
             ))}
-          </ul>
+          </SettingsList>
         ) : (
-          <p className="py-3 text-sm text-fg-muted">No tokens yet.</p>
+          <SettingsList>
+            <SettingsListItem className="py-3 text-sm text-fg-muted">No tokens yet.</SettingsListItem>
+          </SettingsList>
         )}
       </SettingsGroup>
 

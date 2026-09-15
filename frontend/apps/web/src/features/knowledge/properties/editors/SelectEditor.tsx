@@ -4,6 +4,7 @@ import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger, Pop
 import { forgetSelectOption, getSelectOptions, rememberSelectOption, type SelectOption } from '../../lib/select-options';
 import { TAG_PALETTE, colorForLabel } from '../../lib/tag-colors';
 import { Chip } from '../../ui/Chip';
+import { OptionPickerInput } from '../../ui/OptionPickerInput';
 import { emptyClass, valueCellClass, type EditorProps } from './types';
 
 /** select · multi_select — Notion-style option picker with create-on-type and colours. */
@@ -77,36 +78,34 @@ export function SelectEditor({ workspaceId, name, prop, onChange, readOnly }: Ed
         {chips}
       </PopoverTrigger>
       <PopoverContent className="w-72 p-0" aria-label={`${name} options`} initialFocus={inputRef}>
-        <div className="flex flex-wrap items-center gap-1 border-b border-border bg-muted px-2 py-1.5">
+        <OptionPickerInput
+          inputRef={inputRef}
+          value={query}
+          onChange={setQuery}
+          placeholder={selected.length ? '' : 'Search or create an option…'}
+          ariaLabel={`Search ${name} options`}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              setActive((a) => Math.min(rows.length - 1, a + 1));
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              setActive((a) => Math.max(0, a - 1));
+            } else if (e.key === 'Enter') {
+              e.preventDefault();
+              const row = rows[active];
+              if (!row) return;
+              if (row.kind === 'create') create(q);
+              else toggle(row.option.value);
+            } else if (e.key === 'Backspace' && !query && multi && selected.length) {
+              commit(selected.slice(0, -1));
+            } else if (e.key === 'Escape') setOpen(false);
+          }}
+        >
           {selected.map((v) => (
             <Chip key={v} label={v} color={colorOf(v)} onRemove={() => commit(selected.filter((x) => x !== v))} />
           ))}
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={selected.length ? '' : 'Search or create an option…'}
-            aria-label={`Search ${name} options`}
-            onKeyDown={(e) => {
-              if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                setActive((a) => Math.min(rows.length - 1, a + 1));
-              } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                setActive((a) => Math.max(0, a - 1));
-              } else if (e.key === 'Enter') {
-                e.preventDefault();
-                const row = rows[active];
-                if (!row) return;
-                if (row.kind === 'create') create(q);
-                else toggle(row.option.value);
-              } else if (e.key === 'Backspace' && !query && multi && selected.length) {
-                commit(selected.slice(0, -1));
-              } else if (e.key === 'Escape') setOpen(false);
-            }}
-            className="h-6 min-w-24 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          />
-        </div>
+        </OptionPickerInput>
         <p className="px-2 pt-1.5 pb-0.5 text-[11px] text-muted-foreground">{multi ? 'Select options or create one' : 'Select an option or create one'}</p>
         <ul role="listbox" aria-label={`${name} options`} className="max-h-60 overflow-y-auto p-1">
           {rows.map((row, i) =>

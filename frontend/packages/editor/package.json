@@ -23,6 +23,7 @@
     "@hocuspocus/provider": "^4.7.0",
     "@nook/api-client": "workspace:*",
     "@nook/plugin-sdk": "workspace:*",
+    "@nook/ui": "workspace:*",
     "katex": "0.16.27",
     "lucide-react": "^0.560.0",
     "mermaid": "^11.17.2",

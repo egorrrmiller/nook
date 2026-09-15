@@ -1,11 +1,11 @@
 services:
   postgres:
-    image: postgres:17
+    image: mirror.gcr.io/library/postgres:17
     restart: unless-stopped
     environment:
       POSTGRES_DB: nook
       POSTGRES_USER: nook
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -23,48 +23,39 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      ASPNETCORE_URLS: http://0.0.0.0:5100
-      NOOK_DB: "Host=postgres;Port=5432;Database=nook;Username=nook;Password=${POSTGRES_PASSWORD}"
-      NOOK_DATA_DIR: /data
-      NOOK_OWNER_EMAIL: ${NOOK_OWNER_EMAIL:?set NOOK_OWNER_EMAIL}
-      NOOK_OWNER_PASSWORD: ${NOOK_OWNER_PASSWORD:?set NOOK_OWNER_PASSWORD}
-      NOOK_COLLAB_JWT_SECRET: ${NOOK_COLLAB_JWT_SECRET:?set NOOK_COLLAB_JWT_SECRET}
-      NOOK_INTERNAL_TOKEN: ${NOOK_INTERNAL_TOKEN:?set NOOK_INTERNAL_TOKEN}
-      NOOK_COLLAB_INTERNAL_URL: http://collab:1235
+      NOOK_DB: Host=postgres;Port=5432;Database=nook;Username=nook;Password=${POSTGRES_PASSWORD}
+      NOOK_OWNER_EMAIL: ${NOOK_OWNER_EMAIL:?set NOOK_OWNER_EMAIL in deploy/.env}
+      NOOK_OWNER_PASSWORD: ${NOOK_OWNER_PASSWORD:?set NOOK_OWNER_PASSWORD in deploy/.env}
+      NOOK_COLLAB_JWT_SECRET: ${NOOK_COLLAB_JWT_SECRET:?set NOOK_COLLAB_JWT_SECRET in deploy/.env}
+      NOOK_INTERNAL_TOKEN: ${NOOK_INTERNAL_TOKEN:?set NOOK_INTERNAL_TOKEN in deploy/.env}
     volumes:
       - nookdata:/data
 
   collab:
     build:
       context: ../services/collab
+      dockerfile: Dockerfile
     restart: unless-stopped
     depends_on:
-      - api
+      api:
+        condition: service_started
     environment:
-      COLLAB_PORT: "1234"
-      COLLAB_INTERNAL_PORT: "1235"
-      COLLAB_API_BASE: http://api:5100
-      NOOK_COLLAB_JWT_SECRET: ${NOOK_COLLAB_JWT_SECRET}
-      NOOK_INTERNAL_TOKEN: ${NOOK_INTERNAL_TOKEN}
+      NOOK_COLLAB_JWT_SECRET: ${NOOK_COLLAB_JWT_SECRET:?set NOOK_COLLAB_JWT_SECRET in deploy/.env}
+      NOOK_INTERNAL_TOKEN: ${NOOK_INTERNAL_TOKEN:?set NOOK_INTERNAL_TOKEN in deploy/.env}
 
-  caddy:
-    image: caddy:2
+  web:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
     restart: unless-stopped
     depends_on:
-      - api
-      - collab
+      api:
+        condition: service_started
+      collab:
+        condition: service_started
     ports:
       - "80:80"
-      - "443:443"
-    environment:
-      NOOK_DOMAIN: ${NOOK_DOMAIN:-localhost}
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddydata:/data
-      - caddyconfig:/config
 
 volumes:
   pgdata:
   nookdata:
-  caddydata:
-  caddyconfig:

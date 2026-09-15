@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { api } from '../lib/api';
 import { ancestorsQuery, nodeQuery } from '../lib/queries';
 import { PageView } from '../components/page/PageView';
+import { CollectionViewScreen } from '../features/collections';
 
 export const Route = createFileRoute('/_app/w/$workspaceId/p/$nodeId')({
   loader: async ({ context, params }) => {
@@ -20,7 +21,9 @@ export const Route = createFileRoute('/_app/w/$workspaceId/p/$nodeId')({
 
 function NodePage() {
   const { workspaceId, nodeId } = Route.useParams();
+  const node = Route.useLoaderData();
   useRecordVisit(workspaceId, nodeId);
+  if (node.kind === 'database') return <CollectionViewScreen workspaceId={workspaceId} nodeId={nodeId} readOnly={node.effectiveRole === 'viewer'} />;
   return <PageView key={nodeId} workspaceId={workspaceId} nodeId={nodeId} />;
 }
 

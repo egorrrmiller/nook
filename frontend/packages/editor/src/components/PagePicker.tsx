@@ -1,8 +1,19 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type { QuickHit } from '@nook/api-client';
+import { Input } from '@nook/ui';
 import { useEditorHost } from '../host-context';
 import { NodeIcon } from './NodeIcon';
 import { nodeTitle } from '../util/nodeCache';
+
+/** Keep keyboard navigation deterministic and clamped when async results change. */
+export function movePagePickerActiveIndex(
+  active: number,
+  total: number,
+  direction: 'next' | 'previous',
+): number {
+  if (total <= 0) return 0;
+  return direction === 'next' ? Math.min(active + 1, total - 1) : Math.max(active - 1, 0);
+}
 
 /**
  * Inline quick-find list (contracts §7.4) used by empty page-link / page-embed blocks. Debounced;
@@ -50,10 +61,10 @@ export function PagePicker({
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setActive((a) => Math.min(a + 1, hits.length - 1));
+      setActive((a) => movePagePickerActiveIndex(a, hits.length, 'next'));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setActive((a) => Math.max(a - 1, 0));
+      setActive((a) => movePagePickerActiveIndex(a, hits.length, 'previous'));
     } else if (e.key === 'Enter') {
       e.preventDefault();
       const hit = hits[active];
@@ -66,7 +77,7 @@ export function PagePicker({
 
   return (
     <div className="nook-page-picker" contentEditable={false} data-testid="page-picker">
-      <input
+      <Input
         className="nook-page-picker__input"
         autoFocus={autoFocus}
         value={q}
@@ -90,11 +101,15 @@ export function PagePicker({
             <NodeIcon icon={h.node.icon} kind={h.node.kind} />
             <span className="nook-page-picker__title">{nodeTitle(h.node)}</span>
             {h.breadcrumb.length ? (
-              <span className="nook-page-picker__crumb">{h.breadcrumb.map((b) => nodeTitle(b)).join(' / ')}</span>
+              <span className="nook-page-picker__crumb">
+                {h.breadcrumb.map((b) => nodeTitle(b)).join(' / ')}
+              </span>
             ) : null}
           </li>
         ))}
-        {!loading && hits.length === 0 ? <li className="nook-page-picker__empty">No pages found</li> : null}
+        {!loading && hits.length === 0 ? (
+          <li className="nook-page-picker__empty">No pages found</li>
+        ) : null}
       </ul>
     </div>
   );

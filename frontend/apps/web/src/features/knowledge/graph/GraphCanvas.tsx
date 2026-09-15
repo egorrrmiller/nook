@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { IconButton } from '@nook/ui';
 import { nodeRadius, type SimLink, type SimNode } from '../lib/graph-transform';
 import { useForceGraph, type Viewport } from './useForceGraph';
 
@@ -223,10 +224,11 @@ export function GraphCanvas({ nodes, links, highlighted, onOpen, rootId }: Graph
             ['−', 'Zoom out', 1 / 1.3],
           ] as const
         ).map(([glyph, label, f]) => (
-          <button
+          <IconButton
             key={label}
-            type="button"
-            aria-label={label}
+            label={label}
+            size="icon"
+            tooltip={false}
             onClick={() =>
               setView((v) => {
                 const scale = Math.min(4, Math.max(0.2, v.scale * f));
@@ -235,22 +237,23 @@ export function GraphCanvas({ nodes, links, highlighted, onOpen, rootId }: Graph
                 return { scale, x: cx - ((cx - v.x) / v.scale) * scale, y: cy - ((cy - v.y) / v.scale) * scale };
               })
             }
-            className="size-7 rounded-md border border-border bg-popover text-sm text-muted-foreground shadow-sm hover:bg-accent hover:text-foreground"
+            className="border-border bg-popover text-sm text-muted-foreground shadow-sm hover:bg-accent hover:text-foreground"
           >
             {glyph}
-          </button>
+          </IconButton>
         ))}
-        <button
-          type="button"
-          aria-label="Reset view"
+        <IconButton
+          label="Reset view"
+          size="icon"
+          tooltip={false}
           onClick={() => {
             setView({ scale: 1, x: 0, y: 0 });
             sim.reheat();
           }}
-          className="size-7 rounded-md border border-border bg-popover text-[10px] font-medium text-muted-foreground shadow-sm hover:bg-accent hover:text-foreground"
+          className="border-border bg-popover text-[10px] font-medium text-muted-foreground shadow-sm hover:bg-accent hover:text-foreground"
         >
           1:1
-        </button>
+        </IconButton>
       </div>
     </div>
   );

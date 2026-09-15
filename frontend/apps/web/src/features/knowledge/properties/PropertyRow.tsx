@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CheckIcon, PencilIcon, Trash2Icon } from 'lucide-react';
 import type { PageProperty, PagePropertyType, PagePropertyValue } from '@nook/api-client';
-import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuSub, MenuSubContent, MenuSubTrigger, MenuTrigger, cn } from '@nook/ui';
+import { Input, Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuSub, MenuSubContent, MenuSubTrigger, MenuTrigger, cn } from '@nook/ui';
 import { PROPERTY_TYPES, propertyMeta } from '../lib/property-types';
 import { CheckboxEditor } from './editors/CheckboxEditor';
 import { DateEditor } from './editors/DateEditor';
@@ -58,7 +58,7 @@ export function PropertyRow({ workspaceId, name, prop, readOnly, existingNames, 
       ) : renaming ? (
         <div className={cn(nameCellClass, 'bg-accent')}>
           <Icon />
-          <input
+          <Input
             autoFocus
             aria-label="Property name"
             value={draft}
@@ -71,7 +71,7 @@ export function PropertyRow({ workspaceId, name, prop, readOnly, existingNames, 
                 setRenaming(false);
               }
             }}
-            className="w-full min-w-0 bg-transparent text-foreground outline-none"
+            className="h-6 w-full min-w-0 rounded-none border-0 bg-transparent px-0 text-foreground shadow-none focus-visible:border-0 focus-visible:ring-0"
           />
         </div>
       ) : (

@@ -17,6 +17,7 @@ import {
 } from '@nook/ui';
 import { api } from '../../lib/api';
 import { toast } from '../../stores/toast';
+import { HiddenFileInput } from '../shared/HiddenFileInput';
 
 export interface CoverPickerProps {
   value: NodeCover | null | undefined;
@@ -107,9 +108,11 @@ export function CoverPicker({ value, nodeId, onChange, children }: CoverPickerPr
                     {(gallery ?? [])
                       .filter((c) => c.group === group)
                       .map((c) => (
-                        <button
+                        <Button
                           key={c.id}
                           type="button"
+                          variant="ghost"
+                          size="md"
                           title={c.name}
                           data-testid="cover-gallery-item"
                           onClick={() => {
@@ -117,12 +120,12 @@ export function CoverPicker({ value, nodeId, onChange, children }: CoverPickerPr
                             setOpen(false);
                           }}
                           className={cn(
-                            'h-14 overflow-hidden rounded-[var(--radius-sm)] border border-border transition-[outline] hover:outline-2 hover:outline-brand',
+                            'h-14 w-full overflow-hidden rounded-[var(--radius-sm)] border border-border p-0 transition-[outline] hover:outline-2 hover:outline-brand',
                             value?.type === 'gallery' && value.value === c.id && 'outline-2 outline-brand',
                           )}
                         >
                           <img src={c.thumbUrl} alt={c.name} className="size-full object-cover" />
-                        </button>
+                        </Button>
                       ))}
                   </div>
                 </div>
@@ -131,16 +134,10 @@ export function CoverPicker({ value, nodeId, onChange, children }: CoverPickerPr
           </TabsPanel>
 
           <TabsPanel value="upload" className="flex flex-col items-center gap-2 p-4">
-            <input
-              ref={fileRef}
-              type="file"
+            <HiddenFileInput
+              inputRef={fileRef}
               accept="image/*"
-              hidden
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) void upload(f);
-                e.target.value = '';
-              }}
+              onFile={(file) => void upload(file)}
             />
             <Button variant="secondary" disabled={busy} onClick={() => fileRef.current?.click()}>
               <UploadIcon /> {busy ? 'Uploading…' : 'Upload an image'}

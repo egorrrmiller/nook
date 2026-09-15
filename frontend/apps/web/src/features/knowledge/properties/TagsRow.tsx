@@ -4,6 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger, Tooltip, cn } from '@nook/ui';
 import { useNodeTags, useSetNodeTags, useTags } from '../api/queries';
 import { colorForLabel } from '../lib/tag-colors';
 import { Chip } from '../ui/Chip';
+import { OptionPickerInput } from '../ui/OptionPickerInput';
 import { emptyClass, valueCellClass } from './editors/types';
 import { nameCellClass } from './PropertyRow';
 
@@ -76,36 +77,34 @@ export function TagsRow({ workspaceId, nodeId, readOnly }: { workspaceId: string
               {chips}
             </PopoverTrigger>
             <PopoverContent className="w-72 p-0" aria-label="Edit tags" initialFocus={inputRef}>
-              <div className="flex flex-wrap items-center gap-1 border-b border-border bg-muted px-2 py-1.5">
+              <OptionPickerInput
+                inputRef={inputRef}
+                value={query}
+                onChange={setQuery}
+                placeholder={manual.length ? '' : 'Search or create a tag…'}
+                ariaLabel="Search tags"
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setActive((a) => Math.min(rows.length - 1, a + 1));
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setActive((a) => Math.max(0, a - 1));
+                  } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const row = rows[active];
+                    if (!row) return;
+                    if (row.kind === 'create') create(q);
+                    else toggle(row.id);
+                  } else if (e.key === 'Backspace' && !query && manual.length) {
+                    toggle(manual[manual.length - 1]!.id);
+                  } else if (e.key === 'Escape') setOpen(false);
+                }}
+              >
                 {manual.map((t) => (
                   <Chip key={t.id} label={t.name} color={t.color} onRemove={() => toggle(t.id)} />
                 ))}
-                <input
-                  ref={inputRef}
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={manual.length ? '' : 'Search or create a tag…'}
-                  aria-label="Search tags"
-                  onKeyDown={(e) => {
-                    if (e.key === 'ArrowDown') {
-                      e.preventDefault();
-                      setActive((a) => Math.min(rows.length - 1, a + 1));
-                    } else if (e.key === 'ArrowUp') {
-                      e.preventDefault();
-                      setActive((a) => Math.max(0, a - 1));
-                    } else if (e.key === 'Enter') {
-                      e.preventDefault();
-                      const row = rows[active];
-                      if (!row) return;
-                      if (row.kind === 'create') create(q);
-                      else toggle(row.id);
-                    } else if (e.key === 'Backspace' && !query && manual.length) {
-                      toggle(manual[manual.length - 1]!.id);
-                    } else if (e.key === 'Escape') setOpen(false);
-                  }}
-                  className="h-6 min-w-24 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                />
-              </div>
+              </OptionPickerInput>
               <p className="px-2 pt-1.5 pb-0.5 text-[11px] text-muted-foreground">Select tags or create one</p>
               <ul role="listbox" aria-label="Tags" className="max-h-60 overflow-y-auto p-1">
                 {rows.map((row, i) =>

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Nook.Api.Auth;
 using Nook.Api.Endpoints;
 using Nook.Api.Infrastructure;
+using Nook.Api.Notion;
 using Nook.Application;
 using Nook.Application.Collab;
 using Nook.Application.Common;
@@ -36,7 +37,9 @@ builder.Host.UseSerilog((ctx, cfg) => cfg
     .Enrich.FromLogContext()
     .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"));
 
-var pluginAssemblies = new[] { typeof(Nook.Plugin.Sample.SamplePlugin).Assembly };
+// The base host has no in-process plugin implementations. External integrations use the public API, webhooks and MCP.
+// The SDK registry remains available to a custom distribution, but it is not populated by this application.
+var pluginAssemblies = Array.Empty<System.Reflection.Assembly>();
 
 // --- services -------------------------------------------------------------------------------------------------------
 builder.Services.AddSingleton(options);
@@ -48,7 +51,7 @@ builder.Services.AddNookInfrastructure(options.Db, options.BackgroundJobs, plugi
     new CollabClientOptions(options.CollabInternalUrl, options.InternalToken));
 builder.Services.AddNookFiles(options.DataDir, options.MaxUploadBytes);
 builder.Services.AddSingleton<CoverGallery>();
-builder.Services.AddNookPlugins(builder.Configuration, pluginAssemblies);
+builder.Services.AddNookPlugins(builder.Configuration);
 
 builder.Services.ConfigureHttpJsonOptions(o =>
 {
@@ -118,6 +121,7 @@ app.UseStatusCodePages();
 app.UseSerilogRequestLogging();
 app.UseClientDisconnectAs499(); // must sit inside the request logger (see ClientDisconnectMiddleware)
 app.UseRateLimiter();
+app.UseMiddleware<NotionVersionMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -129,6 +133,8 @@ api.MapHealthEndpoints();
 api.MapAuthEndpoints();
 api.MapWorkspaceEndpoints();
 api.MapNodeEndpoints();
+api.MapCollectionEndpoints();
+api.MapPluginEndpoints();
 api.MapCollabEndpoints();
 api.MapFileEndpoints();
 api.MapTrashEndpoints();
@@ -146,6 +152,10 @@ api.MapExportImportEndpoints();
 api.MapNookPlugins(app.Services);
 
 app.MapInternalEndpoints();
+app.MapPluginWebhookEndpoints();
+app.MapMcpEndpoints();
+app.MapNotionCompatibilityEndpoints();
+app.MapNotionWriteEndpoints();
 app.MapHub<NookHub>("/hub");
 
 if (options.BackgroundJobs)

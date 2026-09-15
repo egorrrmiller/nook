@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Nook.Plugin.ObsidianImport</RootNamespace>
+    <AssemblyName>Nook.Plugin.ObsidianImport</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Nook.Plugins.Sdk/Nook.Plugins.Sdk.csproj" />
+  </ItemGroup>
+</Project>

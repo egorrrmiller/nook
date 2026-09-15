@@ -16,15 +16,17 @@ import { BlockNoteView } from '@blocknote/shadcn';
 import { multiColumnDropCursor, locales as multiColumnLocales } from '@blocknote/xl-multi-column';
 import { en as enLocale } from '@blocknote/core/locales';
 import type { ApiClient, Node, PageSettings, Role } from '@nook/api-client';
-import { usePluginSlashMenuItems, type AnyBlockNoteEditor } from '@nook/plugin-sdk';
+import { usePluginBlocks, usePluginInlineContent, usePluginSlashMenuItems, type AnyBlockNoteEditor } from '@nook/plugin-sdk';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type * as Y from 'yjs';
 import { useQueryless } from './util/useQueryless';
 import { BlocksView } from './BlocksView';
 import { useCollabSession, type CollabMode, type CollabSession } from './collab';
 import { EditorHostProvider, useEditorHost, type UploadResult } from './host-context';
-import { useNookSchema, type NookSchema } from './schema';
+import { nookBlockSpecs, nookInlineContentSpecs, useNookSchema, type NookSchema } from './schema';
+import { unsupportedSpecsFromDocument } from './schema/unsupported';
 import { buildSlashItems, type SlashActions } from './menus/slashItems';
+import { NookSlashMenu } from './menus/NookSlashMenu';
 import { mentionMenuItems } from './menus/mentionItems';
 import { ColorPanel, PanelShell, TurnIntoPanel } from './menus/panels';
 import { createNookDragHandleMenu } from './menus/NookDragHandleMenu';
@@ -115,7 +117,7 @@ export function NookEditor(props: NookEditorProps) {
 
 function EditorBody(props: NookEditorProps & { session: CollabSession | null }) {
   const { session } = props;
-  if (!session || session.status === 'connecting' || (session.status !== 'error' && !session.synced && !session.provider)) {
+  if (!session || session.status === 'connecting' || (session.status !== 'error' && !session.synced)) {
     return <EditorSkeleton />;
   }
   if (session.status === 'error') return <OfflineFallback {...props} session={session} />;
@@ -181,8 +183,22 @@ function NookEditorInner({
   const { doc, provider, claims } = session;
   const readOnly = role === 'viewer' || claims?.role === 'viewer' || pageSettings?.locked === true;
 
-  const schema = useNookSchema();
+  const pluginBlocks = usePluginBlocks();
+  const pluginInlineContent = usePluginInlineContent();
   const fragment = useMemo(() => doc.getXmlFragment('document'), [doc]);
+  const knownBlockTypes = useMemo(
+    () => new Set([...Object.keys(nookBlockSpecs()), ...Object.keys(pluginBlocks)]),
+    [pluginBlocks],
+  );
+  const knownInlineTypes = useMemo(
+    () => new Set([...Object.keys(nookInlineContentSpecs()), ...Object.keys(pluginInlineContent)]),
+    [pluginInlineContent],
+  );
+  const unsupported = useMemo(
+    () => unsupportedSpecsFromDocument(doc, knownBlockTypes, knownInlineTypes),
+    [doc, knownBlockTypes, knownInlineTypes],
+  );
+  const schema = useNookSchema(unsupported);
   const awareness = provider?.awareness ?? undefined;
 
   const [overlay, setOverlay] = useState<OverlayState | null>(null);
@@ -220,7 +236,15 @@ function NookEditorInner({
         showCursorLabels: 'activity',
       },
       // `xl-multi-column` reads its own section of the dictionary and throws without it.
-      dictionary: { ...enLocale, multi_column: multiColumnLocales.en },
+      dictionary: {
+        ...enLocale,
+        multi_column: multiColumnLocales.en,
+        placeholders: {
+          ...enLocale.placeholders,
+          default: "Start writing or type '/' for commands",
+          heading: 'Heading',
+        },
+      },
       dropCursor: multiColumnDropCursor,
       tables: { splitCells: true, cellBackgroundColor: true, cellTextColor: true, headers: true },
       extensions: [syntaxHighlighter, BlockShortcutsExtension({ onCopyLink: (id: string) => copyLinkRef.current?.(id) })],
@@ -358,6 +382,7 @@ function NookEditorInner({
       >
         <SuggestionMenuController
           triggerCharacter="/"
+          suggestionMenuComponent={NookSlashMenu}
           getItems={async (query) => filterSuggestionItems(buildSlashItems(editor as AnyEditor, actions, pluginItems), query)}
         />
         <SuggestionMenuController

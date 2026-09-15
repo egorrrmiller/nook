@@ -9,6 +9,7 @@ import { createCoreHandlers } from './core';
 import { createTreeHandlers } from './tree';
 import { createFilesHandlers } from './files';
 import { createKnowledgeHandlers } from './knowledge';
+import { createCollectionHandlers } from './collections';
 
 export type { MockContext } from './context';
 
@@ -40,6 +41,7 @@ export function createMockApi(initial?: () => MockState): MockApi {
     ...createTreeHandlers(ctx),
     ...createFilesHandlers(ctx),
     ...createKnowledgeHandlers(ctx),
+    ...createCollectionHandlers(ctx),
   ];
 
   return {

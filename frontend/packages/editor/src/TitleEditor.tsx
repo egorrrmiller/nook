@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type * as Y from 'yjs';
+import { Textarea } from '@nook/ui';
 
 export interface TitleEditorProps {
   text: Y.Text;
@@ -80,7 +81,7 @@ export function TitleEditor({
   };
 
   return (
-    <textarea
+    <Textarea
       ref={ref}
       className={['nook-editor__title', className].filter(Boolean).join(' ')}
       rows={1}

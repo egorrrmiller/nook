@@ -1,6 +1,8 @@
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { Button, ConfirmDialog, Field, Input, Select } from '@nook/ui';
+import type { NodeIcon } from '@nook/api-client';
+import { BuildingIcon } from 'lucide-react';
+import { Button, ConfirmDialog, Field, Select } from '@nook/ui';
 import {
   useDeleteWorkspace,
   useMe,
@@ -9,7 +11,9 @@ import {
   useWorkspaceSettings,
 } from '../../lib/queries';
 import { toast } from '../../stores/toast';
-import { SettingsGroup, SettingsPageHeader, SettingsRow } from './SettingsSection';
+import { IconPicker } from '../pickers';
+import { NodeIcon as NodeIconView } from '../tree/NodeIcon';
+import { SettingsActionRow, SettingsGroup, SettingsPageHeader, SettingsRow } from './SettingsSection';
 
 const RETENTIONS = [
   { value: '7', label: '7 days' },
@@ -28,36 +32,41 @@ export function WorkspaceSettings({ workspaceId }: { workspaceId: string }) {
   const setSetting = useSetWorkspaceSetting(workspaceId);
   const navigate = useNavigate();
   const [name, setName] = useState('');
-  const [icon, setIcon] = useState('');
+  const [icon, setIcon] = useState<NodeIcon | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const isOwner = workspace?.role === 'owner';
 
   useEffect(() => {
     if (!workspace) return;
     setName(workspace.name);
-    setIcon(workspace.icon ?? '');
+    setIcon(workspace.icon ?? null);
   }, [workspace]);
 
   const retention = String((settings?.['trash.retentionDays'] as number | undefined) ?? 30);
+  const savedIcon = workspace?.icon ?? null;
+  const iconChanged = icon?.type !== savedIcon?.type || icon?.value !== savedIcon?.value;
 
   return (
     <div data-testid="settings-workspace">
       <SettingsPageHeader title="General" description="Workspace name, icon and data retention." />
 
       <SettingsGroup title="Workspace">
-        <div className="flex items-end gap-3 py-3">
+        <SettingsActionRow className="gap-3">
           <div className="flex flex-col gap-1">
-            <label htmlFor="ws-icon" className="text-xs font-medium text-fg-muted">
-              Icon
-            </label>
-            <Input
-              id="ws-icon"
-              value={icon}
-              onChange={(e) => setIcon(e.target.value)}
-              disabled={!isOwner}
-              className="w-14 text-center text-lg"
-              placeholder="🏠"
-            />
+            <span className="text-xs font-medium text-fg-muted">Icon</span>
+            <IconPicker value={icon} onChange={setIcon}>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                disabled={!isOwner}
+                aria-label="Choose workspace icon"
+                data-testid="workspace-icon-picker"
+                className="text-lg"
+              >
+                {icon ? <NodeIconView icon={icon} size={20} /> : <BuildingIcon className="size-4" />}
+              </Button>
+            </IconPicker>
           </div>
           <Field
             label="Name"
@@ -69,17 +78,17 @@ export function WorkspaceSettings({ workspaceId }: { workspaceId: string }) {
           />
           <Button
             size="sm"
-            disabled={!isOwner || !name.trim() || (name === workspace?.name && icon === (workspace?.icon ?? ''))}
+            disabled={!isOwner || !name.trim() || (name === workspace?.name && !iconChanged)}
             onClick={() =>
               update.mutate(
-                { id: workspaceId, name: name.trim(), icon: icon.trim() || null },
+                { id: workspaceId, name: name.trim(), icon },
                 { onSuccess: () => toast('Workspace updated') },
               )
             }
           >
             Save
           </Button>
-        </div>
+        </SettingsActionRow>
       </SettingsGroup>
 
       <SettingsGroup title="Trash">

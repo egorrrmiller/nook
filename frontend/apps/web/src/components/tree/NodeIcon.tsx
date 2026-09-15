@@ -7,7 +7,7 @@ export interface NodeIconProps {
   icon?: NodeIconValue | null;
   kind?: NodeKind;
   /** Pixel size of the slot; the glyph scales with it. */
-  size?: 16 | 18 | 20 | 24 | 32 | 48 | 72;
+  size?: 16 | 18 | 19 | 20 | 24 | 32 | 48 | 72;
   className?: string;
 }
 
@@ -34,9 +34,10 @@ export function NodeIcon({ icon, kind = 'page', size = 18, className }: NodeIcon
     );
   }
   const Glyph = kind === 'database' ? DatabaseIcon : kind === 'folder' ? FolderIcon : FileTextIcon;
+  const kindClass = kind === 'folder' ? 'nook-node-icon--folder' : kind === 'database' ? 'nook-node-icon--database' : 'nook-node-icon--page';
   return (
-    <span className={cn('inline-flex shrink-0 items-center justify-center text-fg-muted', className)} style={box} aria-hidden>
-      <Glyph style={{ width: Math.round(size * 0.85), height: Math.round(size * 0.85) }} />
+    <span className={cn('nook-node-icon inline-flex shrink-0 items-center justify-center', kindClass, className)} style={box} aria-hidden>
+      <Glyph strokeWidth={1.7} style={{ width: Math.round(size * 0.76), height: Math.round(size * 0.76) }} />
     </span>
   );
 }

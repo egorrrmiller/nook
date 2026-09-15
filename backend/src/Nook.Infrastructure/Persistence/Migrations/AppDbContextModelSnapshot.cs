@@ -318,6 +318,136 @@ namespace Nook.Infrastructure.Persistence.Migrations
                     b.ToTable("blocks", (string)null);
                 });
 
+            modelBuilder.Entity("Nook.Domain.Entities.Collection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<JsonElement>("PropertySchema")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("property_schema");
+
+                    b.Property<JsonElement>("RowLayout")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("row_layout");
+
+                    b.Property<JsonElement>("Templates")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("templates");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("workspace_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_collections");
+
+                    b.HasIndex("WorkspaceId", "Name")
+                        .HasDatabaseName("ix_collections_workspace_id_name");
+
+                    b.ToTable("collections", (string)null);
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.CollectionView", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CollectionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("collection_id");
+
+                    b.Property<JsonElement>("Config")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("config");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("DatabaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("database_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Position")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("position");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_collection_views");
+
+                    b.HasIndex("CollectionId", "Kind")
+                        .HasDatabaseName("ix_collection_views_collection_id_kind");
+
+                    b.HasIndex("DatabaseId", "Position")
+                        .HasDatabaseName("ix_collection_views_database_id_position");
+
+                    b.ToTable("collection_views", (string)null);
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.Database", b =>
+                {
+                    b.Property<Guid>("NodeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("node_id");
+
+                    b.Property<Guid>("CollectionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("collection_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("NodeId")
+                        .HasName("pk_databases");
+
+                    b.HasIndex("CollectionId")
+                        .HasDatabaseName("ix_databases_collection_id");
+
+                    b.ToTable("databases", (string)null);
+                });
+
             modelBuilder.Entity("Nook.Domain.Entities.Document", b =>
                 {
                     b.Property<Guid>("NodeId")
@@ -471,6 +601,239 @@ namespace Nook.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_import_jobs_workspace_id_created_at");
 
                     b.ToTable("import_jobs", (string)null);
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.Integration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("client_id");
+
+                    b.Property<string>("ClientSecretHash")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("client_secret_hash");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.PrimitiveCollection<string[]>("RedirectUris")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("redirect_uris");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_integrations");
+
+                    b.HasIndex("ClientId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_integrations_client_id");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_integrations_created_by_user_id");
+
+                    b.ToTable("integrations", (string)null);
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.IntegrationCapabilities", b =>
+                {
+                    b.Property<Guid>("InstallationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("installation_id");
+
+                    b.Property<bool>("InsertComments")
+                        .HasColumnType("boolean")
+                        .HasColumnName("insert_comments");
+
+                    b.Property<bool>("InsertContent")
+                        .HasColumnType("boolean")
+                        .HasColumnName("insert_content");
+
+                    b.Property<bool>("InsertProperty")
+                        .HasColumnType("boolean")
+                        .HasColumnName("insert_property");
+
+                    b.Property<bool>("ReadComments")
+                        .HasColumnType("boolean")
+                        .HasColumnName("read_comments");
+
+                    b.Property<bool>("ReadContent")
+                        .HasColumnType("boolean")
+                        .HasColumnName("read_content");
+
+                    b.Property<bool>("ReadProperty")
+                        .HasColumnType("boolean")
+                        .HasColumnName("read_property");
+
+                    b.Property<bool>("UpdateContent")
+                        .HasColumnType("boolean")
+                        .HasColumnName("update_content");
+
+                    b.Property<bool>("UpdateProperty")
+                        .HasColumnType("boolean")
+                        .HasColumnName("update_property");
+
+                    b.Property<string>("UserInfoLevel")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("user_info_level");
+
+                    b.HasKey("InstallationId")
+                        .HasName("pk_integration_capabilities");
+
+                    b.ToTable("integration_capabilities", (string)null);
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.IntegrationGrant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("GrantedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("granted_at");
+
+                    b.Property<Guid?>("GrantedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("granted_by_user_id");
+
+                    b.Property<bool>("IncludeChildren")
+                        .HasColumnType("boolean")
+                        .HasColumnName("include_children");
+
+                    b.Property<Guid>("InstallationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("installation_id");
+
+                    b.Property<Guid>("NodeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("node_id");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_integration_grants");
+
+                    b.HasIndex("GrantedByUserId")
+                        .HasDatabaseName("ix_integration_grants_granted_by_user_id");
+
+                    b.HasIndex("NodeId")
+                        .HasDatabaseName("ix_integration_grants_node_id");
+
+                    b.HasIndex("InstallationId", "NodeId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_integration_grants_installation_id_node_id");
+
+                    b.HasIndex("InstallationId", "RevokedAt")
+                        .HasDatabaseName("ix_integration_grants_installation_id_revoked_at");
+
+                    b.ToTable("integration_grants", (string)null);
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.IntegrationInstallation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("BotUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("bot_user_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("IntegrationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("integration_id");
+
+                    b.Property<DateTimeOffset?>("LastUsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_used_at");
+
+                    b.Property<Guid?>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<string>("TokenKind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("token_kind");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("workspace_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_integration_installations");
+
+                    b.HasIndex("BotUserId")
+                        .HasDatabaseName("ix_integration_installations_bot_user_id");
+
+                    b.HasIndex("OwnerUserId")
+                        .HasDatabaseName("ix_integration_installations_owner_user_id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_integration_installations_token_hash");
+
+                    b.HasIndex("IntegrationId", "WorkspaceId")
+                        .HasDatabaseName("ix_integration_installations_integration_id_workspace_id");
+
+                    b.HasIndex("WorkspaceId", "RevokedAt")
+                        .HasDatabaseName("ix_integration_installations_workspace_id_revoked_at");
+
+                    b.ToTable("integration_installations", (string)null);
                 });
 
             modelBuilder.Entity("Nook.Domain.Entities.Invite", b =>
@@ -751,6 +1114,129 @@ namespace Nook.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_node_tags_node_id_source");
 
                     b.ToTable("node_tags", (string)null);
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.OAuthAuthorizationCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CodeChallenge")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("code_challenge");
+
+                    b.Property<string>("CodeChallengeMethod")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("code_challenge_method");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("code_hash");
+
+                    b.Property<DateTimeOffset?>("ConsumedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("consumed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<Guid>("IntegrationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("integration_id");
+
+                    b.Property<string>("RedirectUri")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)")
+                        .HasColumnName("redirect_uri");
+
+                    b.PrimitiveCollection<string[]>("Scopes")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("scopes");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("workspace_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_oauth_authorization_codes");
+
+                    b.HasIndex("CodeHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_oauth_authorization_codes_code_hash");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_oauth_authorization_codes_user_id");
+
+                    b.HasIndex("WorkspaceId")
+                        .HasDatabaseName("ix_oauth_authorization_codes_workspace_id");
+
+                    b.HasIndex("IntegrationId", "ExpiresAt")
+                        .HasDatabaseName("ix_oauth_authorization_codes_integration_id_expires_at");
+
+                    b.ToTable("oauth_authorization_codes", (string)null);
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.OAuthRefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<Guid>("InstallationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("installation_id");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<DateTimeOffset?>("RotatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("rotated_at");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("token_hash");
+
+                    b.HasKey("Id")
+                        .HasName("pk_oauth_refresh_tokens");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_oauth_refresh_tokens_token_hash");
+
+                    b.HasIndex("InstallationId", "RevokedAt")
+                        .HasDatabaseName("ix_oauth_refresh_tokens_installation_id_revoked_at");
+
+                    b.ToTable("oauth_refresh_tokens", (string)null);
                 });
 
             modelBuilder.Entity("Nook.Domain.Entities.OutboxEvent", b =>
@@ -1141,6 +1627,60 @@ namespace Nook.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_blocks_nodes_node_id");
                 });
 
+            modelBuilder.Entity("Nook.Domain.Entities.Collection", b =>
+                {
+                    b.HasOne("Nook.Domain.Entities.Workspace", "Workspace")
+                        .WithMany()
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_collections_workspaces_workspace_id");
+
+                    b.Navigation("Workspace");
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.CollectionView", b =>
+                {
+                    b.HasOne("Nook.Domain.Entities.Collection", "Collection")
+                        .WithMany()
+                        .HasForeignKey("CollectionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_collection_views_collections_collection_id");
+
+                    b.HasOne("Nook.Domain.Entities.Database", "Database")
+                        .WithMany("Views")
+                        .HasForeignKey("DatabaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_collection_views_databases_database_id");
+
+                    b.Navigation("Collection");
+
+                    b.Navigation("Database");
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.Database", b =>
+                {
+                    b.HasOne("Nook.Domain.Entities.Collection", "Collection")
+                        .WithMany("Databases")
+                        .HasForeignKey("CollectionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_databases_collections_collection_id");
+
+                    b.HasOne("Nook.Domain.Entities.Node", "Node")
+                        .WithOne()
+                        .HasForeignKey("Nook.Domain.Entities.Database", "NodeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_databases_nodes_node_id");
+
+                    b.Navigation("Collection");
+
+                    b.Navigation("Node");
+                });
+
             modelBuilder.Entity("Nook.Domain.Entities.Document", b =>
                 {
                     b.HasOne("Nook.Domain.Entities.Node", "Node")
@@ -1197,6 +1737,95 @@ namespace Nook.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_import_jobs_workspaces_workspace_id");
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.Integration", b =>
+                {
+                    b.HasOne("Nook.Domain.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_integrations_users_created_by_user_id");
+
+                    b.Navigation("CreatedByUser");
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.IntegrationCapabilities", b =>
+                {
+                    b.HasOne("Nook.Domain.Entities.IntegrationInstallation", "Installation")
+                        .WithOne("Capabilities")
+                        .HasForeignKey("Nook.Domain.Entities.IntegrationCapabilities", "InstallationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_integration_capabilities_integration_installations_installa");
+
+                    b.Navigation("Installation");
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.IntegrationGrant", b =>
+                {
+                    b.HasOne("Nook.Domain.Entities.User", "GrantedByUser")
+                        .WithMany()
+                        .HasForeignKey("GrantedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_integration_grants_users_granted_by_user_id");
+
+                    b.HasOne("Nook.Domain.Entities.IntegrationInstallation", "Installation")
+                        .WithMany("Grants")
+                        .HasForeignKey("InstallationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_integration_grants_integration_installations_installation_id");
+
+                    b.HasOne("Nook.Domain.Entities.Node", "Node")
+                        .WithMany()
+                        .HasForeignKey("NodeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_integration_grants_nodes_node_id");
+
+                    b.Navigation("GrantedByUser");
+
+                    b.Navigation("Installation");
+
+                    b.Navigation("Node");
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.IntegrationInstallation", b =>
+                {
+                    b.HasOne("Nook.Domain.Entities.User", "BotUser")
+                        .WithMany()
+                        .HasForeignKey("BotUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_integration_installations_users_bot_user_id");
+
+                    b.HasOne("Nook.Domain.Entities.Integration", "Integration")
+                        .WithMany("Installations")
+                        .HasForeignKey("IntegrationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_integration_installations_integrations_integration_id");
+
+                    b.HasOne("Nook.Domain.Entities.User", "OwnerUser")
+                        .WithMany()
+                        .HasForeignKey("OwnerUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_integration_installations_users_owner_user_id");
+
+                    b.HasOne("Nook.Domain.Entities.Workspace", "Workspace")
+                        .WithMany()
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_integration_installations_workspaces_workspace_id");
+
+                    b.Navigation("BotUser");
+
+                    b.Navigation("Integration");
+
+                    b.Navigation("OwnerUser");
+
+                    b.Navigation("Workspace");
                 });
 
             modelBuilder.Entity("Nook.Domain.Entities.Link", b =>
@@ -1265,6 +1894,48 @@ namespace Nook.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_node_tags_tags_tag_id");
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.OAuthAuthorizationCode", b =>
+                {
+                    b.HasOne("Nook.Domain.Entities.Integration", "Integration")
+                        .WithMany("AuthorizationCodes")
+                        .HasForeignKey("IntegrationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_oauth_authorization_codes_integrations_integration_id");
+
+                    b.HasOne("Nook.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_oauth_authorization_codes_users_user_id");
+
+                    b.HasOne("Nook.Domain.Entities.Workspace", "Workspace")
+                        .WithMany()
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_oauth_authorization_codes_workspaces_workspace_id");
+
+                    b.Navigation("Integration");
+
+                    b.Navigation("User");
+
+                    b.Navigation("Workspace");
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.OAuthRefreshToken", b =>
+                {
+                    b.HasOne("Nook.Domain.Entities.IntegrationInstallation", "Installation")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("InstallationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_oauth_refresh_tokens_integration_installations_installation");
+
+                    b.Navigation("Installation");
                 });
 
             modelBuilder.Entity("Nook.Domain.Entities.PageSnapshot", b =>
@@ -1344,6 +2015,32 @@ namespace Nook.Infrastructure.Persistence.Migrations
                     b.Navigation("User");
 
                     b.Navigation("Workspace");
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.Collection", b =>
+                {
+                    b.Navigation("Databases");
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.Database", b =>
+                {
+                    b.Navigation("Views");
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.Integration", b =>
+                {
+                    b.Navigation("AuthorizationCodes");
+
+                    b.Navigation("Installations");
+                });
+
+            modelBuilder.Entity("Nook.Domain.Entities.IntegrationInstallation", b =>
+                {
+                    b.Navigation("Capabilities");
+
+                    b.Navigation("Grants");
+
+                    b.Navigation("RefreshTokens");
                 });
 
             modelBuilder.Entity("Nook.Domain.Entities.Node", b =>

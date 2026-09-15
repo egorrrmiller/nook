@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { AlertTriangleIcon, ArrowUpRightIcon, ChevronRightIcon, ExternalLinkIcon, Link2Icon, RefreshCwIcon, UnlinkIcon } from 'lucide-react';
 import type { Backlink, OutgoingLink } from '@nook/api-client';
-import { IconButton, Skeleton, cn } from '@nook/ui';
+import { Button, IconButton, Skeleton, cn } from '@nook/ui';
 import { useNode } from '../../../lib/queries';
 import { nodeTitle } from '../../../lib/utils';
 import { invalidateLinks, useAliases, useBacklinks, useOutgoingLinks } from '../api/queries';
@@ -82,17 +82,19 @@ export function BacklinksPanel({ workspaceId, nodeId }: { workspaceId: string; n
               const open = !collapsed[g.source.id];
               return (
                 <li key={g.source.id} data-testid="backlink-group" className="rounded-md">
-                  <button
+                  <Button
                     type="button"
+                    variant="subtle"
+                    size="sm"
                     aria-expanded={open}
                     onClick={() => setCollapsed((c) => ({ ...c, [g.source.id]: open }))}
-                    className="flex w-full items-center gap-1.5 rounded-md px-1 py-1 text-left hover:bg-accent"
+                    className="h-auto w-full justify-start rounded-md px-1 py-1 text-left font-normal"
                   >
                     <ChevronRightIcon className={cn('size-3.5 shrink-0 text-muted-foreground transition-transform', open && 'rotate-90')} />
                     <NodeIcon icon={g.source.icon} kind={g.source.kind} />
                     <span className="truncate font-medium">{nodeTitle(g.source.title)}</span>
                     <span className="ml-auto shrink-0 text-xs text-muted-foreground">{g.items.length}</span>
-                  </button>
+                  </Button>
                   {open ? (
                     <ul className="ml-3 flex flex-col gap-0.5 border-l border-border pl-2">
                       {g.items.map((b, i) => (

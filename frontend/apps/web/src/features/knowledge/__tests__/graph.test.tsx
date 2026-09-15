@@ -63,4 +63,15 @@ describe('GraphView', () => {
     await user.click(screen.getByTestId('graph-toggle-parents'));
     await waitFor(() => expect(screen.getByText(/links · scroll to zoom/).textContent).not.toBe(before));
   });
+
+  it('exposes graph controls as shared accessible buttons', async () => {
+    const { workspaceId } = signIn();
+    renderWidget(<GraphView workspaceId={workspaceId} />, { path: `/w/${workspaceId}/graph` });
+    await screen.findByTestId('graph-canvas');
+
+    expect(screen.getByTestId('graph-toggle-parents')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Zoom in' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Zoom out' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reset view' })).toBeInTheDocument();
+  });
 });

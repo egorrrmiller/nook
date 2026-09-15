@@ -1,6 +1,7 @@
 import { createReactInlineContentSpec } from '@blocknote/react';
 import { useEffect, useRef, useState } from 'react';
 import { CalendarIcon } from 'lucide-react';
+import { Button, Input, ToggleButton } from '@nook/ui';
 
 export const dateMentionConfig = {
   type: 'dateMention',
@@ -83,8 +84,8 @@ function DateMentionView({
 
   return (
     <span className="nook-date" ref={root} data-testid="date-mention">
-      <button
-        type="button"
+      <ToggleButton
+        pressed={open}
         className="nook-date__chip"
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => editable && setOpen((o) => !o)}
@@ -92,27 +93,50 @@ function DateMentionView({
         <CalendarIcon size={12} />
         {formatDate(date)}
         {end ? ` → ${formatDate(end)}` : ''}
-      </button>
+      </ToggleButton>
       {open ? (
         <span className="nook-date__popover" role="dialog" aria-label="Pick a date">
           <label>
             Date
-            <input type="date" value={date.slice(0, 10)} onChange={(e) => onChange({ date: e.target.value, end })} />
+            <Input
+              type="date"
+              value={date.slice(0, 10)}
+              onChange={(e) => onChange({ date: e.target.value, end })}
+            />
           </label>
           <label>
             End
-            <input type="date" value={end.slice(0, 10)} onChange={(e) => onChange({ date, end: e.target.value })} />
+            <Input
+              type="date"
+              value={end.slice(0, 10)}
+              onChange={(e) => onChange({ date, end: e.target.value })}
+            />
           </label>
           <span className="nook-date__quick">
-            <button type="button" onClick={() => onChange({ date: todayIso(), end })}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onChange({ date: todayIso(), end })}
+            >
               Today
-            </button>
-            <button type="button" onClick={() => onChange({ date: todayIso(1), end })}>
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onChange({ date: todayIso(1), end })}
+            >
               Tomorrow
-            </button>
-            <button type="button" onClick={() => onChange({ date, end: '' })}>
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onChange({ date, end: '' })}
+            >
               Clear end
-            </button>
+            </Button>
           </span>
         </span>
       ) : null}
@@ -127,7 +151,9 @@ export const DateMentionInline = createReactInlineContentSpec(dateMentionConfig,
       date={inlineContent.props.date}
       end={inlineContent.props.end}
       editable={editor.isEditable}
-      onChange={({ date, end }) => updateInlineContent({ type: 'dateMention', props: { date, end: end ?? '' } })}
+      onChange={({ date, end }) =>
+        updateInlineContent({ type: 'dateMention', props: { date, end: end ?? '' } })
+      }
     />
   ),
   toExternalHTML: ({ inlineContent }) => (

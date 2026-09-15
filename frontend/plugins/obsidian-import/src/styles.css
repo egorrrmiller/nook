@@ -1,0 +1,128 @@
+.nook-obsidian-import {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.25rem 0;
+  color: var(--fg, #37352f);
+  font-size: 0.8125rem;
+}
+
+.nook-obsidian-import__description,
+.nook-obsidian-import__count,
+.nook-obsidian-import__dropzone-hint {
+  color: var(--fg-muted, #787774);
+}
+
+.nook-obsidian-import__description,
+.nook-obsidian-import__count {
+  margin: 0;
+}
+
+.nook-obsidian-import__dropzone {
+  display: grid;
+  gap: 0.25rem;
+  cursor: pointer;
+  border: 1px dashed var(--border, #d9d9d7);
+  border-radius: 0.5rem;
+  padding: 0.7rem;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.nook-obsidian-import__dropzone:hover {
+  border-color: var(--accent, #579dff);
+  background: var(--bg-hover, rgba(55, 53, 47, 0.06));
+}
+
+.nook-obsidian-import__dropzone input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.nook-obsidian-import__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.nook-obsidian-import__actions button {
+  border: 1px solid var(--border, #d9d9d7);
+  border-radius: 0.4rem;
+  padding: 0.35rem 0.6rem;
+  background: var(--bg, #fff);
+  color: inherit;
+  cursor: pointer;
+}
+
+.nook-obsidian-import__actions button:last-child {
+  border-color: var(--accent, #579dff);
+  background: var(--accent, #579dff);
+  color: #fff;
+}
+
+.nook-obsidian-import__actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.nook-obsidian-import__error,
+.nook-obsidian-import__ok {
+  margin: 0;
+  border-radius: 0.4rem;
+  padding: 0.5rem;
+}
+
+.nook-obsidian-import__error {
+  background: rgba(235, 87, 87, 0.1);
+  color: var(--danger, #c0392b);
+}
+
+.nook-obsidian-import__ok {
+  background: rgba(46, 170, 90, 0.1);
+  color: var(--success, #248046);
+}
+
+.nook-obsidian-import__report {
+  display: grid;
+  gap: 0.55rem;
+  border-top: 1px solid var(--border, #d9d9d7);
+  padding-top: 0.65rem;
+}
+
+.nook-obsidian-import__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.7rem;
+  font-weight: 600;
+}
+
+.nook-obsidian-import__diagnostics,
+.nook-obsidian-import__pages {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nook-obsidian-import__diagnostics li,
+.nook-obsidian-import__pages li {
+  display: grid;
+  gap: 0.15rem;
+  border-radius: 0.35rem;
+  padding: 0.35rem;
+  background: var(--bg-hover, rgba(55, 53, 47, 0.06));
+}
+
+.nook-obsidian-import__diagnostics li.is-error {
+  background: rgba(235, 87, 87, 0.1);
+}
+
+.nook-obsidian-import__diagnostics code,
+.nook-obsidian-import__pages code {
+  overflow: hidden;
+  color: var(--fg-muted, #787774);
+  font-size: 0.7rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

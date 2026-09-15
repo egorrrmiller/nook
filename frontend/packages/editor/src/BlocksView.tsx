@@ -3,7 +3,9 @@ import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import type { Block } from '@nook/api-client';
 import { useMemo } from 'react';
-import { useNookSchema } from './schema';
+import { usePluginBlocks, usePluginInlineContent } from '@nook/plugin-sdk';
+import { nookBlockSpecs, nookInlineContentSpecs, useNookSchema } from './schema';
+import { unsupportedSpecsFromBlocks } from './schema/unsupported';
 
 export interface BlocksViewProps {
   blocks: Block[];
@@ -19,7 +21,21 @@ export interface BlocksViewProps {
  * "Live editing unavailable" fallback, page embeds and history previews / diffs.
  */
 export function BlocksView({ blocks, schema, theme, compact, className }: BlocksViewProps) {
-  const own = useNookSchema();
+  const pluginBlocks = usePluginBlocks();
+  const pluginInlineContent = usePluginInlineContent();
+  const knownBlockTypes = useMemo(
+    () => new Set([...Object.keys(nookBlockSpecs()), ...Object.keys(pluginBlocks)]),
+    [pluginBlocks],
+  );
+  const knownInlineTypes = useMemo(
+    () => new Set([...Object.keys(nookInlineContentSpecs()), ...Object.keys(pluginInlineContent)]),
+    [pluginInlineContent],
+  );
+  const unsupported = useMemo(
+    () => unsupportedSpecsFromBlocks(blocks, knownBlockTypes, knownInlineTypes),
+    [blocks, knownBlockTypes, knownInlineTypes],
+  );
+  const own = useNookSchema(unsupported);
   const s = schema ?? own;
   const key = useMemo(() => JSON.stringify(blocks), [blocks]);
   const initial = useMemo(
