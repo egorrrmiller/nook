@@ -2,10 +2,14 @@
 
 set -Eeuo pipefail
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-COMPOSE_FILE="$SCRIPT_DIR/docker-compose.yml"
-ENV_FILE="$SCRIPT_DIR/.env"
-ENV_EXAMPLE="$SCRIPT_DIR/.env.example"
+REPO_ARCHIVE_URL="https://github.com/egorrrmiller/nook/archive/refs/heads/main.tar.gz"
+
+SCRIPT_DIR=""
+COMPOSE_FILE=""
+ENV_FILE=""
+ENV_EXAMPLE=""
+BOOTSTRAP_ROOT=""
+BOOTSTRAP_TMP=""
 
 usage() {
   cat <<'EOF'
@@ -14,6 +18,9 @@ Usage: bash install.sh [--no-start]
 Prepare deploy/.env, validate Docker Compose, and start Nook.
 
   --no-start  only prepare and validate the configuration
+
+When run from the raw GitHub URL, the repository archive is downloaded to
+NOOK_INSTALL_DIR or the current directory automatically.
 EOF
 }
 
@@ -35,9 +42,65 @@ elif [[ -n "${1:-}" ]]; then
   exit 2
 fi
 
-command -v docker >/dev/null 2>&1 || fail "Docker is not installed or is not on PATH"
-docker info >/dev/null 2>&1 || fail "Docker Engine is not running; start Docker and run this script again"
-docker compose version >/dev/null 2>&1 || fail "Docker Compose v2 is not available as 'docker compose'"
+check_docker() {
+  command -v docker >/dev/null 2>&1 || fail "Docker is not installed or is not on PATH"
+  docker info >/dev/null 2>&1 || fail "Docker Engine is not running; start Docker and run this script again"
+  docker compose version >/dev/null 2>&1 || fail "Docker Compose v2 is not available as 'docker compose'"
+}
+
+resolve_existing_script_dir() {
+  local source_path="${BASH_SOURCE[0]:-}"
+  local candidate
+
+  if [[ -n "$source_path" && "$source_path" != /dev/fd/* && "$source_path" != /proc/self/fd/* && -f "$source_path" ]]; then
+    candidate="$(cd -- "$(dirname -- "$source_path")" && pwd)"
+    if [[ -f "$candidate/docker-compose.yml" && -f "$candidate/.env.example" ]]; then
+      printf '%s\n' "$candidate"
+      return
+    fi
+  fi
+
+  if [[ -f "$PWD/docker-compose.yml" && -f "$PWD/.env.example" ]]; then
+    printf '%s\n' "$PWD"
+  elif [[ -f "$PWD/deploy/docker-compose.yml" && -f "$PWD/deploy/.env.example" ]]; then
+    printf '%s\n' "$PWD/deploy"
+  fi
+}
+
+bootstrap_repository() {
+  local install_root="${NOOK_INSTALL_DIR:-$PWD}"
+  local archive
+
+  [[ "$install_root" != "/" ]] || fail "NOOK_INSTALL_DIR cannot be /"
+  command -v curl >/dev/null 2>&1 || fail "curl is required to download Nook"
+  command -v tar >/dev/null 2>&1 || fail "tar is required to unpack Nook"
+
+  mkdir -p "$install_root"
+  BOOTSTRAP_ROOT="$(cd -- "$install_root" && pwd)"
+  BOOTSTRAP_TMP="$(mktemp -d)"
+  trap 'if [[ -n "$BOOTSTRAP_TMP" ]]; then rm -rf -- "$BOOTSTRAP_TMP"; fi' EXIT
+  archive="$BOOTSTRAP_TMP/nook-main.tar.gz"
+
+  printf 'install: downloading Nook source archive\n'
+  curl -fsSL "$REPO_ARCHIVE_URL" -o "$archive"
+  tar -xzf "$archive" --strip-components=1 -C "$BOOTSTRAP_ROOT"
+
+  [[ -f "$BOOTSTRAP_ROOT/deploy/install.sh" ]] || fail "downloaded archive does not contain deploy/install.sh"
+  printf 'install: source installed in %s\n' "$BOOTSTRAP_ROOT"
+}
+
+check_docker
+
+SCRIPT_DIR="$(resolve_existing_script_dir || true)"
+if [[ -z "$SCRIPT_DIR" ]]; then
+  bootstrap_repository
+  bash "$BOOTSTRAP_ROOT/deploy/install.sh" "$@"
+  exit $?
+fi
+
+COMPOSE_FILE="$SCRIPT_DIR/docker-compose.yml"
+ENV_FILE="$SCRIPT_DIR/.env"
+ENV_EXAMPLE="$SCRIPT_DIR/.env.example"
 
 [[ -f "$COMPOSE_FILE" ]] || fail "missing $COMPOSE_FILE"
 [[ -f "$ENV_EXAMPLE" ]] || fail "missing $ENV_EXAMPLE"
