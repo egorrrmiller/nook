@@ -25,6 +25,7 @@ export function CollectionViewScreen({ workspaceId, nodeId, readOnly = false, ro
   const [config, setConfig] = useState<CollectionViewConfig>(DEFAULT_COLLECTION_VIEW_CONFIG);
   const [peek, setPeek] = useState<{ row: CollectionRow; mode: 'side' | 'center' } | null>(null);
   const collection = collectionQuery.data;
+  const refetchCollection = collectionQuery.refetch;
   const activeView = collection?.views.find((view) => view.id === activeViewId) ?? collection?.views[0];
 
   useEffect(() => {
@@ -56,8 +57,8 @@ export function CollectionViewScreen({ workspaceId, nodeId, readOnly = false, ro
   }, [onOpenRow, openFullPage, rowOpenMode]);
 
   if (collectionQuery.isPending || !node) return <CollectionLoading />;
-  if (collectionQuery.isError) return <CollectionError onRetry={() => void collectionQuery.refetch()} />;
-  if (!collection) return <CollectionError onRetry={() => void collectionQuery.refetch()} />;
+  if (collectionQuery.isError) return <CollectionError onRetry={() => void refetchCollection()} />;
+  if (!collection) return <CollectionError onRetry={() => void refetchCollection()} />;
   if (!activeView) return <CollectionEmptyState title={node.title || collection.name} message="This database has no views yet. The backend view schema is required before rows can be displayed." />;
   const viewConfig = config.visiblePropertyIds.length || config.filters.children.length || config.sorts.length || config.groupBy ? config : activeView.config;
   const viewProps = { properties: collection.properties, rows: filteredRows, config: viewConfig, onOpenRow: openRow };
