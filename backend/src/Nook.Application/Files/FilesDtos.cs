@@ -68,6 +68,11 @@ public sealed record UploadTarget(Guid NodeId, Guid? BlockId, string? PropertyId
 
 public sealed record FromUrlRequest(string Url, Guid NodeId, Guid? BlockId, string? PropertyId, string? Purpose);
 
+public sealed record ExtractedTextPage(int Page, string Text);
+
+/// <summary>Extracted text for the side viewer. PDF pages map directly to <c>#page=N</c>.</summary>
+public sealed record ExtractedFileTextDto(string Text, IReadOnlyList<ExtractedTextPage> Pages, bool Ready, bool Succeeded);
+
 public sealed record LinkPreviewRequest(string Url);
 
 public sealed record LinkPreviewDto(

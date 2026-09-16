@@ -23,7 +23,7 @@ export function FilePreview({
 }: FilePreviewProps) {
   if (!['image', 'video', 'audio', 'pdf'].includes(kind)) return null;
   const className = `nook-file-card__preview${kind === 'audio' ? ' nook-file-card__preview--audio' : ''}${kind === 'pdf' ? ' nook-file-card__preview--pdf' : ''}`;
-  const source = originalImage ? resource.url : resource.thumbUrl || resource.url;
+  const source = resource.previewUrl || (originalImage ? resource.url : resource.thumbUrl || resource.url);
 
   return (
     <div className={className} data-testid="file-preview">

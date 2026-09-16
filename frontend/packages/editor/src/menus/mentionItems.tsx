@@ -41,7 +41,8 @@ export async function mentionMenuItems(
         subtext: 'Insert date',
         group: GROUPS.inline,
         icon: <CalendarIcon size={18} />,
-        onItemClick: () => editor.insertInlineContent([{ type: 'dateMention', props: { date, end: '' } }, ' ']),
+        onItemClick: () =>
+          editor.insertInlineContent([{ type: 'dateMention', props: { date, end: '' } }, ' ']),
       });
     } else if (query && DATE_WORDS.some((w) => w.startsWith(query.toLowerCase()))) {
       const word = DATE_WORDS.find((w) => w.startsWith(query.toLowerCase()))!;
@@ -51,7 +52,8 @@ export async function mentionMenuItems(
         subtext: word,
         group: GROUPS.inline,
         icon: <CalendarIcon size={18} />,
-        onItemClick: () => editor.insertInlineContent([{ type: 'dateMention', props: { date, end: '' } }, ' ']),
+        onItemClick: () =>
+          editor.insertInlineContent([{ type: 'dateMention', props: { date, end: '' } }, ' ']),
       });
     }
   }
@@ -66,7 +68,7 @@ export async function mentionMenuItems(
     items.push({
       title: hit.node.title?.trim() || 'Untitled',
       subtext: hit.breadcrumb.map((b) => b.title?.trim() || 'Untitled').join(' / ') || undefined,
-      group: 'Pages',
+      group: hit.node.kind === 'file' ? 'Files' : 'Pages',
       icon: <NodeIcon icon={hit.node.icon} kind={hit.node.kind} size={18} />,
       onItemClick: () => {
         primeNodeInfo(hit.node);

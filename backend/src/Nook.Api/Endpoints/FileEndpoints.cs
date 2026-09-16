@@ -28,7 +28,7 @@ public static class FileEndpoints
             .AddEndpointFilter<WorkspaceContextFilter>()
             .WithName("UploadFile")
             .Accepts<UploadFileForm>("multipart/form-data")
-            .WithDescription("multipart/form-data: file, nodeId (required), blockId?, propertyId?, purpose? (content|icon|cover). 413 when NOOK_MAX_UPLOAD_MB is exceeded.")
+            .WithDescription("multipart/form-data: file, nodeId (required), blockId?, propertyId?, purpose? (content|icon|cover). Unlimited by default; 413 when an operator-configured NOOK_MAX_UPLOAD_MB is exceeded.")
             .ProducesProblem(StatusCodes.Status413PayloadTooLarge);
 
         files.MapPost("/from-url", async Task<Created<AttachmentDto>> (FromUrlRequest request, FileService service, CancellationToken ct) =>
@@ -56,6 +56,15 @@ public static class FileEndpoints
         byId.MapGet("/meta", async Task<Ok<AttachmentDto>> (Guid id, FileService service, CancellationToken ct) =>
                 TypedResults.Ok(await service.GetAsync(id, ct)))
             .WithName("GetFileMeta");
+
+        byId.MapGet("/text", async Task<Ok<ExtractedFileTextDto>> (Guid id, FileService service, CancellationToken ct) =>
+                TypedResults.Ok(await service.GetExtractedTextAsync(id, ct)))
+            .WithName("GetExtractedFileText")
+            .WithDescription("Extracted text. PDF results include page-numbered sections for direct #page=N links.");
+
+        byId.MapGet("/preview", GetSvgPreviewAsync)
+            .WithName("PreviewSvgFile")
+            .WithDescription("Renders an uploaded SVG as an isolated image. Other MIME types return 404.");
 
         byId.MapDelete("/", async Task<NoContent> (Guid id, FileService service, CancellationToken ct) =>
             {
@@ -96,7 +105,8 @@ public static class FileEndpoints
 
         // Allow the whole upload plus some slack for the other fields (Kestrel defaults to 30 MB).
         var sizeFeature = http.Features.Get<IHttpMaxRequestBodySizeFeature>();
-        if (sizeFeature is { IsReadOnly: false }) sizeFeature.MaxRequestBodySize = options.MaxUploadBytes + 1024 * 1024;
+        if (sizeFeature is { IsReadOnly: false })
+            sizeFeature.MaxRequestBodySize = options.HasUploadLimit ? options.MaxUploadBytes + 1024 * 1024 : null;
 
         var reader = new MultipartReader(boundary, request.Body) { HeadersLengthLimit = 16 * 1024 };
         var fields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -163,9 +173,30 @@ public static class FileEndpoints
         while ((read = await source.ReadAsync(buffer, ct)) > 0)
         {
             total += read;
-            if (total > max) throw new PayloadTooLargeException($"The file exceeds the upload limit of {max / (1024 * 1024)} MB.");
+            if (max != FilesOptions.Unlimited && total > max)
+                throw new PayloadTooLargeException($"The file exceeds the upload limit of {max / (1024 * 1024)} MB.");
             await destination.WriteAsync(buffer.AsMemory(0, read), ct);
         }
+    }
+
+    private static async Task<IResult> GetSvgPreviewAsync(Guid id, HttpContext http, FileService service, IBlobStore blobs, CancellationToken ct)
+    {
+        var (attachment, _) = await service.RequireAsync(id, WorkspaceRole.Viewer, ct);
+        if (!attachment.Mime.Equals("image/svg+xml", StringComparison.OrdinalIgnoreCase))
+            throw new NotFoundException("An SVG preview is not available for this file.");
+
+        Stream stream;
+        try { stream = blobs.OpenRead(attachment.BlobSha); }
+        catch (FileNotFoundException) { throw new NotFoundException("File content is missing."); }
+
+        var headers = http.Response.Headers;
+        headers.CacheControl = CacheControlValue;
+        headers.XContentTypeOptions = "nosniff";
+        // SVG loaded through <img> is already a non-interactive image document; the sandbox also
+        // prevents scripts, navigation and network access if a hostile upload reaches this route.
+        headers.ContentSecurityPolicy = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; sandbox";
+        return TypedResults.Stream(stream, "image/svg+xml", lastModified: attachment.CreatedAt,
+            entityTag: new EntityTagHeaderValue($"\"{attachment.BlobSha}-preview\""), enableRangeProcessing: false);
     }
 
     private static async Task<IResult> GetContentAsync(Guid id, string? download, HttpContext http, FileService service, IBlobStore blobs, CancellationToken ct)
@@ -185,6 +216,8 @@ public static class FileEndpoints
         headers.CacheControl = CacheControlValue;
         headers.XContentTypeOptions = "nosniff";
         headers.ContentSecurityPolicy = "default-src 'none'; sandbox";
+        // Tell nginx and compatible reverse proxies not to spool large file responses to disk.
+        headers["X-Accel-Buffering"] = "no";
         return TypedResults.Stream(stream, contentType, lastModified: attachment.CreatedAt, entityTag: new EntityTagHeaderValue($"\"{attachment.BlobSha}\""), enableRangeProcessing: true);
     }
 

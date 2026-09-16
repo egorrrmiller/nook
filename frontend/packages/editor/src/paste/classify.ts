@@ -7,7 +7,7 @@ export type PasteClassification =
       kind: 'url';
       url: string;
       /** Set when the URL points at a page of this workspace (`/w/{ws}/p/{nodeId}[#b-<blockId>]`). */
-      internal?: { nodeId: string; blockId?: string };
+      internal?: { nodeId: string; blockId?: string; page?: number };
       embeddable: boolean;
       /** Direct link to an image / video / audio / pdf file, by extension. */
       media?: 'image' | 'video' | 'audio' | 'pdf';
@@ -19,7 +19,10 @@ export interface ClassifyContext {
   workspaceId?: string;
 }
 
-const MEDIA_EXT: Record<string, NonNullable<Extract<PasteClassification, { kind: 'url' }>['media']>> = {
+const MEDIA_EXT: Record<
+  string,
+  NonNullable<Extract<PasteClassification, { kind: 'url' }>['media']>
+> = {
   png: 'image',
   jpg: 'image',
   jpeg: 'image',
@@ -38,7 +41,10 @@ const MEDIA_EXT: Record<string, NonNullable<Extract<PasteClassification, { kind:
 };
 
 /** `/w/{ws}/p/{nodeId}#b-{blockId}` → ids, or null. */
-export function parseInternalPageUrl(raw: string, ctx: ClassifyContext = {}): { workspaceId: string; nodeId: string; blockId?: string } | null {
+export function parseInternalPageUrl(
+  raw: string,
+  ctx: ClassifyContext = {},
+): { workspaceId: string; nodeId: string; blockId?: string; page?: number } | null {
   let path: string;
   let hash = '';
   if (raw.startsWith('/')) {
@@ -55,7 +61,14 @@ export function parseInternalPageUrl(raw: string, ctx: ClassifyContext = {}): { 
   const m = /^\/w\/([^/]+)\/p\/([^/?#]+)\/?$/.exec(path);
   if (!m) return null;
   const blockId = /^b-(.+)$/.exec(hash)?.[1];
-  return { workspaceId: m[1]!, nodeId: m[2]!, ...(blockId ? { blockId } : {}) };
+  const rawPage = /^page=(\d+)$/.exec(hash)?.[1];
+  const page = rawPage ? Number.parseInt(rawPage, 10) : undefined;
+  return {
+    workspaceId: m[1]!,
+    nodeId: m[2]!,
+    ...(blockId ? { blockId } : {}),
+    ...(page ? { page } : {}),
+  };
 }
 
 const MD_HINTS = [
@@ -92,7 +105,11 @@ export function classifyPastedText(text: string, ctx: ClassifyContext = {}): Pas
       return {
         kind: 'url',
         url: trimmed,
-        internal: { nodeId: internal.nodeId, ...(internal.blockId ? { blockId: internal.blockId } : {}) },
+        internal: {
+          nodeId: internal.nodeId,
+          ...(internal.blockId ? { blockId: internal.blockId } : {}),
+          ...(internal.page ? { page: internal.page } : {}),
+        },
         embeddable: false,
       };
     }
@@ -100,7 +117,12 @@ export function classifyPastedText(text: string, ctx: ClassifyContext = {}): Pas
     if (u) {
       const ext = /\.([a-z0-9]{2,5})$/i.exec(u.pathname)?.[1]?.toLowerCase();
       const media = ext ? MEDIA_EXT[ext] : undefined;
-      return { kind: 'url', url: trimmed, embeddable: isEmbeddableUrl(trimmed), ...(media ? { media } : {}) };
+      return {
+        kind: 'url',
+        url: trimmed,
+        embeddable: isEmbeddableUrl(trimmed),
+        ...(media ? { media } : {}),
+      };
     }
   }
   if (looksLikeMarkdown(trimmed)) return { kind: 'markdown' };

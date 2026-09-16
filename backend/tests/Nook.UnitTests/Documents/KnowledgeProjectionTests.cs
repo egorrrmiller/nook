@@ -35,6 +35,19 @@ public class KnowledgeProjectionTests
     }
 
     [Fact]
+    public void Pdf_page_hrefs_keep_the_file_node_backlink()
+    {
+        var node = Guid.NewGuid();
+        var href = $"/w/{Guid.NewGuid()}/p/{node}#page=12";
+        var rows = Paragraph($"{{'type':'link','href':'{href}','content':[{{'type':'text','text':'p. 12','styles':{{}}}}]}}");
+        var link = Assert.Single(LinkExtractor.Extract(Guid.NewGuid(), rows));
+        Assert.Equal(LinkKind.Mention, link.Kind);
+        Assert.Equal(node, link.TargetNodeId);
+        Assert.Null(link.TargetBlockId);
+        Assert.Equal(href, link.Href);
+    }
+
+    [Fact]
     public void Nook_scheme_hrefs_resolve_to_nodes_and_blocks()
     {
         var node = Guid.NewGuid();

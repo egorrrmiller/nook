@@ -14,4 +14,14 @@ describe('HiddenFileInput', () => {
     expect(onFile).toHaveBeenCalledWith(file);
     expect(input.value).toBe('');
   });
+
+  it('forwards every selected file for tree uploads', () => {
+    const onFiles = vi.fn();
+    render(<HiddenFileInput multiple aria-label="Choose files" onFiles={onFiles} />);
+    const files = [new File(['a'], 'a.pdf'), new File(['b'], 'b.pdf')];
+
+    fireEvent.change(screen.getByLabelText('Choose files'), { target: { files } });
+
+    expect(onFiles).toHaveBeenCalledWith(files);
+  });
 });

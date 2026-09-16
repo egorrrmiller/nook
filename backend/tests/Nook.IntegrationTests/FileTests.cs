@@ -103,6 +103,7 @@ public class FileTests(NookApiFactory factory) : IClassFixture<NookApiFactory>
         Assert.Equal("application/octet-stream", full.Content.Headers.ContentType?.MediaType);
         Assert.Equal($"\"{a.Sha256}\"", full.Headers.ETag?.Tag);
         Assert.True(full.Headers.CacheControl is { Private: true, MaxAge: { } age } && age == TimeSpan.FromSeconds(31536000), full.Headers.CacheControl?.ToString());
+        Assert.Equal("no", full.Headers.GetValues("X-Accel-Buffering").Single());
         Assert.Equal("bytes", full.Headers.AcceptRanges.Single());
         var cd = full.Content.Headers.ContentDisposition!;
         Assert.Equal("inline", cd.DispositionType);
@@ -146,6 +147,10 @@ public class FileTests(NookApiFactory factory) : IClassFixture<NookApiFactory>
         var download = await client.GetAsync($"/api/files/{a.Id}?download=1");
         Assert.Equal("image/svg+xml", download.Content.Headers.ContentType?.MediaType);
         Assert.Equal("attachment", download.Content.Headers.ContentDisposition!.DispositionType);
+
+        var preview = await client.GetAsync($"/api/files/{a.Id}/preview");
+        Assert.Equal("image/svg+xml", preview.Content.Headers.ContentType?.MediaType);
+        Assert.Contains("sandbox", preview.Headers.GetValues("Content-Security-Policy").Single());
 
         var html = await UploadAsync(client, "<html><body><script>1</script></body></html>"u8.ToArray(), "page.html", "text/html", page.Id);
         Assert.Equal("application/octet-stream", (await client.GetAsync($"/api/files/{html.Id}")).Content.Headers.ContentType?.MediaType);
@@ -246,7 +251,6 @@ public class FileTests(NookApiFactory factory) : IClassFixture<NookApiFactory>
         server.Map("/img.png", "image/png", png);
         server.Map("/redirect", "text/plain", "", 302, new Dictionary<string, string> { ["Location"] = "/img.png" });
         server.Map("/to-private", "text/plain", "", 302, new Dictionary<string, string> { ["Location"] = "http://10.0.0.1/secret" });
-        server.Map("/big", "application/octet-stream", new byte[1024], headers: new Dictionary<string, string> { ["Content-Length"] = (600L * 1024 * 1024).ToString() });
         factory.Services.GetRequiredService<UrlFetchGuard>().AllowLoopbackPort(server.Port);
 
         var ok = await client.PostAsJsonAsync("/api/files/from-url", new { url = $"{server.BaseUrl}/redirect", nodeId = page.Id, purpose = "icon" });
@@ -259,7 +263,6 @@ public class FileTests(NookApiFactory factory) : IClassFixture<NookApiFactory>
 
         Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/files/from-url", new { url = $"{server.BaseUrl}/to-private", nodeId = page.Id })).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/files/from-url", new { url = $"{server.BaseUrl}/missing", nodeId = page.Id })).StatusCode);
-        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, (await client.PostAsJsonAsync("/api/files/from-url", new { url = $"{server.BaseUrl}/big", nodeId = page.Id })).StatusCode);
     }
 
     [Fact]
@@ -387,6 +390,12 @@ public class FileTests(NookApiFactory factory) : IClassFixture<NookApiFactory>
         var pdfMeta = await client.GetJsonAsync<AttachmentDto>($"/api/files/{pdf.Id}/meta");
         Assert.True(pdfMeta.Meta.TextExtracted);
         Assert.Equal(1, pdfMeta.Meta.Pages);
+        var pdfText = await client.GetJsonAsync<ExtractedFileTextDto>($"/api/files/{pdf.Id}/text");
+        Assert.True(pdfText.Ready);
+        Assert.True(pdfText.Succeeded);
+        Assert.Single(pdfText.Pages);
+        Assert.Equal(1, pdfText.Pages[0].Page);
+        Assert.Contains("Hello Nook PDF", pdfText.Pages[0].Text);
         Assert.True((await client.GetJsonAsync<AttachmentDto>($"/api/files/{docx.Id}/meta")).Meta.TextExtracted);
 
         // the generated tsvector columns index the text
@@ -424,8 +433,8 @@ public class FileTests(NookApiFactory factory) : IClassFixture<NookApiFactory>
     {
         var (client, _, page) = await OwnerWithPageAsync();
         var options = factory.Services.GetRequiredService<FilesOptions>();
-        Assert.Equal(512L * 1024 * 1024, options.MaxUploadBytes); // default NOOK_MAX_UPLOAD_MB
-        // exercise the store's cap directly (a 512 MB request body would be too slow for the suite)
+        Assert.Equal(FilesOptions.Unlimited, options.MaxUploadBytes); // self-hosted default
+        // Operators may still opt into a cap; exercise the store directly.
         var store = factory.Services.GetRequiredService<IBlobStore>();
         await Assert.ThrowsAsync<PayloadTooLargeException>(() => store.StoreAsync(new MemoryStream(new byte[2048]), 1024, CancellationToken.None));
         Assert.Empty(Directory.EnumerateFiles(Path.Combine(((DiskBlobStore)store).Root, "tmp")));

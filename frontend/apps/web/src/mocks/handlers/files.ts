@@ -63,7 +63,6 @@ export function createFilesHandlers(ctx: MockContext): HttpHandler[] {
       if (!file || typeof file === 'string') return problem(400, 'file is required');
       if (!nodeId) return problem(400, 'nodeId is required');
       const name = file.name || 'upload.bin';
-      if (file.size > 512 * 1024 * 1024) return problem(413, 'File is too large');
       const attachment = createAttachment(
         ctx.state,
         ws.id,
@@ -109,6 +108,26 @@ export function createFilesHandlers(ctx: MockContext): HttpHandler[] {
       if (!a) return problem(404, 'Attachment not found');
       const { workspaceId: _ws, data: _data, ...dto } = a;
       return HttpResponse.json(dto);
+    }),
+
+    http.get('/api/files/:id/text', ({ params }) => {
+      const a = ctx.state.attachments.find((x) => x.id === params.id);
+      if (!a) return problem(404, 'Attachment not found');
+      if (a.mime === 'application/pdf') {
+        return HttpResponse.json({
+          text: 'Recognized PDF text',
+          pages: [{ page: 1, text: 'Recognized PDF text' }],
+          ready: true,
+          succeeded: true,
+        });
+      }
+      return HttpResponse.json({ text: '', pages: [], ready: true, succeeded: false });
+    }),
+
+    http.get('/api/files/:id/preview', ({ params }) => {
+      const a = ctx.state.attachments.find((x) => x.id === params.id);
+      if (!a || a.mime !== 'image/svg+xml') return problem(404, 'SVG preview not found');
+      return new HttpResponse(a.data, { headers: { 'Content-Type': 'image/svg+xml' } });
     }),
 
     http.get('/api/files/:id/thumb', ({ params }) => {

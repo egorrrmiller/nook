@@ -1,21 +1,71 @@
-# Optional local-build override. Production uses deploy/docker-compose.yml alone.
-# Usage: docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.build.yml up -d --build
+# Complete local stack built from the current checkout.
+# Usage:
+#   docker compose --env-file deploy/.env -f deploy/docker-compose.build.yml up -d --build
 
 services:
+  postgres:
+    image: mirror.gcr.io/library/postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nook
+      POSTGRES_USER: nook
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nook -d nook"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   api:
     image: nook-api:local
     build:
       context: ..
       dockerfile: deploy/api.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NOOK_DB: Host=postgres;Port=5432;Database=nook;Username=nook;Password=${POSTGRES_PASSWORD}
+      NOOK_OWNER_EMAIL: ${NOOK_OWNER_EMAIL:?set NOOK_OWNER_EMAIL in deploy/.env}
+      NOOK_OWNER_PASSWORD: ${NOOK_OWNER_PASSWORD:?set NOOK_OWNER_PASSWORD in deploy/.env}
+      NOOK_COLLAB_JWT_SECRET: ${NOOK_COLLAB_JWT_SECRET:?set NOOK_COLLAB_JWT_SECRET in deploy/.env}
+      NOOK_INTERNAL_TOKEN: ${NOOK_INTERNAL_TOKEN:?set NOOK_INTERNAL_TOKEN in deploy/.env}
+      NOOK_MAX_UPLOAD_MB: ${NOOK_MAX_UPLOAD_MB:-0}
+    volumes:
+      - nookdata:/data
+      - nookkeys:/root/.aspnet/DataProtection-Keys
 
   collab:
     image: nook-collab:local
     build:
       context: ../services/collab
       dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    environment:
+      NOOK_COLLAB_JWT_SECRET: ${NOOK_COLLAB_JWT_SECRET:?set NOOK_COLLAB_JWT_SECRET in deploy/.env}
+      NOOK_INTERNAL_TOKEN: ${NOOK_INTERNAL_TOKEN:?set NOOK_INTERNAL_TOKEN in deploy/.env}
 
   web:
     image: nook-web:local
     build:
       context: ../frontend
       dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+      collab:
+        condition: service_started
+    ports:
+      - "${NOOK_HTTP_PORT:-80}:80"
+
+volumes:
+  pgdata:
+  nookdata:
+  nookkeys:

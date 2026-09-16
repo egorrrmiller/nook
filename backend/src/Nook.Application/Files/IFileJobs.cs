@@ -15,5 +15,11 @@ public sealed class NullFileJobs : IFileJobs
 
 public sealed record FilesOptions(long MaxUploadBytes)
 {
-    public const int DefaultMaxUploadMb = 512;
+    /// <summary>
+    /// Self-hosted installations are unlimited by default. Operators that need a guardrail can
+    /// opt in with <c>NOOK_MAX_UPLOAD_MB</c>.
+    /// </summary>
+    public const long Unlimited = long.MaxValue;
+
+    public bool HasUploadLimit => MaxUploadBytes != Unlimited;
 }

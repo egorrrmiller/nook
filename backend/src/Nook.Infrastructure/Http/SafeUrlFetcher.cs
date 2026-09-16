@@ -214,7 +214,8 @@ public sealed class CappedReadStream(Stream inner, long max) : Stream
     private int Account(int n)
     {
         _read += n;
-        if (_read > max) throw new PayloadTooLargeException($"The response exceeds the limit of {max / (1024 * 1024)} MB.");
+        if (max != FilesOptions.Unlimited && _read > max)
+            throw new PayloadTooLargeException($"The response exceeds the limit of {max / (1024 * 1024)} MB.");
         return n;
     }
 

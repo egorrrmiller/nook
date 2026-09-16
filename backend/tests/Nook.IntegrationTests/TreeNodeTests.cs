@@ -68,6 +68,27 @@ public class TreeNodeTests(NookApiFactory factory) : IClassFixture<NookApiFactor
     }
 
     [Fact]
+    public async Task File_nodes_are_leaves_but_can_live_in_folders()
+    {
+        var (client, _) = await OwnerInNewWorkspaceAsync("File nodes");
+        var folder = await client.CreateNodeAsync("Library", kind: "folder");
+        var file = await client.CreateNodeAsync("Paper.pdf", folder.Id, "file");
+        var page = await client.CreateNodeAsync("Notes");
+
+        Assert.Equal(folder.Id, file.ParentId);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/nodes", new
+        {
+            parentId = file.Id,
+            kind = "page",
+            title = "Illegal child",
+        })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PatchAsJsonAsync($"/api/nodes/{page.Id}", new
+        {
+            parentId = file.Id,
+        })).StatusCode);
+    }
+
+    [Fact]
     public async Task Archive_hides_from_list_unless_includeArchived()
     {
         var (client, _) = await OwnerInNewWorkspaceAsync("Archive");

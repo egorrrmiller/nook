@@ -42,7 +42,8 @@ export function useNodeActions(workspaceId: string) {
   const favoriteIds = useMemo(() => new Set((favorites ?? []).map((f) => f.nodeId)), [favorites]);
 
   const open = useCallback(
-    (nodeId: string) => navigate({ to: '/w/$workspaceId/p/$nodeId', params: { workspaceId, nodeId } }),
+    (nodeId: string) =>
+      navigate({ to: '/w/$workspaceId/p/$nodeId', params: { workspaceId, nodeId } }),
     [navigate, workspaceId],
   );
 
@@ -68,12 +69,16 @@ export function useNodeActions(workspaceId: string) {
     copyLink: (node: Node) => copyPageLink(node),
     toggleArchive: (node: Node) => {
       const archived = !node.archivedAt;
-      archive.mutate({ id: node.id, archived }, { onSuccess: () => toast(archived ? 'Page archived' : 'Page unarchived') });
+      archive.mutate(
+        { id: node.id, archived },
+        { onSuccess: () => toast(archived ? 'Page archived' : 'Page unarchived') },
+      );
     },
     remove: async (node: Node) => {
       await remove.mutateAsync(node.id);
       toast('Moved to trash');
-      if (params.nodeId === node.id) await navigate({ to: '/w/$workspaceId', params: { workspaceId } });
+      if (params.nodeId === node.id)
+        await navigate({ to: '/w/$workspaceId', params: { workspaceId } });
     },
   };
 }
@@ -85,7 +90,19 @@ export interface NodeMenuItemsProps {
   actions: NodeActions;
   onRename?: () => void;
   /** Hide the items that make no sense in the current surface. */
-  hide?: Partial<Record<'rename' | 'addInside' | 'duplicate' | 'favorite' | 'moveTo' | 'copyLink' | 'archive' | 'delete', boolean>>;
+  hide?: Partial<
+    Record<
+      | 'rename'
+      | 'addInside'
+      | 'duplicate'
+      | 'favorite'
+      | 'moveTo'
+      | 'copyLink'
+      | 'archive'
+      | 'delete',
+      boolean
+    >
+  >;
 }
 
 /** Menu items (to embed in `MenuContent` / `ContextMenuContent`). */
@@ -116,12 +133,12 @@ export function NodeMenuItems({ node, actions, onRename, hide = {} }: NodeMenuIt
           <PencilIcon /> Rename
         </MenuItem>
       ) : null}
-      {!hide.addInside && !readOnly ? (
+      {!hide.addInside && !readOnly && node.kind !== 'file' ? (
         <MenuItem onClick={() => void actions.addInside(node)}>
           <PlusIcon /> Add page inside
         </MenuItem>
       ) : null}
-      {!hide.addInside && !readOnly ? (
+      {!hide.addInside && !readOnly && node.kind !== 'file' ? (
         <MenuItem onClick={() => void actions.addInside(node, 'folder')}>
           <FolderPlusIcon /> Add folder inside
         </MenuItem>
@@ -140,7 +157,11 @@ export function NodeMenuItems({ node, actions, onRename, hide = {} }: NodeMenuIt
       {!hide.delete && !readOnly ? (
         <>
           <MenuSeparator />
-          <MenuItem variant="destructive" onClick={() => void actions.remove(node)} data-testid="menu-delete">
+          <MenuItem
+            variant="destructive"
+            onClick={() => void actions.remove(node)}
+            data-testid="menu-delete"
+          >
             <Trash2Icon /> Delete
           </MenuItem>
         </>

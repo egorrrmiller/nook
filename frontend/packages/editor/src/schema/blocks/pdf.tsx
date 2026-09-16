@@ -1,6 +1,6 @@
 import { createReactBlockSpec, FileBlockWrapper, useResolveUrl, type ReactCustomBlockRenderProps } from '@blocknote/react';
 import { useEffect, useState, type ComponentProps } from 'react';
-import { DownloadIcon, FileTextIcon } from 'lucide-react';
+import { DownloadIcon, FileTextIcon, PanelRightOpenIcon } from 'lucide-react';
 import { useEditorHost } from '../../host-context';
 import { attachmentIdFromUrl, formatBytes } from '../../media/files';
 
@@ -55,6 +55,16 @@ function PdfPreview({ block, editor }: Omit<ReactCustomBlockRenderProps<typeof p
         <span className="nook-pdf__name">{block.props.name || 'document.pdf'}</span>
         {pages ? <span className="nook-pdf__meta">{pages} page{pages === 1 ? '' : 's'}</span> : null}
         {size ? <span className="nook-pdf__meta">{formatBytes(size)}</span> : null}
+        {attachmentId && host.openFile ? (
+          <button
+            type="button"
+            className="nook-pdf__side-preview"
+            title="Open beside the page"
+            onClick={() => host.openFile?.({ id: attachmentId, name: block.props.name || 'document.pdf', mime: 'application/pdf', url: src })}
+          >
+            <PanelRightOpenIcon size={14} />
+          </button>
+        ) : null}
         <a className="nook-pdf__download" href={attachmentId ? host.api.files.url(attachmentId, { download: true }) : src} download title="Download">
           <DownloadIcon size={14} />
         </a>

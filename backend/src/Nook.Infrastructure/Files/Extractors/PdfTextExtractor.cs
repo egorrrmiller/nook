@@ -14,12 +14,14 @@ public sealed class PdfTextExtractor : IFileTextExtractor
         {
             using var doc = PdfDocument.Open(content, new ParsingOptions { UseLenientParsing = true, SkipMissingFonts = true });
             var sb = new StringBuilder();
+            var first = true;
             foreach (var page in doc.GetPages())
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                if (!first) sb.Append('\f');
+                first = false;
                 var text = page.Text;
-                if (string.IsNullOrWhiteSpace(text)) continue;
-                sb.Append(text).Append('\n');
+                if (!string.IsNullOrWhiteSpace(text)) sb.Append(text.Trim()).Append('\n');
                 if (sb.Length > FileTextLimits.MaxChars) break;
             }
             return FileTextLimits.Cap(sb.ToString());

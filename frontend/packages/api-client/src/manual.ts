@@ -4,6 +4,7 @@ import type {
   AddMemberRequest,
   ApiToken,
   Attachment,
+  ExtractedFileText,
   AuthResponse,
   Backlink,
   BlockAnchor,
@@ -314,11 +315,16 @@ export function createApiClient(config: ApiConfig) {
       /** `GET /api/files/{id}/meta` */
       meta: (id: string, signal?: AbortSignal) =>
         http<Attachment>('GET', `/api/files/${id}/meta`, { signal }),
+      /** Extracted PDF/document text, including direct PDF page mappings. */
+      text: (id: string, signal?: AbortSignal) =>
+        http<ExtractedFileText>('GET', `/api/files/${id}/text`, { signal }),
       /** `DELETE /api/files/{id}` — row only; blobs are GC'd */
       remove: (id: string) => http<void>('DELETE', `/api/files/${id}`),
       /** `GET /api/files/{id}` — URL for `<img>`/`<a>`; `download` adds `?download=1`. */
       url: (id: string, opts: { download?: boolean } = {}) =>
         `${config.baseUrl}/api/files/${id}${opts.download ? '?download=1' : ''}`,
+      /** Isolated, browser-rendered SVG preview (scripts and network access are sandboxed server-side). */
+      previewUrl: (id: string) => `${config.baseUrl}/api/files/${id}/preview`,
       /** `GET /api/files/{id}/thumb?w=` — image/webp derivative (w ∈ 160|320|640|1280|1920). */
       thumbUrl: (id: string, w?: ThumbWidth) =>
         `${config.baseUrl}/api/files/${id}/thumb${w ? `?w=${w}` : ''}`,

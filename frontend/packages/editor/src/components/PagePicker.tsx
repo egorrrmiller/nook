@@ -20,7 +20,7 @@ export function movePagePickerActiveIndex(
  * arrow keys + Enter select, Escape calls `onCancel`.
  */
 export function PagePicker({
-  placeholder = 'Search pages…',
+  placeholder = 'Search pages and files…',
   onPick,
   onCancel,
   autoFocus = true,
@@ -108,7 +108,7 @@ export function PagePicker({
           </li>
         ))}
         {!loading && hits.length === 0 ? (
-          <li className="nook-page-picker__empty">No pages found</li>
+          <li className="nook-page-picker__empty">No pages or files found</li>
         ) : null}
       </ul>
     </div>

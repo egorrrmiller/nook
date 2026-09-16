@@ -35,7 +35,9 @@ public sealed class QuickFindService(IAppDbContext db, IWorkspaceContextAccessor
         List<Candidate> candidates;
         if (query.Length == 0)
         {
-            var effectiveKinds = kindFilter ?? [NodeKind.Page];
+            // Empty quick-find powers page/file pickers. First-class files should be discoverable
+            // before the user types, just like recently edited pages.
+            var effectiveKinds = kindFilter ?? [NodeKind.Page, NodeKind.File];
             var recent = await db.Nodes.AsNoTracking()
                 .Where(n => n.WorkspaceId == ws && n.DeletedAt == null && effectiveKinds.Contains(n.Kind))
                 .OrderBy(n => n.ArchivedAt != null).ThenByDescending(n => n.UpdatedAt)

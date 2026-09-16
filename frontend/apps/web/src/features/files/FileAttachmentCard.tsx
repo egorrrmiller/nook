@@ -28,6 +28,8 @@ export interface FileAttachmentCardProps {
   external?: ExternalFile;
   compact?: boolean;
   onRemove?: () => void;
+  /** When supplied, preview opens in the page's right-hand workbench. */
+  onPreview?: (resource: FileResource) => void;
 }
 
 function FileActionLink({
@@ -54,7 +56,7 @@ function FileActionLink({
 }
 
 /** A safe, app-owned attachment card used in the page inspector and file surfaces. */
-export function FileAttachmentCard({ attachment, external, compact = false, onRemove }: FileAttachmentCardProps) {
+export function FileAttachmentCard({ attachment, external, compact = false, onRemove, onPreview }: FileAttachmentCardProps) {
   const resource = useMemo<FileResource | null>(() => {
     if (attachment) return resourceFromAttachment(attachment);
     if (external) return resourceFromExternal(external);
@@ -74,7 +76,8 @@ export function FileAttachmentCard({ attachment, external, compact = false, onRe
   if (!resource) return null;
   const kind = fileKind(resource);
   const safe = isSafeFileUrl(resource.url);
-  const canPreview = safe && (kind === 'image' || kind === 'video' || kind === 'audio' || kind === 'pdf');
+  const canInlinePreview = safe && (kind === 'image' || kind === 'video' || kind === 'audio' || kind === 'pdf');
+  const canPreview = safe && (canInlinePreview || (!!onPreview && !!resource.id && (kind === 'document' || kind === 'text')));
   const metadata = metadataLabel(resource);
   const size = formatFileSize(resource.size);
   const openLabel = resource.external ? 'Open external file' : 'Open file';
@@ -133,7 +136,7 @@ export function FileAttachmentCard({ attachment, external, compact = false, onRe
         </div>
       ) : null}
 
-      {safe && previewOpen && !previewError && canPreview ? (
+      {safe && previewOpen && !previewError && canInlinePreview ? (
         <FilePreview
           resource={resource}
           kind={kind}
@@ -158,11 +161,20 @@ export function FileAttachmentCard({ attachment, external, compact = false, onRe
             type="button"
             variant="subtle"
             size="xs"
-            onClick={() => { setPreviewOpen((open) => !open); setPreviewError(null); setPreviewLoaded(false); setUseOriginalImage(false); }}
+            onClick={() => {
+              if (onPreview) {
+                onPreview(resource);
+                return;
+              }
+              setPreviewOpen((open) => !open);
+              setPreviewError(null);
+              setPreviewLoaded(false);
+              setUseOriginalImage(false);
+            }}
             aria-label={previewLabel}
           >
-            {previewOpen ? <XIcon aria-hidden="true" /> : <EyeIcon aria-hidden="true" />}
-            {previewOpen ? 'Hide preview' : 'Preview'}
+            {!onPreview && previewOpen ? <XIcon aria-hidden="true" /> : <EyeIcon aria-hidden="true" />}
+            {!onPreview && previewOpen ? 'Hide preview' : 'Preview'}
           </Button>
         ) : null}
         {safe ? (

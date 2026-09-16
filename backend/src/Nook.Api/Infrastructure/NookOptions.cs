@@ -26,7 +26,19 @@ public sealed record NookOptions(
         var db = Get("NOOK_DB", "Db") ?? config.GetConnectionString("Nook") ?? AppDbContextFactory.DefaultConnectionString;
         var autoMigrate = ParseBool(Get("NOOK_AUTO_MIGRATE", "AutoMigrate")) ?? env.IsDevelopment();
         var jobs = ParseBool(Get("NOOK_BACKGROUND_JOBS", "BackgroundJobs")) ?? true;
-        var maxUploadMb = int.TryParse(Get("NOOK_MAX_UPLOAD_MB", "MaxUploadMb"), out var mb) && mb > 0 ? mb : Nook.Application.Files.FilesOptions.DefaultMaxUploadMb;
+        var configuredMaxUpload = Get("NOOK_MAX_UPLOAD_MB", "MaxUploadMb");
+        var maxUploadBytes = Nook.Application.Files.FilesOptions.Unlimited;
+        if (!string.IsNullOrWhiteSpace(configuredMaxUpload))
+        {
+            if (!long.TryParse(configuredMaxUpload, out var mb) || mb < 0)
+                throw new InvalidOperationException("NOOK_MAX_UPLOAD_MB must be a non-negative integer (0 means unlimited).");
+            if (mb > 0)
+            {
+                if (mb > (long.MaxValue - 1024L * 1024L) / (1024L * 1024L))
+                    throw new InvalidOperationException("NOOK_MAX_UPLOAD_MB is too large.");
+                maxUploadBytes = checked(mb * 1024L * 1024L);
+            }
+        }
         return new NookOptions(
             Db: db,
             DataDir: Get("NOOK_DATA_DIR", "DataDir") ?? "./data",
@@ -40,7 +52,7 @@ public sealed record NookOptions(
             AutoMigrate: autoMigrate,
             BackgroundJobs: jobs,
             CookieName: "nook_session",
-            MaxUploadBytes: maxUploadMb * 1024L * 1024L);
+            MaxUploadBytes: maxUploadBytes);
     }
 
     private static bool? ParseBool(string? value) => value?.ToLowerInvariant() switch

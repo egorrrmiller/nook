@@ -19,11 +19,20 @@ export interface EditorHost {
   toast: (message: string) => void;
   /** Uploads a file for the current node; resolves to the block props to apply (`url`, `name`). */
   uploadFile?: (file: File, blockId?: string) => Promise<UploadResult>;
+  /** Opens an app-owned attachment in the side viewer while leaving the editor usable. */
+  openFile?: (file: EditorFilePreview) => void;
   /**
    * Creates a sub-page of the current one (`[[New title]]`). The host implementation keeps its
    * query cache in sync (sidebar, breadcrumbs); the fallback talks to the API directly.
    */
   createPage: (title: string) => Promise<Node>;
+}
+
+export interface EditorFilePreview {
+  id: string;
+  name?: string;
+  mime?: string;
+  url?: string;
 }
 
 export interface UploadResult {
@@ -43,6 +52,7 @@ export interface EditorHostProviderProps {
   navigate?: (to: string) => void;
   toast?: (message: string) => void;
   uploadFile?: EditorHost['uploadFile'];
+  openFile?: EditorHost['openFile'];
   createPage?: EditorHost['createPage'];
   children: ReactNode;
 }
@@ -57,6 +67,7 @@ export function EditorHostProvider({
   navigate,
   toast,
   uploadFile,
+  openFile,
   createPage,
   children,
 }: EditorHostProviderProps) {
@@ -70,9 +81,10 @@ export function EditorHostProvider({
       pageHref: (id, blockId) => pageHref(workspaceId, id, blockId),
       toast: toast ?? ((m) => console.info('[editor]', m)),
       uploadFile,
+      openFile,
       createPage: createPage ?? ((title: string) => api.nodes.create({ kind: 'page', title, parentId: nodeId })),
     }),
-    [api, workspaceId, nodeId, navigate, toast, uploadFile, createPage],
+    [api, workspaceId, nodeId, navigate, toast, uploadFile, openFile, createPage],
   );
   return <HostContext.Provider value={value}>{children}</HostContext.Provider>;
 }

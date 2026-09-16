@@ -4,11 +4,13 @@ import type { Attachment } from '@nook/api-client';
 import { Button } from '@nook/ui';
 import { useNodeFiles, useRemoveFile } from '../../lib/queries';
 import { FileAttachmentCard } from './FileAttachmentCard';
+import { useUiStore } from '../../stores/ui';
 
 export function NodeFilesPanel({ workspaceId, nodeId, canEdit }: { workspaceId: string; nodeId: string; canEdit: boolean }) {
   const files = useNodeFiles(workspaceId, nodeId);
   const remove = useRemoveFile(workspaceId, nodeId);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const openFilePreview = useUiStore((s) => s.openFilePreview);
 
   if (files.isLoading) {
     return <div className="nook-files-panel__state" aria-busy="true"><Loader2Icon className="nook-file-card__spinner" /> Loading files…</div>;
@@ -45,6 +47,7 @@ export function NodeFilesPanel({ workspaceId, nodeId, canEdit }: { workspaceId: 
           <FileAttachmentCard
             attachment={attachment}
             compact
+            onPreview={(resource) => openFilePreview({ id: attachment.id, name: resource.name, mime: resource.mime, url: resource.url })}
             // A block-linked file is still referenced by the editor. Removing its
             // attachment row here would leave a broken media block behind.
             onRemove={canEdit && !attachment.blockId && !attachment.propertyId ? () => handleRemove(attachment) : undefined}

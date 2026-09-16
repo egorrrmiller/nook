@@ -55,7 +55,8 @@ public sealed class DiskBlobStore : IBlobStore
                 while ((read = await content.ReadAsync(buffer, ct)) > 0)
                 {
                     size += read;
-                    if (size > maxBytes) throw new PayloadTooLargeException($"The file exceeds the upload limit of {maxBytes / (1024 * 1024)} MB.");
+                    if (maxBytes != FilesOptions.Unlimited && size > maxBytes)
+                        throw new PayloadTooLargeException($"The file exceeds the upload limit of {maxBytes / (1024 * 1024)} MB.");
                     if (headLen < head.Length)
                     {
                         var n = Math.Min(head.Length - headLen, read);

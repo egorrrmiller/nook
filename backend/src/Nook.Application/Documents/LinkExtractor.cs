@@ -17,7 +17,7 @@ public static partial class LinkExtractor
     [GeneratedRegex(@"\[\[(?<title>[^\[\]\n|#]{1,200})(?:#(?<block>[^\[\]\n|]{1,80}))?(?:\|[^\[\]\n]*)?\]\]")]
     private static partial Regex Wikilink();
 
-    [GeneratedRegex(@"^/w/[^/]+/p/(?<node>[0-9a-fA-F-]{36})(?:/)?(?:\?[^#]*)?(?:#b-(?<block>[^/?#\s]+))?$")]
+    [GeneratedRegex(@"^/w/[^/]+/p/(?<node>[0-9a-fA-F-]{36})(?:/)?(?:\?[^#]*)?(?:#(?:b-(?<block>[^/?#\s]+)|page=\d+))?$")]
     private static partial Regex PagePath();
 
     public static IReadOnlyList<Link> Extract(Guid sourceNodeId, IReadOnlyList<FlatBlock> blocks)

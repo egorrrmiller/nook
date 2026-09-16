@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Nook.Api.Auth;
 using Nook.Application.Common;
 using Nook.Application.Export;
+using Nook.Application.Files;
 using Nook.Application.Import;
 using Nook.Application.Knowledge;
 using Nook.Infrastructure.Jobs;
@@ -13,9 +14,6 @@ namespace Nook.Api.Endpoints;
 /// <summary>Contracts §9.8 export (streamed zip) and import (direct, or a Hangfire job for large archives).</summary>
 public static class ExportImportEndpoints
 {
-    /// <summary>Uploads above this are streamed to disk and imported in the background.</summary>
-    public const long MaxUploadBytes = 2L * 1024 * 1024 * 1024;
-
     public static RouteGroupBuilder MapExportImportEndpoints(this RouteGroupBuilder api)
     {
         var g = api.MapGroup("/").WithTags("ExportImport").AddEndpointFilter<WorkspaceContextFilter>();
@@ -37,10 +35,11 @@ public static class ExportImportEndpoints
         g.MapPost("/import", async Task<Results<Ok<ImportResponse>, Accepted<ImportAcceptedResponse>>> (
                 [FromForm] IFormFile file, [FromForm] Guid? parentId,
                 [FromServices] ImportService service, [FromServices] DataDirectory dataDir,
-                [FromServices] IBackgroundJobClient? jobs, CancellationToken ct) =>
+                [FromServices] IBackgroundJobClient? jobs, [FromServices] FilesOptions filesOptions, CancellationToken ct) =>
             {
                 if (file is null || file.Length == 0) throw new ValidationException("A non-empty file is required.");
-                if (file.Length > MaxUploadBytes) throw new NookTooLargeException($"The upload exceeds {MaxUploadBytes / (1024 * 1024)} MB.");
+                if (filesOptions.HasUploadLimit && file.Length > filesOptions.MaxUploadBytes)
+                    throw new NookTooLargeException($"The upload exceeds {filesOptions.MaxUploadBytes / (1024 * 1024)} MB.");
                 var fileName = Path.GetFileName(file.FileName);
                 var importer = service.Resolve(fileName);
                 await service.ValidateParentAsync(parentId, ct);

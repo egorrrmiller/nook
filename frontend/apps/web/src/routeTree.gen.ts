@@ -17,8 +17,8 @@ import { Route as AppWWorkspaceIdRouteImport } from './routes/_app.w.$workspaceI
 import { Route as AppWWorkspaceIdIndexRouteImport } from './routes/_app.w.$workspaceId.index'
 import { Route as AppWWorkspaceIdGraphRouteImport } from './routes/_app.w.$workspaceId.graph'
 import { Route as AppWWorkspaceIdTrashRouteImport } from './routes/_app.w.$workspaceId.trash'
-import { Route as AppWWorkspaceIdPNodeIdRouteImport } from './routes/_app.w.$workspaceId.p.$nodeId'
 import { Route as AppWWorkspaceIdDbNodeIdRouteImport } from './routes/_app.w.$workspaceId.db.$nodeId'
+import { Route as AppWWorkspaceIdPNodeIdRouteImport } from './routes/_app.w.$workspaceId.p.$nodeId'
 import { Route as AppWWorkspaceIdSettingsIndexRouteImport } from './routes/_app.w.$workspaceId.settings.index'
 import { Route as AppWWorkspaceIdSettingsSectionRouteImport } from './routes/_app.w.$workspaceId.settings.$section'
 
@@ -61,14 +61,14 @@ const AppWWorkspaceIdTrashRoute = AppWWorkspaceIdTrashRouteImport.update({
   path: '/trash',
   getParentRoute: () => AppWWorkspaceIdRoute,
 } as any)
-const AppWWorkspaceIdPNodeIdRoute = AppWWorkspaceIdPNodeIdRouteImport.update({
-  id: '/p/$nodeId',
-  path: '/p/$nodeId',
-  getParentRoute: () => AppWWorkspaceIdRoute,
-} as any)
 const AppWWorkspaceIdDbNodeIdRoute = AppWWorkspaceIdDbNodeIdRouteImport.update({
   id: '/db/$nodeId',
   path: '/db/$nodeId',
+  getParentRoute: () => AppWWorkspaceIdRoute,
+} as any)
+const AppWWorkspaceIdPNodeIdRoute = AppWWorkspaceIdPNodeIdRouteImport.update({
+  id: '/p/$nodeId',
+  path: '/p/$nodeId',
   getParentRoute: () => AppWWorkspaceIdRoute,
 } as any)
 const AppWWorkspaceIdSettingsIndexRoute =
@@ -92,8 +92,8 @@ export interface FileRoutesByFullPath {
   '/w/$workspaceId/graph': typeof AppWWorkspaceIdGraphRoute
   '/w/$workspaceId/trash': typeof AppWWorkspaceIdTrashRoute
   '/w/$workspaceId/': typeof AppWWorkspaceIdIndexRoute
-  '/w/$workspaceId/p/$nodeId': typeof AppWWorkspaceIdPNodeIdRoute
   '/w/$workspaceId/db/$nodeId': typeof AppWWorkspaceIdDbNodeIdRoute
+  '/w/$workspaceId/p/$nodeId': typeof AppWWorkspaceIdPNodeIdRoute
   '/w/$workspaceId/settings/$section': typeof AppWWorkspaceIdSettingsSectionRoute
   '/w/$workspaceId/settings/': typeof AppWWorkspaceIdSettingsIndexRoute
 }
@@ -104,8 +104,8 @@ export interface FileRoutesByTo {
   '/w/$workspaceId/graph': typeof AppWWorkspaceIdGraphRoute
   '/w/$workspaceId/trash': typeof AppWWorkspaceIdTrashRoute
   '/w/$workspaceId': typeof AppWWorkspaceIdIndexRoute
-  '/w/$workspaceId/p/$nodeId': typeof AppWWorkspaceIdPNodeIdRoute
   '/w/$workspaceId/db/$nodeId': typeof AppWWorkspaceIdDbNodeIdRoute
+  '/w/$workspaceId/p/$nodeId': typeof AppWWorkspaceIdPNodeIdRoute
   '/w/$workspaceId/settings/$section': typeof AppWWorkspaceIdSettingsSectionRoute
   '/w/$workspaceId/settings': typeof AppWWorkspaceIdSettingsIndexRoute
 }
@@ -119,8 +119,8 @@ export interface FileRoutesById {
   '/_app/w/$workspaceId/graph': typeof AppWWorkspaceIdGraphRoute
   '/_app/w/$workspaceId/trash': typeof AppWWorkspaceIdTrashRoute
   '/_app/w/$workspaceId/': typeof AppWWorkspaceIdIndexRoute
-  '/_app/w/$workspaceId/p/$nodeId': typeof AppWWorkspaceIdPNodeIdRoute
   '/_app/w/$workspaceId/db/$nodeId': typeof AppWWorkspaceIdDbNodeIdRoute
+  '/_app/w/$workspaceId/p/$nodeId': typeof AppWWorkspaceIdPNodeIdRoute
   '/_app/w/$workspaceId/settings/$section': typeof AppWWorkspaceIdSettingsSectionRoute
   '/_app/w/$workspaceId/settings/': typeof AppWWorkspaceIdSettingsIndexRoute
 }
@@ -134,8 +134,8 @@ export interface FileRouteTypes {
     | '/w/$workspaceId/graph'
     | '/w/$workspaceId/trash'
     | '/w/$workspaceId/'
-    | '/w/$workspaceId/p/$nodeId'
     | '/w/$workspaceId/db/$nodeId'
+    | '/w/$workspaceId/p/$nodeId'
     | '/w/$workspaceId/settings/$section'
     | '/w/$workspaceId/settings/'
   fileRoutesByTo: FileRoutesByTo
@@ -146,8 +146,8 @@ export interface FileRouteTypes {
     | '/w/$workspaceId/graph'
     | '/w/$workspaceId/trash'
     | '/w/$workspaceId'
-    | '/w/$workspaceId/p/$nodeId'
     | '/w/$workspaceId/db/$nodeId'
+    | '/w/$workspaceId/p/$nodeId'
     | '/w/$workspaceId/settings/$section'
     | '/w/$workspaceId/settings'
   id:
@@ -160,8 +160,8 @@ export interface FileRouteTypes {
     | '/_app/w/$workspaceId/graph'
     | '/_app/w/$workspaceId/trash'
     | '/_app/w/$workspaceId/'
-    | '/_app/w/$workspaceId/p/$nodeId'
     | '/_app/w/$workspaceId/db/$nodeId'
+    | '/_app/w/$workspaceId/p/$nodeId'
     | '/_app/w/$workspaceId/settings/$section'
     | '/_app/w/$workspaceId/settings/'
   fileRoutesById: FileRoutesById
@@ -231,18 +231,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWWorkspaceIdTrashRouteImport
       parentRoute: typeof AppWWorkspaceIdRoute
     }
-    '/_app/w/$workspaceId/p/$nodeId': {
-      id: '/_app/w/$workspaceId/p/$nodeId'
-      path: '/p/$nodeId'
-      fullPath: '/w/$workspaceId/p/$nodeId'
-      preLoaderRoute: typeof AppWWorkspaceIdPNodeIdRouteImport
-      parentRoute: typeof AppWWorkspaceIdRoute
-    }
     '/_app/w/$workspaceId/db/$nodeId': {
       id: '/_app/w/$workspaceId/db/$nodeId'
       path: '/db/$nodeId'
       fullPath: '/w/$workspaceId/db/$nodeId'
       preLoaderRoute: typeof AppWWorkspaceIdDbNodeIdRouteImport
+      parentRoute: typeof AppWWorkspaceIdRoute
+    }
+    '/_app/w/$workspaceId/p/$nodeId': {
+      id: '/_app/w/$workspaceId/p/$nodeId'
+      path: '/p/$nodeId'
+      fullPath: '/w/$workspaceId/p/$nodeId'
+      preLoaderRoute: typeof AppWWorkspaceIdPNodeIdRouteImport
       parentRoute: typeof AppWWorkspaceIdRoute
     }
     '/_app/w/$workspaceId/settings/': {
@@ -266,8 +266,8 @@ interface AppWWorkspaceIdRouteChildren {
   AppWWorkspaceIdGraphRoute: typeof AppWWorkspaceIdGraphRoute
   AppWWorkspaceIdTrashRoute: typeof AppWWorkspaceIdTrashRoute
   AppWWorkspaceIdIndexRoute: typeof AppWWorkspaceIdIndexRoute
-  AppWWorkspaceIdPNodeIdRoute: typeof AppWWorkspaceIdPNodeIdRoute
   AppWWorkspaceIdDbNodeIdRoute: typeof AppWWorkspaceIdDbNodeIdRoute
+  AppWWorkspaceIdPNodeIdRoute: typeof AppWWorkspaceIdPNodeIdRoute
   AppWWorkspaceIdSettingsSectionRoute: typeof AppWWorkspaceIdSettingsSectionRoute
   AppWWorkspaceIdSettingsIndexRoute: typeof AppWWorkspaceIdSettingsIndexRoute
 }
@@ -276,8 +276,8 @@ const AppWWorkspaceIdRouteChildren: AppWWorkspaceIdRouteChildren = {
   AppWWorkspaceIdGraphRoute: AppWWorkspaceIdGraphRoute,
   AppWWorkspaceIdTrashRoute: AppWWorkspaceIdTrashRoute,
   AppWWorkspaceIdIndexRoute: AppWWorkspaceIdIndexRoute,
-  AppWWorkspaceIdPNodeIdRoute: AppWWorkspaceIdPNodeIdRoute,
   AppWWorkspaceIdDbNodeIdRoute: AppWWorkspaceIdDbNodeIdRoute,
+  AppWWorkspaceIdPNodeIdRoute: AppWWorkspaceIdPNodeIdRoute,
   AppWWorkspaceIdSettingsSectionRoute: AppWWorkspaceIdSettingsSectionRoute,
   AppWWorkspaceIdSettingsIndexRoute: AppWWorkspaceIdSettingsIndexRoute,
 }

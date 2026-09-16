@@ -464,6 +464,7 @@
 
 /* ------------------------------------------------------- Notion typography */
 .nook-editor .bn-editor {
+  tab-size: 4;
   /* Keep the selection ring inside AppShell's vertical scroll container. */
   box-sizing: border-box;
   padding-inline: 2px;
@@ -1047,6 +1048,21 @@
 .nook-pdf__download {
   margin-left: auto;
   color: inherit;
+}
+
+.nook-pdf__side-preview {
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--foreground-secondary);
+  padding: 4px;
+  cursor: pointer;
+}
+.nook-pdf__side-preview:hover {
+  background: var(--accent);
+  color: var(--foreground);
 }
 
 /* ------------------------------------------------------ mention / date */

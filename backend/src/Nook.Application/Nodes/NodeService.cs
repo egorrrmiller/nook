@@ -122,7 +122,8 @@ public sealed class NodeService(
         var parentHadChildren = true;
         if (request.ParentId is Guid parentId)
         {
-            await RequireAsync(parentId, WorkspaceRole.Editor, ct);
+            var (parent, _) = await RequireAsync(parentId, WorkspaceRole.Editor, ct);
+            if (parent.Kind == NodeKind.File) throw new ValidationException("Files cannot contain child nodes.");
             parentHadChildren = await tree.HasLiveChildrenAsync(parentId, ct);
         }
         else if (ctx.MembershipRole is null || !ctx.MembershipRole.Value.CanEdit())
@@ -190,6 +191,7 @@ public sealed class NodeService(
             if (newParentId is Guid np)
             {
                 var (parent, _) = await RequireAsync(np, WorkspaceRole.Editor, ct);
+                if (parent.Kind == NodeKind.File) throw new ValidationException("Files cannot contain child nodes.");
                 var ancestors = await access.AncestorIdsAsync(parent.ParentId, ct);
                 if (ancestors.Contains(node.Id)) throw new ValidationException("Cannot move a node into its own subtree.");
             }

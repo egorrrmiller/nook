@@ -7,9 +7,9 @@ import {
   type ReactCustomBlockRenderProps,
 } from '@blocknote/react';
 import { ImageIcon } from 'lucide-react';
-import type { ComponentProps } from 'react';
+import { useEffect, useState, type ComponentProps } from 'react';
 import { useOptionalEditorHost } from '../../host-context';
-import { imageSrcSet } from '../../media/files';
+import { attachmentIdFromUrl, imageSrcSet } from '../../media/files';
 
 type ImageProps = ReactCustomBlockRenderProps<typeof createImageBlockConfig>;
 
@@ -18,12 +18,27 @@ function NookImagePreview(props: Omit<ImageProps, 'contentRef'>) {
   const host = useOptionalEditorHost();
   const url = props.block.props.url;
   const resolved = useResolveUrl(url);
-  const responsive = host ? imageSrcSet(host.api, url) : null;
+  const attachmentId = attachmentIdFromUrl(url);
+  const nameSuggestsSvg = props.block.props.name.toLowerCase().endsWith('.svg');
+  const [isSvg, setIsSvg] = useState(nameSuggestsSvg);
+
+  useEffect(() => {
+    setIsSvg(nameSuggestsSvg);
+    if (!host || !attachmentId || nameSuggestsSvg) return;
+    let live = true;
+    host.api.files.meta(attachmentId).then((file) => {
+      if (live && file.mime.toLowerCase() === 'image/svg+xml') setIsSvg(true);
+    }).catch(() => {});
+    return () => { live = false; };
+  }, [attachmentId, host, nameSuggestsSvg]);
+
+  const responsive = host && !isSvg ? imageSrcSet(host.api, url) : null;
   const src = resolved.loadingState === 'loading' ? url : resolved.downloadUrl;
+  const previewSrc = host && attachmentId && isSvg ? host.api.files.previewUrl(attachmentId) : (responsive?.src ?? src);
   return (
     <img
       className="bn-visual-media"
-      src={responsive?.src ?? src}
+      src={previewSrc}
       srcSet={responsive?.srcSet}
       sizes={responsive?.sizes}
       alt={props.block.props.name || ''}

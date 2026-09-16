@@ -8,7 +8,12 @@ import {
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core';
-import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { MoreHorizontalIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -53,11 +58,13 @@ export function FavoritesList({ workspaceId }: { workspaceId: string }) {
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={items.map((f) => f.nodeId)} strategy={verticalListSortingStrategy}>
         <ul className="flex flex-col gap-0.5" data-testid="favorites-list" aria-label="Favorites">
-          {tree.rows.map((row) => row.favorite ? (
-            <FavoriteRow key={row.node.id} fav={row.favorite} actions={actions} />
-          ) : (
-            <FavoriteDescendantRow key={row.node.id} node={row.node} depth={row.depth} />
-          ))}
+          {tree.rows.map((row) =>
+            row.favorite ? (
+              <FavoriteRow key={row.node.id} fav={row.favorite} actions={actions} />
+            ) : (
+              <FavoriteDescendantRow key={row.node.id} node={row.node} depth={row.depth} />
+            ),
+          )}
         </ul>
       </SortableContext>
     </DndContext>
@@ -74,46 +81,51 @@ interface FavoriteTreeRow {
 function useFavoriteTree(workspaceId: string, favorites: Favorite[]) {
   const rootIds = useMemo(() => favorites.map((favorite) => favorite.nodeId), [favorites]);
   const [parents, setParents] = useState<string[]>(rootIds);
-  const requestedParents = useMemo(() => Array.from(new Set([...rootIds, ...parents])), [rootIds, parents]);
+  const requestedParents = useMemo(
+    () => Array.from(new Set([...rootIds, ...parents])),
+    [rootIds, parents],
+  );
   const queries = useQueries({
     queries: requestedParents.map((parentId) => nodesQuery(workspaceId, parentId, true)),
   });
-  const childrenByParent = useMemo(() => {
-    const result = new Map<string, Node[]>();
-    requestedParents.forEach((parentId, index) => result.set(parentId, queries[index]?.data ?? []));
-    return result;
-  }, [requestedParents, ...queries.map((query) => query.data)]);
-  const nextParents = useMemo(() => {
-    const result: string[] = [];
-    for (const children of childrenByParent.values()) {
-      for (const node of children) if (!node.deletedAt && node.hasChildren !== false) result.push(node.id);
-    }
-    return result;
-  }, [childrenByParent]);
+  // Query count follows the discovered tree, so a spread dependency array changes length.
+  // This projection is cheap and avoids React's dynamic-dependency warning.
+  const childrenByParent = new Map<string, Node[]>();
+  requestedParents.forEach((parentId, index) =>
+    childrenByParent.set(parentId, queries[index]?.data ?? []),
+  );
+  const nextParents: string[] = [];
+  for (const children of childrenByParent.values()) {
+    for (const node of children)
+      if (!node.deletedAt && node.hasChildren !== false) nextParents.push(node.id);
+  }
+  const nextParentsKey = JSON.stringify(nextParents);
 
   useEffect(() => {
-    setParents((current) => current.length === nextParents.length && current.every((id, index) => id === nextParents[index]) ? current : nextParents);
-  }, [nextParents]);
+    const wanted = JSON.parse(nextParentsKey) as string[];
+    setParents((current) =>
+      current.length === wanted.length && current.every((id, index) => id === wanted[index])
+        ? current
+        : wanted,
+    );
+  }, [nextParentsKey]);
 
-  const rows = useMemo(() => {
-    const roots = new Map(favorites.map((favorite) => [favorite.nodeId, favorite]));
-    const result: FavoriteTreeRow[] = [];
-    const visiting = new Set<string>();
-    const walk = (parentId: string, depth: number) => {
-      if (!visiting.add(parentId)) return;
-      for (const node of childrenByParent.get(parentId) ?? []) {
-        if (node.deletedAt || roots.has(node.id)) continue;
-        result.push({ node, depth });
-        walk(node.id, depth + 1);
-      }
-      visiting.delete(parentId);
-    };
-    for (const favorite of favorites) {
-      result.push({ node: favorite.node, depth: 0, favorite });
-      walk(favorite.nodeId, 1);
+  const roots = new Map(favorites.map((favorite) => [favorite.nodeId, favorite]));
+  const rows: FavoriteTreeRow[] = [];
+  const visiting = new Set<string>();
+  const walk = (parentId: string, depth: number) => {
+    if (!visiting.add(parentId)) return;
+    for (const node of childrenByParent.get(parentId) ?? []) {
+      if (node.deletedAt || roots.has(node.id)) continue;
+      rows.push({ node, depth });
+      walk(node.id, depth + 1);
     }
-    return result;
-  }, [childrenByParent, favorites]);
+    visiting.delete(parentId);
+  };
+  for (const favorite of favorites) {
+    rows.push({ node: favorite.node, depth: 0, favorite });
+    walk(favorite.nodeId, 1);
+  }
 
   return { rows };
 }
@@ -143,10 +155,18 @@ function FavoriteDescendantRow({ node, depth }: { node: Node; depth: number }) {
   );
 }
 
-function FavoriteRow({ fav, actions }: { fav: Favorite; actions: ReturnType<typeof useNodeActions> }) {
+function FavoriteRow({
+  fav,
+  actions,
+}: {
+  fav: Favorite;
+  actions: ReturnType<typeof useNodeActions>;
+}) {
   const params = useParams({ strict: false }) as { nodeId?: string };
   const [menuOpen, setMenuOpen] = useState(false);
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: fav.nodeId });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: fav.nodeId,
+  });
   const active = params.nodeId === fav.nodeId;
   const { node } = fav;
   return (
@@ -176,7 +196,10 @@ function FavoriteRow({ fav, actions }: { fav: Favorite; actions: ReturnType<type
         {nodeTitle(node.title)}
       </Link>
       <span
-        className={cn('ml-auto opacity-0 transition-opacity group-hover:opacity-100', menuOpen && 'opacity-100')}
+        className={cn(
+          'ml-auto opacity-0 transition-opacity group-hover:opacity-100',
+          menuOpen && 'opacity-100',
+        )}
         onPointerDown={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
       >

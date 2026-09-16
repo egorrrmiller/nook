@@ -5,6 +5,13 @@ export type ThemeSetting = 'system' | 'light' | 'dark' | 'hc';
 export const THEMES: ThemeSetting[] = ['system', 'light', 'dark', 'hc'];
 export type PageMode = 'edit' | 'focus' | 'read';
 
+export interface FilePreviewTarget {
+  id: string;
+  name?: string;
+  mime?: string;
+  url?: string;
+}
+
 // Keep enough room for readable page titles and comfortable pointer targets.
 export const SIDEBAR_MIN = 220;
 export const SIDEBAR_DEFAULT = 280;
@@ -43,6 +50,9 @@ interface UiState {
   setInspector: (v: InspectorTab | null) => void;
   /** Opens `v`, or closes the inspector when `v` is already the active tab. */
   toggleInspector: (v: InspectorTab) => void;
+  /** File rendered beside the page so the editor remains usable for notes. */
+  filePreview: FilePreviewTarget | null;
+  openFilePreview: (file: FilePreviewTarget) => void;
   /** Full-text SearchDialog visibility (contracts §10). Not persisted. */
   searchOpen: boolean;
   setSearchOpen: (open: boolean) => void;
@@ -53,7 +63,7 @@ interface UiState {
   toggleReadMode: () => void;
 }
 
-export type InspectorTab = 'backlinks' | 'history' | 'info';
+export type InspectorTab = 'backlinks' | 'history' | 'info' | 'file';
 
 export const useUiStore = create<UiState>()(
   persist(
@@ -98,6 +108,8 @@ export const useUiStore = create<UiState>()(
       inspector: null,
       setInspector: (inspector) => set({ inspector }),
       toggleInspector: (v) => set({ inspector: get().inspector === v ? null : v }),
+      filePreview: null,
+      openFilePreview: (filePreview) => set({ filePreview, inspector: 'file' }),
       searchOpen: false,
       setSearchOpen: (searchOpen) => set({ searchOpen }),
       pageMode: 'edit',

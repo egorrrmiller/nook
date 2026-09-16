@@ -78,7 +78,7 @@ public sealed class FileService(
         await using (fetched)
         {
             if (fetched.StatusCode is < 200 or >= 300) throw new ValidationException($"The URL answered HTTP {fetched.StatusCode}.");
-            if (fetched.ContentLength is > 0 && fetched.ContentLength > options.MaxUploadBytes)
+            if (options.HasUploadLimit && fetched.ContentLength is > 0 && fetched.ContentLength > options.MaxUploadBytes)
                 throw new PayloadTooLargeException($"The file exceeds the upload limit of {options.MaxUploadBytes / (1024 * 1024)} MB.");
 
             var stored = await blobs.StoreAsync(fetched.Content, options.MaxUploadBytes, ct);
@@ -99,6 +99,17 @@ public sealed class FileService(
     {
         var (attachment, _) = await RequireAsync(id, WorkspaceRole.Viewer, ct);
         return AttachmentDto.From(attachment);
+    }
+
+    public async Task<ExtractedFileTextDto> GetExtractedTextAsync(Guid id, CancellationToken ct)
+    {
+        var (attachment, _) = await RequireAsync(id, WorkspaceRole.Viewer, ct);
+        var meta = AttachmentMeta.From(attachment.Meta);
+        var text = attachment.ExtractedText ?? "";
+        var pages = attachment.Mime == "application/pdf"
+            ? text.Split('\f').Select((page, index) => new ExtractedTextPage(index + 1, page.Trim())).ToArray()
+            : Array.Empty<ExtractedTextPage>();
+        return new ExtractedFileTextDto(text.Replace("\f", "\n"), pages, meta.TextExtracted is not null, meta.TextExtracted == true);
     }
 
     /// <summary>Loads an attachment and asserts the caller holds <paramref name="minimum"/> on its node.</summary>

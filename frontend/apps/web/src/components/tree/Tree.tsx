@@ -41,7 +41,15 @@ import { nodesQuery, useFavorites, useMoveNode, useUpdateNode } from '../../lib/
 import { nodeTitle } from '../../lib/utils';
 import { toast } from '../../stores/toast';
 import { useUiStore } from '../../stores/ui';
-import { computeDrop, flattenTree, INDENT, ROOT_KEY, type DropTarget, type FlatItem, type Level } from './model';
+import {
+  computeDrop,
+  flattenTree,
+  INDENT,
+  ROOT_KEY,
+  type DropTarget,
+  type FlatItem,
+  type Level,
+} from './model';
 import { NodeIcon } from './NodeIcon';
 import { NodeMenuItems, useNodeActions, type NodeActions } from './NodeMenu';
 
@@ -61,34 +69,41 @@ const ROW_LEFT = 8;
 function useFlatTree(workspaceId: string, scope: 'private' | 'shared', showArchived: boolean) {
   const expanded = useUiStore((s) => s.expanded);
   const { data: favorites } = useFavorites(workspaceId);
-  const favoriteIds = useMemo(() => new Set((favorites ?? []).map((favorite) => favorite.nodeId)), [favorites]);
+  const favoriteIds = useMemo(
+    () => new Set((favorites ?? []).map((favorite) => favorite.nodeId)),
+    [favorites],
+  );
   const [parents, setParents] = useState<string[]>([]);
   const queries = useQueries({
     // The archived toggle belongs to the Private section. Shared roots stay live-only even when
     // the user asks to inspect archived private pages.
-    queries: [null, ...parents].map((p) => nodesQuery(workspaceId, p, scope === 'private' && showArchived)),
+    queries: [null, ...parents].map((p) =>
+      nodesQuery(workspaceId, p, scope === 'private' && showArchived),
+    ),
   });
-  const levels = useMemo(() => {
-    const m = new Map<string, Level>();
-    [null, ...parents].forEach((p, i) => {
-      const q = queries[i]!;
-      let nodes = q.data;
-      if (p === null && nodes) {
-        nodes = nodes.filter((n) => (scope === 'shared' ? n.effectiveRole !== 'owner' : n.effectiveRole === 'owner'));
-      }
-      if (scope === 'private' && nodes && favoriteIds.size > 0) {
-        nodes = nodes.filter((node) => !favoriteIds.has(node.id));
-      }
-      m.set(p ?? ROOT_KEY, { nodes, isPending: q.isPending });
-    });
-    return m;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [parents, scope, favoriteIds, ...queries.map((q) => q.data), ...queries.map((q) => q.isPending)]);
-  const items = useMemo(() => flattenTree(levels, expanded, showArchived), [levels, expanded, showArchived]);
+  // `useQueries` has a dynamic length. Building these cheap projections directly avoids a
+  // dynamic hook dependency array (and the React warning it causes when folders expand).
+  const levels = new Map<string, Level>();
+  [null, ...parents].forEach((p, i) => {
+    const q = queries[i]!;
+    let nodes = q.data;
+    if (p === null && nodes) {
+      nodes = nodes.filter((n) =>
+        scope === 'shared' ? n.effectiveRole !== 'owner' : n.effectiveRole === 'owner',
+      );
+    }
+    if (scope === 'private' && nodes && favoriteIds.size > 0) {
+      nodes = nodes.filter((node) => !favoriteIds.has(node.id));
+    }
+    levels.set(p ?? ROOT_KEY, { nodes, isPending: q.isPending });
+  });
+  const items = flattenTree(levels, expanded, showArchived);
   // Fixed point: fetch children for every visible expanded node.
   useEffect(() => {
     const wanted = items.filter((i) => i.expanded).map((i) => i.id);
-    setParents((prev) => (prev.length === wanted.length && prev.every((p, i) => p === wanted[i]) ? prev : wanted));
+    setParents((prev) =>
+      prev.length === wanted.length && prev.every((p, i) => p === wanted[i]) ? prev : wanted,
+    );
   }, [items]);
   const rootPending = queries[0]?.isPending ?? true;
   const rootError = queries[0]?.isError ?? false;
@@ -116,7 +131,9 @@ export function Tree({ workspaceId, scope = 'private', emptyText }: TreeProps) {
   const expandTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { keyboardCodes: { start: ['Space'], cancel: ['Escape'], end: ['Space'] } }),
+    useSensor(KeyboardSensor, {
+      keyboardCodes: { start: ['Space'], cancel: ['Escape'], end: ['Space'] },
+    }),
   );
 
   useEffect(() => {
@@ -138,15 +155,28 @@ export function Tree({ workspaceId, scope = 'private', emptyText }: TreeProps) {
     if (!over) return null;
     const rect = over.rect;
     const translated = active.rect.current.translated;
-    const y = pointer.current?.y ?? (translated ? translated.top + translated.height / 2 : rect.top + rect.height / 2);
+    const y =
+      pointer.current?.y ??
+      (translated ? translated.top + translated.height / 2 : rect.top + rect.height / 2);
     const ratio = Math.max(0, Math.min(1, (y - rect.top) / rect.height));
-    return computeDrop({ items, activeId: String(active.id), overId: String(over.id), ratio, offsetX: delta.x });
+    return computeDrop({
+      items,
+      activeId: String(active.id),
+      overId: String(over.id),
+      ratio,
+      offsetX: delta.x,
+    });
   };
 
   const setDropTarget = (next: DropTarget | null) => {
     dropRef.current = next;
     setDrop((prev) =>
-      prev && next && prev.kind === next.kind && prev.parentId === next.parentId && prev.overId === next.overId && prev.depth === next.depth
+      prev &&
+      next &&
+      prev.kind === next.kind &&
+      prev.parentId === next.parentId &&
+      prev.overId === next.overId &&
+      prev.depth === next.depth
         ? prev
         : next,
     );
@@ -202,7 +232,9 @@ export function Tree({ workspaceId, scope = 'private', emptyText }: TreeProps) {
     if (activeId) return; // dnd-kit's keyboard sensor owns the arrows while dragging
     const row = (e.target as HTMLElement).closest<HTMLElement>('[data-tree-row]');
     if (!row) return;
-    const rows = Array.from(listRef.current?.querySelectorAll<HTMLElement>('[data-tree-row]') ?? []);
+    const rows = Array.from(
+      listRef.current?.querySelectorAll<HTMLElement>('[data-tree-row]') ?? [],
+    );
     const idx = rows.indexOf(row);
     const item = items[idx];
     if (!item) return;
@@ -235,7 +267,10 @@ export function Tree({ workspaceId, scope = 'private', emptyText }: TreeProps) {
         break;
       case 'Enter':
         e.preventDefault();
-        void navigate({ to: '/w/$workspaceId/p/$nodeId', params: { workspaceId, nodeId: item.id } });
+        void navigate({
+          to: '/w/$workspaceId/p/$nodeId',
+          params: { workspaceId, nodeId: item.id },
+        });
         break;
     }
   };
@@ -315,12 +350,25 @@ interface TreeRowProps {
   onToggle: () => void;
 }
 
-function TreeRow({ item, actions, active, focusable, dragging, drop, dropInside, onToggle }: TreeRowProps) {
+function TreeRow({
+  item,
+  actions,
+  active,
+  focusable,
+  dragging,
+  drop,
+  dropInside,
+  onToggle,
+}: TreeRowProps) {
   const { node, depth } = item;
   const [renaming, setRenaming] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const update = useUpdateNode(node.workspaceId);
-  const { attributes, listeners, setNodeRef: setDragRef } = useDraggable({ id: item.id, disabled: renaming });
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDragRef,
+  } = useDraggable({ id: item.id, disabled: renaming });
   const { setNodeRef: setDropRef } = useDroppable({ id: item.id });
   const setRefs = useCallback(
     (el: HTMLElement | null) => {
@@ -334,11 +382,22 @@ function TreeRow({ item, actions, active, focusable, dragging, drop, dropInside,
 
   const guides: ReactNode[] = [];
   for (let d = 1; d <= depth; d++) {
-    guides.push(<span key={d} className="nook-tree-guide" style={{ left: ROW_LEFT + (d - 1) * INDENT + 10 }} />);
+    guides.push(
+      <span
+        key={d}
+        className="nook-tree-guide"
+        style={{ left: ROW_LEFT + (d - 1) * INDENT + 10 }}
+      />,
+    );
   }
 
   return (
-    <li role="treeitem" aria-expanded={item.hasChildren ? item.expanded : undefined} aria-selected={active} className="relative">
+    <li
+      role="treeitem"
+      aria-expanded={item.hasChildren ? item.expanded : undefined}
+      aria-selected={active}
+      className="relative"
+    >
       <ContextMenu>
         <ContextMenuTrigger
           ref={setRefs}
@@ -361,7 +420,12 @@ function TreeRow({ item, actions, active, focusable, dragging, drop, dropInside,
           {guides}
           {/* Icon slot: shows the page icon; on hover it turns into the expand toggle (when it has children). */}
           <span className="relative flex size-7 shrink-0 items-center justify-center">
-            <span className={cn('absolute inset-0 flex items-center justify-center', item.hasChildren && 'group-hover:opacity-0')}>
+            <span
+              className={cn(
+                'absolute inset-0 flex items-center justify-center',
+                item.hasChildren && 'group-hover:opacity-0',
+              )}
+            >
               <NodeIcon icon={node.icon} kind={node.kind} size={19} />
             </span>
             {item.hasChildren ? (
@@ -379,7 +443,10 @@ function TreeRow({ item, actions, active, focusable, dragging, drop, dropInside,
                 className="absolute inset-0 rounded-[var(--radius-sm)] text-fg-muted opacity-0 hover:bg-bg-active hover:text-fg group-hover:opacity-100"
               >
                 <ChevronRightIcon
-                  className={cn('size-[17px] transition-transform duration-[var(--duration)]', item.expanded && 'rotate-90')}
+                  className={cn(
+                    'size-[17px] transition-transform duration-[var(--duration)]',
+                    item.expanded && 'rotate-90',
+                  )}
                 />
               </IconButton>
             ) : null}
@@ -406,7 +473,9 @@ function TreeRow({ item, actions, active, focusable, dragging, drop, dropInside,
               }}
             >
               {nodeTitle(node.title)}
-              {item.archived ? <span className="ml-1 text-[11px] text-fg-muted">(archived)</span> : null}
+              {item.archived ? (
+                <span className="ml-1 text-[11px] text-fg-muted">(archived)</span>
+              ) : null}
             </Link>
           )}
           {/* Owned by frontend-knowledge (contracts §10); renders nothing until that slice lands. */}
@@ -430,7 +499,7 @@ function TreeRow({ item, actions, active, focusable, dragging, drop, dropInside,
                 <NodeMenuItems node={node} actions={actions} onRename={() => setRenaming(true)} />
               </MenuContent>
             </Menu>
-            {node.effectiveRole !== 'viewer' ? (
+            {node.effectiveRole !== 'viewer' && node.kind !== 'file' ? (
               <IconButton
                 label="Add a page inside"
                 size="icon-sm"

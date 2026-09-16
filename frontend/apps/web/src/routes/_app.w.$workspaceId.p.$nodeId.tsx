@@ -4,6 +4,7 @@ import { api } from '../lib/api';
 import { ancestorsQuery, nodeQuery } from '../lib/queries';
 import { PageView } from '../components/page/PageView';
 import { CollectionViewScreen } from '../features/collections';
+import { FileNodeView } from '../features/files/FileNodeView';
 
 export const Route = createFileRoute('/_app/w/$workspaceId/p/$nodeId')({
   loader: async ({ context, params }) => {
@@ -24,6 +25,7 @@ function NodePage() {
   const node = Route.useLoaderData();
   useRecordVisit(workspaceId, nodeId);
   if (node.kind === 'database') return <CollectionViewScreen workspaceId={workspaceId} nodeId={nodeId} readOnly={node.effectiveRole === 'viewer'} />;
+  if (node.kind === 'file') return <FileNodeView workspaceId={workspaceId} node={node} />;
   return <PageView key={nodeId} workspaceId={workspaceId} nodeId={nodeId} />;
 }
 

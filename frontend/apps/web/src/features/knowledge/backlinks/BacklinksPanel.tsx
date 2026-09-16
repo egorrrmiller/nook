@@ -71,7 +71,7 @@ export function BacklinksPanel({ workspaceId, nodeId }: { workspaceId: string; n
             title="No backlinks yet"
             hint={
               <>
-                Mention this page from another page with <kbd className="rounded-sm border border-border px-1 font-mono">@</kbd> or{' '}
+                Mention this item from another page with <kbd className="rounded-sm border border-border px-1 font-mono">@</kbd> or{' '}
                 <kbd className="rounded-sm border border-border px-1 font-mono">[[</kbd> and it will show up here.
               </>
             }
@@ -137,7 +137,7 @@ export function BacklinksPanel({ workspaceId, nodeId }: { workspaceId: string; n
         {outgoing.isPending ? (
           <Skeleton className="mx-1 h-6 w-1/2" />
         ) : !outgoing.data?.length ? (
-          <p className="px-2 py-2 text-xs text-muted-foreground">This page does not link anywhere yet.</p>
+          <p className="px-2 py-2 text-xs text-muted-foreground">This item does not link anywhere yet.</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
             {outgoing.data.map((l, i) => (

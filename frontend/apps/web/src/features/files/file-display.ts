@@ -16,6 +16,7 @@ export interface FileResource {
   mime: string;
   size?: number;
   thumbUrl?: string | null;
+  previewUrl?: string;
   meta?: Attachment['meta'];
   external?: boolean;
 }
@@ -60,6 +61,7 @@ export function resourceFromAttachment(attachment: Attachment): FileResource {
     mime: attachment.mime,
     size: attachment.size,
     thumbUrl: attachment.thumbUrl,
+    ...(attachment.mime.toLowerCase() === 'image/svg+xml' ? { previewUrl: `${attachment.url}/preview` } : {}),
     meta: attachment.meta,
   };
 }

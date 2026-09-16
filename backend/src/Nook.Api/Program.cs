@@ -5,6 +5,7 @@ using Hangfire;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.RateLimiting;
 using Nook.Api.Auth;
 using Nook.Api.Endpoints;
@@ -13,6 +14,7 @@ using Nook.Api.Notion;
 using Nook.Application;
 using Nook.Application.Collab;
 using Nook.Application.Common;
+using Nook.Application.Files;
 using Nook.Infrastructure;
 using Nook.Infrastructure.Jobs;
 using Nook.Infrastructure.Persistence;
@@ -32,6 +34,13 @@ if (string.Equals(envName, "Development", StringComparison.OrdinalIgnoreCase))
 
 var builder = WebApplication.CreateBuilder(args);
 var options = NookOptions.Load(builder.Configuration, builder.Environment);
+
+// Self-hosted instances are unlimited unless their operator explicitly chooses a cap. This also
+// covers MVC/form-based imports; the attachment endpoint itself streams multipart data to disk.
+builder.WebHost.ConfigureKestrel(server =>
+    server.Limits.MaxRequestBodySize = options.MaxUploadBytes == FilesOptions.Unlimited ? null : options.MaxUploadBytes + 1024 * 1024);
+builder.Services.Configure<FormOptions>(form =>
+    form.MultipartBodyLengthLimit = options.MaxUploadBytes == FilesOptions.Unlimited ? long.MaxValue : options.MaxUploadBytes + 1024 * 1024);
 
 builder.Host.UseSerilog((ctx, cfg) => cfg
     .ReadFrom.Configuration(ctx.Configuration)

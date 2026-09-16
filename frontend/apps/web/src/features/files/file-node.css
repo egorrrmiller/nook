@@ -1,0 +1,118 @@
+.nook-file-node {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  background: var(--background);
+}
+
+.nook-file-node__main {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.nook-file-node__main > .nook-file-viewer {
+  height: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.nook-file-node__titlebar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.nook-file-node__title {
+  min-width: 0;
+  flex: 1 1 auto;
+  height: 32px;
+  border-color: transparent;
+  background: transparent;
+  padding-inline: 4px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.nook-file-node__title:hover,
+.nook-file-node__title:focus {
+  border-color: var(--border);
+  background: var(--accent);
+}
+
+.nook-file-node__state {
+  display: flex;
+  min-height: 180px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--foreground-tertiary);
+  font-size: 13px;
+}
+
+.nook-file-node__state > svg {
+  width: 18px;
+  height: 18px;
+}
+.nook-file-node__state--error {
+  color: var(--destructive);
+}
+
+.nook-file-node__references {
+  position: sticky;
+  top: 0;
+  display: flex;
+  width: min(340px, 34vw);
+  height: 100%;
+  flex: 0 0 auto;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  background: var(--background);
+}
+
+.nook-file-node__references > header {
+  display: flex;
+  min-height: 48px;
+  align-items: baseline;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.nook-file-node__references > header span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--foreground-tertiary);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nook-file-node__references-body {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+@media (max-width: 900px) {
+  .nook-file-node {
+    flex-direction: column;
+  }
+  .nook-file-node__references {
+    position: static;
+    width: 100%;
+    height: auto;
+    min-height: 260px;
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
+}

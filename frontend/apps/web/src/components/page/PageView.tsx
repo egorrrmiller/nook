@@ -137,6 +137,7 @@ export function PageView({ workspaceId, nodeId }: { workspaceId: string; nodeId:
             navigate={goTo}
             toast={toast}
             uploadFile={uploads.upload}
+            openFile={(file) => useUiStore.getState().openFilePreview(file)}
             createPage={(title) => create.mutateAsync({ kind: 'page', title, parentId: nodeId })}
             header={({ titleText, focusEditor, readOnly: ro, synced }) => (
               <>

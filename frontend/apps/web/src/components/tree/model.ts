@@ -36,7 +36,9 @@ export function flattenTree(
   const out: FlatItem[] = [];
   const walk = (parentId: string | null, depth: number) => {
     const level = levels.get(parentId ?? ROOT_KEY);
-    const nodes = (level?.nodes ?? []).filter((n) => !n.deletedAt && (showArchived || !n.archivedAt));
+    const nodes = (level?.nodes ?? []).filter(
+      (n) => !n.deletedAt && (showArchived || !n.archivedAt),
+    );
     nodes.forEach((node, index) => {
       const hasChildren = node.hasChildren !== false;
       const isExpanded = hasChildren && !!expanded[node.id];
@@ -94,7 +96,10 @@ export interface DropInput {
   indent?: number;
 }
 
-function positionBetween(a: string | null | undefined, b: string | null | undefined): string | undefined {
+function positionBetween(
+  a: string | null | undefined,
+  b: string | null | undefined,
+): string | undefined {
   const va = a && isValidOrderKey(a) ? a : null;
   const vb = b && isValidOrderKey(b) ? b : null;
   try {
@@ -113,7 +118,14 @@ function positionBetween(a: string | null | undefined, b: string | null | undefi
  * horizontal offset choosing the depth, like Notion / dnd-kit's sortable tree), middle = inside.
  * Returns null for no-ops and illegal drops (into own subtree).
  */
-export function computeDrop({ items, activeId, overId, ratio, offsetX, indent = INDENT }: DropInput): DropTarget | null {
+export function computeDrop({
+  items,
+  activeId,
+  overId,
+  ratio,
+  offsetX,
+  indent = INDENT,
+}: DropInput): DropTarget | null {
   if (activeId === overId) return null;
   const byId = new Map(items.map((i) => [i.id, i]));
   const active = byId.get(activeId);
@@ -156,10 +168,18 @@ export function computeDrop({ items, activeId, overId, ratio, offsetX, indent = 
     const depth = Math.max(minDepth, Math.min(maxDepth, wanted));
 
     if (depth === over.depth + 1) {
+      if (over.node.kind === 'file') return null;
       if (over.expanded) {
         const first = siblingsOf(over.id)[0];
-        if (first?.id === activeId || (active.parentId === over.id && active.index === 0)) return null;
-        return { kind: 'inside', parentId: over.id, depth, position: positionBetween(null, first?.node.position), overId };
+        if (first?.id === activeId || (active.parentId === over.id && active.index === 0))
+          return null;
+        return {
+          kind: 'inside',
+          parentId: over.id,
+          depth,
+          position: positionBetween(null, first?.node.position),
+          overId,
+        };
       }
       return { kind: 'inside', parentId: over.id, depth, position: undefined, overId };
     }
@@ -180,10 +200,17 @@ export function computeDrop({ items, activeId, overId, ratio, offsetX, indent = 
     };
   }
 
+  if (over.node.kind === 'file') return null;
   if (over.expanded) {
     const first = siblingsOf(over.id)[0];
     if (active.parentId === over.id && active.index === 0) return null;
-    return { kind: 'inside', parentId: over.id, depth: over.depth + 1, position: positionBetween(null, first?.node.position), overId };
+    return {
+      kind: 'inside',
+      parentId: over.id,
+      depth: over.depth + 1,
+      position: positionBetween(null, first?.node.position),
+      overId,
+    };
   }
   if (active.parentId === over.id) return null;
   return { kind: 'inside', parentId: over.id, depth: over.depth + 1, position: undefined, overId };

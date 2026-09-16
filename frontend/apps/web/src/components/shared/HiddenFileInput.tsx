@@ -3,11 +3,18 @@ import { cn } from '@nook/ui';
 
 export interface HiddenFileInputProps extends Omit<ComponentProps<'input'>, 'type' | 'onChange'> {
   inputRef?: RefObject<HTMLInputElement | null>;
-  onFile: (file: File) => void;
+  onFile?: (file: File) => void;
+  onFiles?: (files: File[]) => void;
 }
 
 /** Shared hidden file chooser. Resetting the value allows selecting the same file again. */
-export function HiddenFileInput({ inputRef, onFile, className, ...props }: HiddenFileInputProps) {
+export function HiddenFileInput({
+  inputRef,
+  onFile,
+  onFiles,
+  className,
+  ...props
+}: HiddenFileInputProps) {
   return (
     <input
       {...props}
@@ -15,8 +22,11 @@ export function HiddenFileInput({ inputRef, onFile, className, ...props }: Hidde
       type="file"
       className={cn('sr-only', className)}
       onChange={(event) => {
-        const file = event.currentTarget.files?.[0];
-        if (file) onFile(file);
+        const files = Array.from(event.currentTarget.files ?? []);
+        if (files.length) {
+          onFiles?.(files);
+          if (onFile) onFile(files[0]!);
+        }
         event.currentTarget.value = '';
       }}
     />

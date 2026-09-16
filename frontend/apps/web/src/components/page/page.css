@@ -380,6 +380,9 @@
   max-height: 100vh;
   box-shadow: -8px 0 24px color-mix(in srgb, var(--foreground) 5%, transparent);
 }
+.nook-inspector--file {
+  width: min(640px, 52vw);
+}
 .nook-inspector__tabs {
   display: flex;
   align-items: center;
@@ -416,6 +419,9 @@
   min-height: 0;
   overflow-y: auto;
 }
+.nook-inspector--file .nook-inspector__body {
+  overflow: hidden;
+}
 .nook-inspector__info {
   padding: 12px;
   font-size: 13px;
@@ -451,6 +457,371 @@
   margin-top: 18px;
   padding-top: 14px;
   border-top: 1px solid var(--border);
+}
+
+/* ---------------------------------------------------------- side file viewer */
+.nook-file-viewer {
+  display: flex;
+  height: 100%;
+  min-height: 100%;
+  flex-direction: column;
+  background: var(--background);
+}
+.nook-file-viewer__header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--background) 94%, transparent);
+  backdrop-filter: blur(10px);
+}
+.nook-file-viewer__header > div {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+.nook-file-viewer__header strong {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nook-file-viewer__header span {
+  color: var(--foreground-tertiary);
+  font-size: 11px;
+}
+.nook-file-viewer__header > a,
+.nook-file-viewer__header > button {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: 0;
+  background: transparent;
+  color: var(--foreground-secondary);
+}
+.nook-file-viewer__header > a:hover,
+.nook-file-viewer__header > button:hover { background: var(--accent); color: var(--foreground); }
+.nook-file-viewer__header > a svg,
+.nook-file-viewer__header > button svg,
+.nook-file-viewer__icon svg { width: 16px; height: 16px; }
+.nook-file-viewer__icon {
+  display: grid;
+  flex: 0 0 30px;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+}
+.nook-file-viewer--node .nook-file-viewer__header {
+  min-height: 36px;
+  gap: 7px;
+  padding: 4px 10px;
+}
+.nook-file-viewer--node .nook-file-viewer__header strong {
+  display: none;
+}
+.nook-file-viewer--node .nook-file-viewer__header > div {
+  justify-content: center;
+}
+.nook-file-viewer--node .nook-file-viewer__header > a,
+.nook-file-viewer--node .nook-file-viewer__header > button {
+  width: 26px;
+  height: 26px;
+}
+.nook-file-viewer--node .nook-file-viewer__icon {
+  flex-basis: 26px;
+  width: 26px;
+  height: 26px;
+}
+.nook-file-viewer--node .nook-file-viewer__icon svg {
+  width: 14px;
+  height: 14px;
+}
+.nook-file-viewer__document {
+  display: block;
+  width: 100%;
+  height: min(62vh, 760px);
+  min-height: 420px;
+  flex: 0 0 auto;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+}
+.nook-file-viewer__document--text { min-height: 300px; height: 42vh; }
+.nook-file-viewer__image,
+.nook-file-viewer__media {
+  display: block;
+  width: 100%;
+  max-height: 62vh;
+  object-fit: contain;
+  border-bottom: 1px solid var(--border);
+  background: var(--muted);
+}
+.nook-file-viewer__audio { width: calc(100% - 24px); margin: 16px 12px; }
+.nook-file-viewer__spin { animation: nook-file-spin 900ms linear infinite; }
+.nook-file-viewer__state { display: flex; align-items: center; gap: 7px; padding: 12px; color: var(--foreground-tertiary); font-size: 12px; }
+.nook-file-viewer__state--error { color: var(--destructive); }
+
+/* ---------------------------------------------------------- PDF workbench */
+.nook-pdf-workbench {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 72%, #7b8490);
+}
+.nook-pdf-workbench > * {
+  width: 100%;
+}
+.nook-pdf-workbench__surface {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+.nook-pdf-workbench__toolbar,
+.nook-pdf-workbench__search {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--background) 96%, transparent);
+  color: var(--foreground-secondary);
+}
+.nook-pdf-workbench__toolbar {
+  min-height: 36px;
+  padding: 3px 8px;
+}
+.nook-pdf-workbench__toolbar button,
+.nook-pdf-workbench__search button {
+  display: grid;
+  min-width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.nook-pdf-workbench__toolbar button:hover:not(:disabled),
+.nook-pdf-workbench__toolbar button.is-active,
+.nook-pdf-workbench__search button:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--foreground);
+}
+.nook-pdf-workbench__toolbar button:disabled,
+.nook-pdf-workbench__search button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.nook-pdf-workbench__toolbar button svg,
+.nook-pdf-workbench__search button svg,
+.nook-pdf-workbench__search > svg {
+  width: 15px;
+  height: 15px;
+}
+.nook-pdf-workbench__page-form {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.nook-pdf-workbench__page-form input {
+  width: 38px;
+  height: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--background);
+  color: var(--foreground);
+  font: inherit;
+  text-align: center;
+  outline: none;
+}
+.nook-pdf-workbench__page-form input:focus {
+  border-color: var(--primary);
+}
+.nook-pdf-workbench__divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 3px;
+  background: var(--border);
+}
+.nook-pdf-workbench__spacer {
+  flex: 1 1 auto;
+}
+.nook-pdf-workbench__toolbar .nook-pdf-workbench__zoom-value {
+  display: block;
+  min-width: 48px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.nook-pdf-workbench__toolbar .nook-pdf-workbench__fit {
+  display: block;
+  width: auto;
+  padding: 0 8px;
+  font-size: 11px;
+}
+.nook-pdf-workbench__search {
+  min-height: 34px;
+  padding: 3px 8px 3px 12px;
+}
+.nook-pdf-workbench__search input {
+  min-width: 80px;
+  flex: 1 1 auto;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 12px;
+  outline: none;
+}
+.nook-pdf-workbench__search > span {
+  flex: 0 0 auto;
+  color: var(--foreground-tertiary);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.nook-pdf-workbench__viewport {
+  position: relative;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: color-mix(in srgb, var(--muted) 70%, #737b86);
+}
+.nook-pdf-workbench__scroller {
+  display: flex;
+  min-width: 100%;
+  min-height: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 20px;
+}
+.nook-pdf-workbench__page {
+  position: relative;
+  flex: 0 0 auto;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 2px 12px rgb(0 0 0 / 18%);
+  scroll-margin-top: 12px;
+  transition: width 120ms ease, height 120ms ease, outline-color 120ms ease;
+}
+.nook-pdf-workbench__page.is-search-result {
+  outline: 3px solid color-mix(in srgb, var(--primary) 75%, transparent);
+  outline-offset: 3px;
+}
+.nook-pdf-workbench__page > img,
+.nook-pdf-workbench__page > canvas {
+  display: block;
+}
+.nook-pdf-workbench__text-layer {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  color: transparent;
+  line-height: 1;
+  text-align: initial;
+  text-size-adjust: none;
+  transform-origin: 0 0;
+}
+.nook-pdf-workbench__text-layer :is(span, br) {
+  position: absolute;
+  color: transparent;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0 0;
+  user-select: text;
+}
+.nook-pdf-workbench__text-layer {
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+.nook-pdf-workbench__text-layer > :not(.markedContent),
+.nook-pdf-workbench__text-layer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+.nook-pdf-workbench__text-layer .markedContent {
+  display: contents;
+}
+.nook-pdf-workbench__text-layer span.is-search-match {
+  border-radius: 2px;
+  background: rgb(250 204 21 / 45%);
+}
+.nook-pdf-workbench__text-layer span.is-active-search-match {
+  background: rgb(249 115 22 / 58%);
+}
+.nook-pdf-workbench__text-layer ::selection {
+  background: rgb(37 99 235 / 28%);
+  color: transparent;
+}
+.nook-pdf-workbench__page-error,
+.nook-pdf-workbench__page-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  background: rgb(255 255 255 / 88%);
+  color: var(--foreground-tertiary);
+  font-size: 12px;
+}
+.nook-pdf-workbench__page-loading svg {
+  width: 18px;
+  height: 18px;
+}
+.nook-pdf-workbench__page-error {
+  color: var(--destructive);
+}
+.nook-pdf-workbench__state {
+  display: flex;
+  width: 100%;
+  min-height: 180px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--foreground-tertiary);
+  font-size: 12px;
+}
+.nook-pdf-workbench__state--error {
+  color: var(--destructive);
+}
+.nook-pdf-workbench__state button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--background);
+  color: inherit;
+  cursor: pointer;
+}
+.nook-pdf-workbench__state button svg {
+  width: 14px;
+  height: 14px;
 }
 .nook-files-panel {
   display: flex;

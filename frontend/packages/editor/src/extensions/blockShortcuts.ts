@@ -10,12 +10,29 @@ export interface BlockShortcutOptions {
 /**
  * Notion's block-level shortcuts that BlockNote does not ship:
  * ⌘D duplicate, ⌘⇧↑/↓ move, Esc select the current block, ⌘⇧L copy link to block.
- * (Tab / Shift-Tab nesting and the arrow-key selection are BlockNote defaults.)
+ * Tab inserts a real text tab in ordinary prose. Lists, tables and other structured blocks keep
+ * BlockNote's native Tab/Shift-Tab behavior.
  */
 export const BlockShortcutsExtension = createExtension(
   ({ editor, options }: { editor: AnyEditor; options: BlockShortcutOptions | undefined }) => ({
     key: 'nookBlockShortcuts',
+    // Beat BlockNote's default Tab handler for paragraphs/headings; handlers that return false
+    // still fall through to native list/table indentation.
+    runsBefore: ['default'],
     keyboardShortcuts: {
+      Tab: () => {
+        const view = editor.prosemirrorView;
+        if (!view || view.state.selection instanceof NodeSelection) return false;
+        let type: string;
+        try {
+          type = editor.getTextCursorPosition().block.type;
+        } catch {
+          return false;
+        }
+        if (type !== 'paragraph' && type !== 'heading') return false;
+        view.dispatch(view.state.tr.insertText('\t').scrollIntoView());
+        return true;
+      },
       'Mod-d': () => {
         duplicateBlocks(editor, selectedBlockIds(editor));
         return true;

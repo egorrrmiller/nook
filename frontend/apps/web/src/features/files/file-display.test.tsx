@@ -2,7 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { Attachment } from '@nook/api-client';
 import { FileAttachmentCard } from './FileAttachmentCard';
-import { fileKind, fileTypeLabel, formatFileSize, resourceFromExternal } from './file-display';
+import { fileKind, fileTypeLabel, formatFileSize, resourceFromAttachment, resourceFromExternal } from './file-display';
 
 function attachment(overrides: Partial<Attachment> = {}): Attachment {
   return {
@@ -37,6 +37,11 @@ describe('file display', () => {
     expect(resourceFromExternal({ name: 'clip.webm', url: 'https://cdn.example/clip.webm' }).mime).toBe('video/webm');
   });
 
+  it('uses the isolated browser preview for uploaded SVGs instead of the raster thumbnail', () => {
+    const resource = resourceFromAttachment(attachment({ filename: 'diagram.svg', mime: 'image/svg+xml' }));
+    expect(resource.previewUrl).toBe('/api/files/attachment-1/preview');
+  });
+
   it('shows MIME, size, safe actions and a PDF preview toggle', () => {
     render(<FileAttachmentCard attachment={attachment()} />);
     expect(screen.getByText('report.pdf')).toBeInTheDocument();
@@ -48,6 +53,14 @@ describe('file display', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Preview file' }));
     expect(screen.getByTestId('file-preview')).toBeInTheDocument();
     expect(within(screen.getByTestId('file-preview')).getByTitle('report.pdf')).toBeInTheDocument();
+  });
+
+  it('hands previewing to the side viewer when the host provides it', () => {
+    const onPreview = vi.fn();
+    render(<FileAttachmentCard attachment={attachment()} onPreview={onPreview} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Preview file' }));
+    expect(onPreview).toHaveBeenCalledWith(expect.objectContaining({ id: 'attachment-1', mime: 'application/pdf' }));
+    expect(screen.queryByTestId('file-preview')).not.toBeInTheDocument();
   });
 
   it('does not create unsafe external actions and explains the fallback', () => {

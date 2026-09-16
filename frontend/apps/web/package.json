@@ -27,6 +27,7 @@
     "@tanstack/react-router": "^1.140.0",
     "d3-force": "^3.0.0",
     "lucide-react": "^0.560.0",
+    "pdfjs-dist": "6.3.289",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "yjs": "^13.6.27",

@@ -50,12 +50,12 @@ docker compose --env-file deploy/.env -f deploy/docker-compose.yml pull
 docker compose --env-file deploy/.env -f deploy/docker-compose.yml up -d --remove-orphans
 ```
 
-Для локальной сборки вместо GHCR используй отдельный override:
+Для локальной сборки и запуска всего стека из текущего checkout используй самостоятельный
+build-compose. Он поднимет Postgres, API, collab и web:
 
 ```bash
 docker compose \
   --env-file deploy/.env \
-  -f deploy/docker-compose.yml \
   -f deploy/docker-compose.build.yml \
-  up -d --build
+  up -d --build --remove-orphans
 ```

@@ -16,7 +16,12 @@ import { BlockNoteView } from '@blocknote/shadcn';
 import { multiColumnDropCursor, locales as multiColumnLocales } from '@blocknote/xl-multi-column';
 import { en as enLocale } from '@blocknote/core/locales';
 import type { ApiClient, Node, PageSettings, Role } from '@nook/api-client';
-import { usePluginBlocks, usePluginInlineContent, usePluginSlashMenuItems, type AnyBlockNoteEditor } from '@nook/plugin-sdk';
+import {
+  usePluginBlocks,
+  usePluginInlineContent,
+  usePluginSlashMenuItems,
+  type AnyBlockNoteEditor,
+} from '@nook/plugin-sdk';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type * as Y from 'yjs';
 import { useQueryless } from './util/useQueryless';
@@ -35,7 +40,11 @@ import { NookFilePanel } from './menus/NookFilePanel';
 import { BlockShortcutsExtension } from './extensions/blockShortcuts';
 import { duplicateBlocks, deleteBlocks, selectedBlockIds } from './extensions/blockCommands';
 import { blockLinkUrl, copyText, useBlockAnchor } from './extensions/anchors';
-import { PasteChoicePopover, type PasteChoice, type PasteChoiceState } from './paste/PasteChoicePopover';
+import {
+  PasteChoicePopover,
+  type PasteChoice,
+  type PasteChoiceState,
+} from './paste/PasteChoicePopover';
 import { classifyPastedText, type PasteClassification } from './paste/classify';
 import { PagePicker } from './components/PagePicker';
 import { TitleEditor } from './TitleEditor';
@@ -88,6 +97,8 @@ export interface NookEditorProps {
   toast?: (message: string) => void;
   /** Uploads a file and returns the props for the media block (app-owned, see features/files). */
   uploadFile?: (file: File, blockId?: string) => Promise<UploadResult>;
+  /** Opens an uploaded file in the host application's right-hand viewer. */
+  openFile?: (file: { id: string; name?: string; mime?: string; url?: string }) => void;
   /** Creates a sub-page for `[[New title]]` — the app keeps its caches in sync. */
   createPage?: (title: string) => Promise<Node>;
 }
@@ -108,6 +119,7 @@ export function NookEditor(props: NookEditorProps) {
       navigate={props.navigate}
       toast={props.toast}
       uploadFile={props.uploadFile}
+      openFile={props.openFile}
       createPage={props.createPage}
     >
       <EditorBody {...props} session={session} />
@@ -117,7 +129,11 @@ export function NookEditor(props: NookEditorProps) {
 
 function EditorBody(props: NookEditorProps & { session: CollabSession | null }) {
   const { session } = props;
-  if (!session || session.status === 'connecting' || (session.status !== 'error' && !session.synced)) {
+  if (
+    !session ||
+    session.status === 'connecting' ||
+    (session.status !== 'error' && !session.synced)
+  ) {
     return <EditorSkeleton />;
   }
   if (session.status === 'error') return <OfflineFallback {...props} session={session} />;
@@ -135,13 +151,20 @@ function OfflineFallback({
   className,
 }: NookEditorProps & { session: CollabSession }) {
   const host = useEditorHost();
-  const blocks = useQueryless(() => host.api.nodes.blocks(host.nodeId).then((r) => r.blocks), [host.api, host.nodeId]);
+  const blocks = useQueryless(
+    () => host.api.nodes.blocks(host.nodeId).then((r) => r.blocks),
+    [host.api, host.nodeId],
+  );
   const titleText = useMemo(() => session.doc.getText('title'), [session.doc]);
   return (
     <div className={['nook-editor', className].filter(Boolean).join(' ')} data-readonly>
       {/* No provider here, so no remote state can arrive: seeding the title from REST is the only source. */}
       {header?.({ titleText, focusEditor: () => {}, readOnly: true, synced: true })}
-      <div role="alert" className="nook-editor-banner nook-editor-banner--error" data-testid="collab-fallback">
+      <div
+        role="alert"
+        className="nook-editor-banner nook-editor-banner--error"
+        data-testid="collab-fallback"
+      >
         Live editing unavailable — showing the last saved version of this page.
       </div>
       <BlocksView blocks={blocks.data ?? []} theme={theme} />
@@ -209,22 +232,37 @@ function NookEditorInner({
   const uploadRef = useRef(host.uploadFile);
   uploadRef.current = host.uploadFile;
 
-  const applyPasteChoice = useCallback((ed: AnyEditor, verdict: Extract<PasteClassification, { kind: 'url' }>, choice: PasteChoice) => {
-    setPaste(null);
-    const block = ed.getTextCursorPosition().block;
-    if (choice === 'link') {
+  const applyPasteChoice = useCallback(
+    (
+      ed: AnyEditor,
+      verdict: Extract<PasteClassification, { kind: 'url' }>,
+      choice: PasteChoice,
+    ) => {
+      setPaste(null);
+      const block = ed.getTextCursorPosition().block;
+      if (choice === 'link') {
+        ed.focus();
+        return;
+      }
+      if (choice === 'bookmark')
+        ed.updateBlock(block, {
+          type: 'bookmark',
+          props: { url: verdict.url, fetched: 0 },
+        } as never);
+      else if (choice === 'embed')
+        ed.updateBlock(block, { type: 'embed', props: { url: verdict.url } } as never);
+      else if (choice === 'mention' && verdict.internal) {
+        ed.updateBlock(block, { type: 'paragraph', content: [] } as never);
+        ed.setTextCursorPosition(block.id, 'end');
+        ed.insertInlineContent([
+          { type: 'mention', props: { nodeId: verdict.internal.nodeId, title: '' } },
+          ' ',
+        ]);
+      }
       ed.focus();
-      return;
-    }
-    if (choice === 'bookmark') ed.updateBlock(block, { type: 'bookmark', props: { url: verdict.url, fetched: 0 } } as never);
-    else if (choice === 'embed') ed.updateBlock(block, { type: 'embed', props: { url: verdict.url } } as never);
-    else if (choice === 'mention' && verdict.internal) {
-      ed.updateBlock(block, { type: 'paragraph', content: [] } as never);
-      ed.setTextCursorPosition(block.id, 'end');
-      ed.insertInlineContent([{ type: 'mention', props: { nodeId: verdict.internal.nodeId, title: '' } }, ' ']);
-    }
-    ed.focus();
-  }, []);
+    },
+    [],
+  );
 
   const editor = useCreateBlockNote(
     withCollaboration({
@@ -247,7 +285,10 @@ function NookEditorInner({
       },
       dropCursor: multiColumnDropCursor,
       tables: { splitCells: true, cellBackgroundColor: true, cellTextColor: true, headers: true },
-      extensions: [syntaxHighlighter, BlockShortcutsExtension({ onCopyLink: (id: string) => copyLinkRef.current?.(id) })],
+      extensions: [
+        syntaxHighlighter,
+        BlockShortcutsExtension({ onCopyLink: (id: string) => copyLinkRef.current?.(id) }),
+      ],
       uploadFile: async (file: File, blockId?: string) => {
         const upload = uploadRef.current;
         if (!upload) return URL.createObjectURL(file);
@@ -260,7 +301,10 @@ function NookEditorInner({
       resolveFileUrl: async (url: string) => url,
       pasteHandler: ({ event, editor: ed, defaultPasteHandler }) => {
         const text = event.clipboardData?.getData('text/plain') ?? '';
-        const verdict = classifyPastedText(text, { origin: window.location.origin, workspaceId: host.workspaceId });
+        const verdict = classifyPastedText(text, {
+          origin: window.location.origin,
+          workspaceId: host.workspaceId,
+        });
         if (verdict.kind !== 'url' || !ed.isEditable) return defaultPasteHandler();
         event.preventDefault();
         // Insert the plain link first (like Notion) and offer to convert it.
@@ -268,8 +312,12 @@ function NookEditorInner({
         const rect = ed.getSelectionBoundingBox();
         pasteRef.current?.({
           url: verdict.url,
-          rect: { top: (rect?.bottom ?? 0) + window.scrollY + 6, left: (rect?.left ?? 0) + window.scrollX },
-          allowMention: !!verdict.internal,
+          rect: {
+            top: (rect?.bottom ?? 0) + window.scrollY + 6,
+            left: (rect?.left ?? 0) + window.scrollX,
+          },
+          // A PDF page URL must stay a plain link so its page anchor is not lost.
+          allowMention: !!verdict.internal && !verdict.internal.page,
           allowEmbed: verdict.embeddable || verdict.media === 'video',
           onChoose: (choice) => applyPasteChoice(ed as AnyEditor, verdict, choice),
           onDismiss: () => setPaste(null),
@@ -315,7 +363,9 @@ function NookEditorInner({
   const actions = useMemo<SlashActions>(() => {
     const ed = editor as AnyEditor;
     const openMenu = (trigger: string) => {
-      const ext = ed.getExtension('suggestionMenu') as { openSuggestionMenu?: (t: string, o?: { deleteTriggerCharacter?: boolean }) => void } | undefined;
+      const ext = ed.getExtension('suggestionMenu') as
+        | { openSuggestionMenu?: (t: string, o?: { deleteTriggerCharacter?: boolean }) => void }
+        | undefined;
       ext?.openSuggestionMenu?.(trigger, { deleteTriggerCharacter: true });
     };
     return {
@@ -326,7 +376,11 @@ function NookEditorInner({
       deleteBlock: () => deleteBlocks(ed, selectedBlockIds(ed)),
       copyLinkToBlock: () => copyLinkToBlock(ed.getTextCursorPosition().block.id),
       insertMention: () => openMenu('@'),
-      insertDate: () => ed.insertInlineContent([{ type: 'dateMention', props: { date: todayIso(), end: '' } }, ' ']),
+      insertDate: () =>
+        ed.insertInlineContent([
+          { type: 'dateMention', props: { date: todayIso(), end: '' } },
+          ' ',
+        ]),
       insertInlineEquation: () => ed.insertInlineContent([{ type: 'inlineEquation', content: '' }]),
       insertEmoji: () => openMenu(':'),
     };
@@ -346,7 +400,10 @@ function NookEditorInner({
   const docSynced = session.synced || session.status === 'local';
 
   return (
-    <div className={['nook-editor', className].filter(Boolean).join(' ')} data-readonly={readOnly || undefined}>
+    <div
+      className={['nook-editor', className].filter(Boolean).join(' ')}
+      data-readonly={readOnly || undefined}
+    >
       {pageSettings?.locked ? (
         <div role="status" className="nook-editor-banner" data-testid="locked-banner">
           This page is locked — unlock it from the page menu to edit.
@@ -356,7 +413,9 @@ function NookEditorInner({
           You have view-only access to this page.
         </div>
       ) : null}
-      {header ? header({ titleText, focusEditor: () => editor.focus(), readOnly, synced: docSynced }) : null}
+      {header
+        ? header({ titleText, focusEditor: () => editor.focus(), readOnly, synced: docSynced })
+        : null}
       {showTitle && !header ? (
         <TitleEditor
           text={titleText}
@@ -383,7 +442,9 @@ function NookEditorInner({
         <SuggestionMenuController
           triggerCharacter="/"
           suggestionMenuComponent={NookSlashMenu}
-          getItems={async (query) => filterSuggestionItems(buildSlashItems(editor as AnyEditor, actions, pluginItems), query)}
+          getItems={async (query) =>
+            filterSuggestionItems(buildSlashItems(editor as AnyEditor, actions, pluginItems), query)
+          }
         />
         <SuggestionMenuController
           triggerCharacter="@"
@@ -391,7 +452,12 @@ function NookEditorInner({
             mentionMenuItems(
               editor as AnyEditor,
               query,
-              { api: host.api, nodeId: host.nodeId, toast: host.toast, createPage: host.createPage },
+              {
+                api: host.api,
+                nodeId: host.nodeId,
+                toast: host.toast,
+                createPage: host.createPage,
+              },
               { allowCreate: false, allowDates: true },
             )
           }
@@ -402,7 +468,12 @@ function NookEditorInner({
             mentionMenuItems(
               editor as AnyEditor,
               query,
-              { api: host.api, nodeId: host.nodeId, toast: host.toast, createPage: host.createPage },
+              {
+                api: host.api,
+                nodeId: host.nodeId,
+                toast: host.toast,
+                createPage: host.createPage,
+              },
               { allowCreate: true, allowDates: false },
             )
           }
@@ -417,8 +488,20 @@ function NookEditorInner({
         <FormattingToolbarController formattingToolbar={NookFormattingToolbar} />
         <FilePanelController filePanel={NookFilePanel} />
       </BlockNoteView>
-      {overlay?.kind === 'turnInto' ? <TurnIntoPanel editor={editor as AnyEditor} blockIds={overlay.blockIds} onClose={() => setOverlay(null)} /> : null}
-      {overlay?.kind === 'color' ? <ColorPanel editor={editor as AnyEditor} blockIds={overlay.blockIds} onClose={() => setOverlay(null)} /> : null}
+      {overlay?.kind === 'turnInto' ? (
+        <TurnIntoPanel
+          editor={editor as AnyEditor}
+          blockIds={overlay.blockIds}
+          onClose={() => setOverlay(null)}
+        />
+      ) : null}
+      {overlay?.kind === 'color' ? (
+        <ColorPanel
+          editor={editor as AnyEditor}
+          blockIds={overlay.blockIds}
+          onClose={() => setOverlay(null)}
+        />
+      ) : null}
       {overlay?.kind === 'moveTo' ? (
         <PanelShell title="Move page to" onClose={() => setOverlay(null)} testId="move-to-panel">
           <PagePicker

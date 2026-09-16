@@ -50,6 +50,7 @@ public sealed class NodeDuplicateService(
         {
             if (tid == source.Id) throw new ValidationException("Cannot duplicate a node into itself.");
             var (parent, _) = await nodes.RequireAsync(tid, WorkspaceRole.Editor, ct);
+            if (parent.Kind == NodeKind.File) throw new ValidationException("Files cannot contain child nodes.");
             var ancestors = await access.AncestorIdsAsync(parent.ParentId, ct);
             if (ancestors.Contains(source.Id)) throw new ValidationException("Cannot duplicate a node into its own subtree.");
         }

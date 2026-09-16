@@ -8,6 +8,7 @@ import { PageHistoryPanel } from '../../features/history';
 import { useUiStore, type InspectorTab } from '../../stores/ui';
 import { useToastStore } from '../../stores/toast';
 import { NodeFilesPanel } from '../../features/files/NodeFilesPanel';
+import { FileViewer } from '../../features/files/FileViewer';
 import { PageInfoRow } from './PageInfoRow';
 
 const TABS: { id: InspectorTab; label: string }[] = [
@@ -28,17 +29,20 @@ export function PageInspector({
 }) {
   const tab = useUiStore((s) => s.inspector);
   const setInspector = useUiStore((s) => s.setInspector);
+  const filePreview = useUiStore((s) => s.filePreview);
   if (!tab) return null;
 
+  const tabs = filePreview ? [...TABS, { id: 'file' as const, label: 'File' }] : TABS;
+
   return (
-    <aside className="nook-inspector" aria-label="Page inspector" data-testid="page-inspector">
+    <aside className={cn('nook-inspector', tab === 'file' && 'nook-inspector--file')} aria-label="Page inspector" data-testid="page-inspector">
       <Tabs
         value={tab}
         onValueChange={(value) => setInspector(value as InspectorTab)}
         className="nook-inspector__tabs-root"
       >
         <TabsList className="nook-inspector__tabs">
-          {TABS.map((t) => (
+          {tabs.map((t) => (
             <TabsTab
               key={t.id}
               value={t.id}
@@ -57,6 +61,7 @@ export function PageInspector({
           {tab === 'backlinks' ? <BacklinksPanel workspaceId={workspaceId} nodeId={node.id} /> : null}
           {tab === 'history' ? <PageHistoryPanel workspaceId={workspaceId} nodeId={node.id} /> : null}
           {tab === 'info' ? <PageInfo workspaceId={workspaceId} node={node} editor={editor} /> : null}
+          {tab === 'file' && filePreview ? <FileViewer target={filePreview} /> : null}
         </div>
       </Tabs>
     </aside>

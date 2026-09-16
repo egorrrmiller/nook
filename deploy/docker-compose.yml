@@ -26,8 +26,10 @@ services:
       NOOK_OWNER_PASSWORD: ${NOOK_OWNER_PASSWORD:?set NOOK_OWNER_PASSWORD in deploy/.env}
       NOOK_COLLAB_JWT_SECRET: ${NOOK_COLLAB_JWT_SECRET:?set NOOK_COLLAB_JWT_SECRET in deploy/.env}
       NOOK_INTERNAL_TOKEN: ${NOOK_INTERNAL_TOKEN:?set NOOK_INTERNAL_TOKEN in deploy/.env}
+      NOOK_MAX_UPLOAD_MB: ${NOOK_MAX_UPLOAD_MB:-0}
     volumes:
       - nookdata:/data
+      - nookkeys:/root/.aspnet/DataProtection-Keys
 
   collab:
     image: ghcr.io/egorrrmiller/nook-collab:${NOOK_IMAGE_TAG:-latest}
@@ -53,3 +55,4 @@ services:
 volumes:
   pgdata:
   nookdata:
+  nookkeys:

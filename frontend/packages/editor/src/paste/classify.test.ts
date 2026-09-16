@@ -52,6 +52,7 @@ describe('parseInternalPageUrl', () => {
       nodeId: 'b',
       blockId: 'c',
     });
+    expect(parseInternalPageUrl('/w/a/p/b#page=12')).toEqual({ workspaceId: 'a', nodeId: 'b', page: 12 });
     expect(parseInternalPageUrl('/w/a/graph')).toBeNull();
   });
 });

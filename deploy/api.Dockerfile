@@ -14,8 +14,7 @@ ENV ASPNETCORE_URLS=http://0.0.0.0:5100 \
     NOOK_COLLAB_WS_URL=/collab \
     NOOK_COLLAB_INTERNAL_URL=http://collab:1235 \
     NOOK_AUTO_MIGRATE=true \
-    NOOK_BACKGROUND_JOBS=true \
-    NOOK_MAX_UPLOAD_MB=512
+    NOOK_BACKGROUND_JOBS=true
 COPY --from=build /out ./
 EXPOSE 5100
 ENTRYPOINT ["dotnet", "Nook.Api.dll"]

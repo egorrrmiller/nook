@@ -359,6 +359,19 @@ export interface Attachment {
   createdAt: string;
 }
 
+export interface ExtractedTextPage {
+  page: number;
+  text: string;
+}
+
+export interface ExtractedFileText {
+  text: string;
+  pages: ExtractedTextPage[];
+  /** Extraction job has finished, successfully or otherwise. */
+  ready: boolean;
+  succeeded: boolean;
+}
+
 export interface UploadFileOptions {
   nodeId: string;
   blockId?: string;

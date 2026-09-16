@@ -1,4 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const fileUpload = vi.hoisted(() => ({ upload: vi.fn() }));
+vi.mock('../features/files/upload', () => ({
+  uploadFileWithProgress: fileUpload.upload,
+}));
 
 // BlockNote/ProseMirror need a real layout engine; the page route only needs to mount here.
 vi.mock('@nook/editor', () => ({
@@ -12,8 +17,15 @@ import { renderApp, signInMock, firstWorkspaceId } from './render';
 import { mockApi } from '../mocks/handlers';
 import { definePlugin } from '@nook/plugin-sdk';
 import { useUiStore } from '../stores/ui';
+import { useToastStore } from '../stores/toast';
 
 describe('sidebar tree', () => {
+  beforeEach(() => {
+    fileUpload.upload.mockReset();
+    useToastStore.setState({ toasts: [] });
+    useUiStore.getState().setSidebarOpen(true);
+  });
+
   it('renders root pages and lazily loads children on expand', async () => {
     signInMock();
     const user = userEvent.setup();
@@ -61,6 +73,32 @@ describe('sidebar tree', () => {
     );
   });
 
+  it('uploads a first-class file into the tree and opens its viewer', async () => {
+    signInMock();
+    fileUpload.upload.mockResolvedValue({});
+    const user = userEvent.setup();
+    const { router } = await renderApp({ path: `/w/${firstWorkspaceId()}` });
+    await screen.findByTestId('sidebar');
+    const before = mockApi.state.nodes.length;
+
+    await user.upload(
+      screen.getByLabelText('Upload files to tree'),
+      new File(['%PDF-1.4'], 'research.pdf', { type: 'application/pdf' }),
+    );
+
+    await waitFor(() => expect(mockApi.state.nodes.length).toBe(before + 1));
+    const created = mockApi.state.nodes.at(-1)!;
+    expect(created).toMatchObject({ kind: 'file', title: 'research.pdf' });
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe(`/w/${firstWorkspaceId()}/p/${created.id}`),
+    );
+    expect(await screen.findByTestId('file-node-view')).toBeInTheDocument();
+    expect(fileUpload.upload).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'research.pdf' }),
+      expect.objectContaining({ nodeId: created.id, purpose: 'content' }),
+    );
+  });
+
   it('can reopen the sidebar after it is hidden', async () => {
     signInMock();
     const user = userEvent.setup();
@@ -68,7 +106,9 @@ describe('sidebar tree', () => {
     await screen.findByTestId('sidebar');
 
     useUiStore.getState().setSidebarOpen(false);
-    expect(screen.getByTestId('sidebar')).toHaveAttribute('aria-hidden', 'true');
+    await waitFor(() =>
+      expect(screen.getByTestId('sidebar')).toHaveAttribute('aria-hidden', 'true'),
+    );
     const openButton = await screen.findByTestId('open-sidebar');
     expect(openButton).toBeVisible();
 
