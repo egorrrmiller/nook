@@ -4,6 +4,7 @@ using System.Threading.RateLimiting;
 using Hangfire;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Nook.Api.Auth;
 using Nook.Api.Endpoints;
@@ -66,6 +67,14 @@ builder.Services.AddSignalR().AddJsonProtocol(o =>
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<NookExceptionHandler>();
+builder.Services.Configure<ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // The API port is not published by Compose; requests can only arrive through
+    // the web container on the private Docker network.
+    o.KnownIPNetworks.Clear();
+    o.KnownProxies.Clear();
+});
 
 builder.Services.AddAuthentication(AuthSchemes.Smart)
     .AddPolicyScheme(AuthSchemes.Smart, "Cookie or API token", o =>
@@ -80,7 +89,7 @@ builder.Services.AddAuthentication(AuthSchemes.Smart)
         o.Cookie.Name = options.CookieName;
         o.Cookie.HttpOnly = true;
         o.Cookie.SameSite = SameSiteMode.Lax;
-        o.Cookie.SecurePolicy = builder.Environment.IsProduction() ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
+        o.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         o.ExpireTimeSpan = TimeSpan.FromDays(30);
         o.SlidingExpiration = true;
         o.Events.OnRedirectToLogin = ctx => { ctx.Response.StatusCode = StatusCodes.Status401Unauthorized; return Task.CompletedTask; };
@@ -116,6 +125,7 @@ await DatabaseInitializer.InitializeAsync(app.Services, options.AutoMigrate, opt
 if (options.BackgroundJobs) HangfireSetup.RegisterRecurringJobs(app.Services);
 
 // --- pipeline -----------------------------------------------------------------------------------------------------
+app.UseForwardedHeaders();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseSerilogRequestLogging();

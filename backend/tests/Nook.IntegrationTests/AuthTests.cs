@@ -51,6 +51,23 @@ public class AuthTests(NookApiFactory factory) : IClassFixture<NookApiFactory>
     }
 
     [Fact]
+    public async Task Session_cookie_security_follows_forwarded_request_scheme()
+    {
+        var http = factory.CreateClient(new() { HandleCookies = false });
+        var httpResponse = await http.PostAsJsonAsync("/api/auth/login", new { email = NookApiFactory.OwnerEmail, password = NookApiFactory.OwnerPassword });
+        httpResponse.EnsureSuccessStatusCode();
+        var httpCookie = Assert.Single(httpResponse.Headers.GetValues("Set-Cookie"));
+        Assert.DoesNotContain("; secure", httpCookie, StringComparison.OrdinalIgnoreCase);
+
+        var https = factory.CreateClient(new() { HandleCookies = false });
+        https.DefaultRequestHeaders.Add("X-Forwarded-Proto", "https");
+        var httpsResponse = await https.PostAsJsonAsync("/api/auth/login", new { email = NookApiFactory.OwnerEmail, password = NookApiFactory.OwnerPassword });
+        httpsResponse.EnsureSuccessStatusCode();
+        var httpsCookie = Assert.Single(httpsResponse.Headers.GetValues("Set-Cookie"));
+        Assert.Contains("; secure", httpsCookie, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task Api_tokens_authenticate_with_bearer_and_respect_scopes()
     {
         var client = factory.CreateClient();
